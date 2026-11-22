@@ -238,3 +238,10 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
   font-family: var(--texte-police);
 }
 .action.specialite > span, .encadre p, .petit-texte, .comparaison { font-size: 14px; }
+
+/* Transfert de la progression (spec 010). */
+.carton.transfert { max-width: 560px; text-align: left; }
+.carton.transfert h2 { text-align: center; }
+.carton.transfert input { font-family: var(--texte-police); letter-spacing: 1px; }
+.erreur { color: var(--rouge); }
+.succes { color: var(--vert); }

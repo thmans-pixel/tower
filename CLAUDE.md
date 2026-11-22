@@ -4,7 +4,7 @@ Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `doc
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
-`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -27,7 +27,8 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
   environ ; « pressé » (appelle chaque vague dès que possible) perd vers la vague 10 ; sans tour, défaite.
   `journal` donne les vies au lancement de chaque vague. Désert (`jouer({ carte: 'desert' })`) : « posé »
   gagne en Normal avec 8 vies environ. Montagne : `jouer({ carte: 'montagne', maxTours: 30 })` gagne avec
-  2 vies environ (le plafond par défaut de 20 tours ne suffit pas sur ce chemin). Toute retouche des chiffres de `src/data/` se
+  2 vies environ (le plafond par défaut de 20 tours ne suffit pas sur ce chemin). Difficile (PV × 1,1, 15 s, 10 vies) : il perd
+  vers la vague 18 sur la Prairie, 8 sur le Désert, 17 sur la Montagne (spec 010). Toute retouche des chiffres de `src/data/` se
   contrôle avec lui.
 - Rendu : `python3 tools/serveur.py` (port 8028, sans cache navigateur). `?jouer=prairie` démarre directement,
   `?test=1` expose `window.td` (partie, poser, appelerVague, avancer) pour les essais automatisés.
@@ -58,7 +59,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
   `deplacer` via `e.bloque`, combattent dans `pouvoirsJoueur`, le boss les écrase). Visée : `ui.pouvoir`/`ui.visee`.
 - Difficulté : `nouvellePartie(carte, difficulte)` (`src/data/difficultes.js`) règle `vies`, `or`, `s.multPV`,
   `s.compteVague`. Progression pure dans `src/sim/progression.js` (`enregistrerVictoire`, `etoilesPartie`,
-  `relire`) ; lecture/écriture navigateur dans `src/ui/sauvegarde.js` (seul endroit qui touche `localStorage`).
+  `relire`) ; transfert par code dans `src/sim/transfert.js` (`codeProgression`, `lireCode`, `fusionner`) ; lecture/écriture navigateur dans `src/ui/sauvegarde.js` (seul endroit qui touche `localStorage`).
 - Vagues générées (`src/data/vagues.js`, `genererVague(graine, n, taille)`) : Montagne et mode infini
   (`nouvellePartie(carte, diff, { infini: true })`, `nbVagues = Infinity`, `scoreInfini`). Particularités de
   carte : `vitesse` (neige), `pvParVague`, `ponts`. Records : `enregistrerInfini`, ouverture : `infiniJouable`.

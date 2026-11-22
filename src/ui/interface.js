@@ -11,11 +11,24 @@ import { ficheTour, fichePouvoir, encadreNiveau2, ficheSpecialisation } from './
 import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
 import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_CARTES } from '../sim/progression.js';
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
+import { codeProgression, lireCode } from '../sim/transfert.js';
+import { CARTES } from '../data/cartes.js';
 import { scoreInfini } from '../sim/partie.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
 const dec = (n, d = 1) => n.toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d });
+/** Ce que contient une progression, en une phrase. */
+function resumeProgression(p) {
+  const cartes = ORDRE_CARTES.filter((c) => p.debloquees.includes(c)).map((c) => CARTES[c].nom).join(', ');
+  const etoiles = Object.values(p.etoiles).reduce((t, e) => t + Object.values(e).reduce((a, b) => a + b, 0), 0);
+  const records = ORDRE_CARTES.filter((c) => p.infini[c]).map((c) => `${CARTES[c].nom} ${p.infini[c]}`);
+  const alea = Object.values(p.aleatoires).reduce((a, b) => a + b, 0);
+  return [`cartes ouvertes : ${cartes}`, `${etoiles} étoile${etoiles > 1 ? 's' : ''}`,
+    records.length ? `records du mode infini : ${records.join(', ')}` : '',
+    alea ? `${alea} carte${alea > 1 ? 's' : ''} aléatoire${alea > 1 ? 's' : ''} gagnée${alea > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') + '.';
+}
+
 const COUL = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#c0392b' };
 
 export class Interface {
@@ -42,6 +55,7 @@ export class Interface {
     $('b-rejouer').onclick = () => actions.rejouer();
     $('b-fin-cartes').onclick = () => actions.ecran('cartes');
     $('b-non').onclick = () => { $('question').hidden = true; };
+    this.preparerTransfert(actions);
     $('panneau').addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -212,6 +226,42 @@ export class Interface {
       this.a.alea({ graine: n });
     };
     $('b-jouer-alea').onclick = () => this.a.jouerAleatoire();
+  }
+
+  /** Fenêtre « Transférer ma progression » (spec 010). `actions.progression()` lit, `actions.reunir(q)` fusionne. */
+  preparerTransfert(actions) {
+    let lue = null;
+    const resultat = (html) => { $('code-resultat').innerHTML = html; };
+    $('b-transfert').onclick = () => {
+      $('code-mien').value = codeProgression(actions.progression());
+      $('code-autre').value = '';
+      resultat(''); lue = null; $('b-reunir').hidden = true;
+      $('transfert').hidden = false;
+    };
+    $('b-fermer-transfert').onclick = () => { $('transfert').hidden = true; };
+    $('b-copier').onclick = async () => {
+      const champ = $('code-mien');
+      try { await navigator.clipboard.writeText(champ.value); } catch { champ.select(); document.execCommand?.('copy'); }
+      $('b-copier').textContent = 'Copié !';
+      setTimeout(() => { $('b-copier').textContent = 'Copier'; }, 1500);
+    };
+    $('code-mien').onfocus = (e) => e.target.select();
+    const lire = () => {
+      const r = lireCode($('code-autre').value);
+      lue = r.ok ? r.progression : null;
+      $('b-reunir').hidden = !r.ok;
+      resultat(r.ok ? `Ce code contient : ${resumeProgression(r.progression)}`
+        : '<b class="erreur">Code illisible</b> : vérifiez qu’il est recopié en entier, sans faute.');
+    };
+    $('b-lire-code').onclick = lire;
+    $('code-autre').onkeydown = (e) => { if (e.key === 'Enter') lire(); };
+    $('b-reunir').onclick = () => {
+      if (!lue) return;
+      actions.reunir(lue);
+      $('code-mien').value = codeProgression(actions.progression());
+      $('b-reunir').hidden = true; lue = null;
+      resultat('<b class="succes">Progressions réunies.</b> Votre code ci-dessus est à jour.');
+    };
   }
 
   question(texte, oui) {

@@ -9,13 +9,13 @@ import { jouer } from './simulate.js';
 test('difficultés : vies, or de départ, PV des ennemis et compte à rebours', () => {
   const f = nouvellePartie('prairie', 'facile'), n = nouvellePartie('prairie'), d = nouvellePartie('prairie', 'difficile');
   assert.deepEqual([f.vies, n.vies, d.vies], [30, 20, 10]);
-  assert.deepEqual([f.or, n.or, d.or], [325, 250, 200]);
+  assert.deepEqual([f.or, n.or, d.or], [325, 250, 250]);
   for (const s of [f, n, d]) { appelerVague(s); for (let i = 0; i < 90; i++) avancer(s); }
   assert.equal(f.ennemis[0].pvMax, n.ennemis[0].pvMax * 0.75);
-  assert.equal(d.ennemis[0].pvMax, n.ennemis[0].pvMax * 1.3);
+  assert.ok(Math.abs(d.ennemis[0].pvMax - n.ennemis[0].pvMax * 1.1) < 1e-9);
   for (const s of [f, d]) while (s.lancement) avancer(s);
   assert.equal(f.compte, 24);
-  assert.equal(d.compte, 12);
+  assert.equal(d.compte, 15);
   assert.throws(() => nouvellePartie('prairie', 'extrême'));
   assert.equal(Object.keys(DIFFICULTES).length, 3);
 });

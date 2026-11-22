@@ -72,6 +72,7 @@
     <div id="liste-cartes" class="cartes"></div>
     <div class="rangee">
       <button id="b-retour" class="petit">Retour</button>
+      <button id="b-transfert" class="petit">Transférer ma progression</button>
       <button id="b-effacer" class="petit">Effacer la progression</button>
     </div>
   </div>
@@ -86,6 +87,23 @@
     <div class="rangee">
       <button id="b-rejouer" class="grand">Rejouer</button>
       <button id="b-fin-cartes" class="petit">Cartes</button>
+    </div>
+  </div>
+</div>
+
+<div id="transfert" class="voile" hidden>
+  <div class="carton transfert">
+    <h2>Transférer ma progression</h2>
+    <p class="alea-note">Copiez votre code ici, collez-le sur l’autre appareil : les deux progressions sont réunies, rien n’est perdu.
+      Rien n’est envoyé sur Internet.</p>
+    <div class="etiquette">Mon code</div>
+    <div class="alea-numero"><input id="code-mien" readonly aria-label="Mon code"><button id="b-copier" class="petit">Copier</button></div>
+    <div class="etiquette">Code d’un autre appareil</div>
+    <div class="alea-numero"><input id="code-autre" placeholder="TDR1-…" autocomplete="off" spellcheck="false" aria-label="Code d’un autre appareil"><button id="b-lire-code" class="petit">Lire</button></div>
+    <div id="code-resultat" class="alea-note" aria-live="polite"></div>
+    <div class="rangee">
+      <button id="b-reunir" class="grand" hidden>Réunir les progressions</button>
+      <button id="b-fermer-transfert" class="petit">Fermer</button>
     </div>
   </div>
 </div>

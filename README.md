@@ -56,7 +56,8 @@ même carte : on peut se l'échanger). On choisit le décor (Prairie, Désert, M
 
 - Trois difficultés (Facile, Normal, Difficile) : vies, or de départ, PV des ennemis et temps entre les vagues.
   Étoiles de 1 à 3 selon les vies restantes ; gagner une carte ouvre la suivante. Progression gardée dans le
-  navigateur (bouton « Effacer la progression » sur l'écran des cartes).
+  navigateur (bouton « Effacer la progression » sur l'écran des cartes). « Transférer ma progression » donne un
+  code à coller sur un autre appareil : les deux progressions sont réunies, sans compte ni serveur.
 - En Normal : or de départ 250, 20 vies. Or à chaque ennemi tué, bonus à chaque vague terminée (15 + 4 × n).
 - Après l'arrivée complète d'une vague, la suivante part au bout de 18 s ; l'appeler plus tôt rapporte 2 or par
   seconde gagnée.
