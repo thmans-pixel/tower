@@ -9,6 +9,7 @@ import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleat
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
 import { charger, enregistrer, effacer } from './ui/sauvegarde.js';
+import { fusionner } from './sim/transfert.js';
 import { chargerDecors } from './render/decors.js';
 import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
@@ -51,6 +52,8 @@ const interfaceJeu = new Interface({
     son.jouer('clic');
   },
   jouerAleatoire: () => commencer(genererCarte(alea.graine, alea.theme, alea.longueur)),
+  progression: () => progression,
+  reunir: (q) => { progression = fusionner(progression, q); enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   effacer: () => { effacer(); progression = progressionVide(); mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
