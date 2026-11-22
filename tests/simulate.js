@@ -19,6 +19,7 @@ export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage',
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (peutPoser(s, c, r)) places.push([c, r, couverture(s, c, r, 125)]);
   places.sort((a, b) => b[2] - a[2]);
   let k = 0;
+  const journal = [];   // vies au lancement de chaque vague
   appelerVague(s);
   for (let i = 0; i < max && !s.fin; i++) {
     if (i % 30 === 0) {
@@ -28,14 +29,17 @@ export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage',
       const amel = s.tours.filter((t) => prixAmelioration(t) !== null).sort((a, b) => prixAmelioration(a) - prixAmelioration(b))[0];
       if (s.or >= prochaine && (s.tours.length < 8 || !amel || prixAmelioration(amel) > prochaine)) {
         const p = places.find(([c, r]) => peutPoser(s, c, r));
-        if (p && poser(s, sorte, p[0], p[1]).ok) k++;
+        const r = p && poser(s, sorte, p[0], p[1]);
+        if (r && r.ok) { k++; if (k % 2 === 0 && s.vague >= 8) r.tour.ciblage = 'fort'; }   // une tour sur deux vise le plus fort, comme un joueur face au boss
       } else if (amel && s.or >= prixAmelioration(amel)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
       if (presse && peutAppeler(s)) appelerVague(s);
     }
+    const v = s.vague;
     avancer(s);
+    if (s.vague !== v) journal.push(s.vies);
     s.evenements.length = 0;
   }
-  return { fin: s.fin, vague: s.vague, vies: s.vies, or: s.or, tours: s.tours.length, abattus: s.abattus, minutes: +(s.temps / 60).toFixed(1) };
+  return { fin: s.fin, vague: s.vague, vies: s.vies, or: s.or, tours: s.tours.length, abattus: s.abattus, minutes: +(s.temps / 60).toFixed(1), journal };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

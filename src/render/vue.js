@@ -8,7 +8,7 @@ import { hasard } from '../sim/hasard.js';
 import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
 import { nomTour, nomEnnemi } from './modeles.js';
 
-const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0' };
+const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Pixelify Sans", ui-monospace, monospace';
 
 export class Vue {
@@ -89,6 +89,11 @@ export class Vue {
     for (const e of liste) {
       switch (e.type) {
         case 'mort':
+          if (e.boss) {
+            this.eclater(e.x, e.y - 20, '#f2c14e', 40); this.eclater(e.x, e.y - 20, COULEUR_ENN[e.sorte], 30);
+            this.secousse = 0.5;
+            this.bandeau = { texte: 'L’Ogre chef de guerre est vaincu !', sous: '+' + e.or + ' or', t: 0, vie: 2.4 };
+          }
           this.eclater(e.x, e.y - (e.vol ? 18 : 6), COULEUR_ENN[e.sorte], 10);
           this.texte(e.x, e.y - 20, '+' + e.or, '#f2c14e');
           break;
@@ -106,6 +111,11 @@ export class Vue {
           break;
         case 'soin':
           if (e.soignes) this.anneaux.push({ x: e.x, y: e.y, r: 6, max: e.rayon, vie: 0.6, t: 0, col: '93,255,154' });
+          break;
+        case 'boss': this.bandeau = { texte: e.nom + ' arrive !', sous: 'Visez-le avec le ciblage « Plus fort »', t: 0, vie: 3, alerte: true }; this.secousse = 0.4; break;
+        case 'rugissement':
+          this.anneaux.push({ x: e.x, y: e.y, r: 10, max: e.rayon, vie: 0.6, t: 0, col: '255,80,60' });
+          this.texte(e.x, e.y - 70, 'Rugissement !', '#ff8a7a'); this.secousse = 0.3;
           break;
         case 'pose': this.eclater(e.x, e.y + 12, '#c9a46a', 10); break;
         case 'amelioration': this.eclater(e.x, e.y - 20, '#f2c14e', 16); this.texte(e.x, e.y - 44, 'Niveau ' + (e.niveau + 1), '#f2c14e'); break;
@@ -265,10 +275,12 @@ export class Vue {
     const haut = e.vol ? 22 + Math.sin(this.horloge * 8 + e.id) * 3 : 0;
     // Image à dessiner : bande de Blender si elle existe, sinon sprite en code. Point d'ancrage = les pieds.
     const actions = this.modeles.ennemis[nomEnnemi(e.sorte)];
-    const a = actions && (actions.marche || actions.vol || Object.values(actions)[0]);
+    const rugit = e.rugit > 0 && actions && actions.rugissement;
+    const a = actions && (rugit ? actions.rugissement : actions.marche || actions.vol || Object.values(actions)[0]);
     let src;
     if (a) {
-      const i = e.vol ? Math.floor(this.horloge * 12 + e.id) % a.n : Math.floor(e.pas / 5) % a.n;
+      const i = rugit ? Math.min(a.n - 1, Math.floor((1 - e.rugit / 0.8) * a.n))
+        : e.vol ? Math.floor(this.horloge * 12 + e.id) % a.n : Math.floor(e.pas / 5) % a.n;
       src = { img: a.img, sx: i * a.l, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse };
     } else {
       const sp = spriteEnnemi(e.sorte, Math.floor(e.pas / 14) % 2);
@@ -281,11 +293,14 @@ export class Vue {
     const l = src.sw * src.k, h = src.sh * src.k;
     const x = Math.round(e.x - src.ax * src.k), y = Math.round(e.y + 9 - haut - src.ay * src.k);
     g.imageSmoothingEnabled = src.lisse;
+    if (e.sorte === 'spectre') g.globalAlpha = e.invisible ? 0.18 : 0.75;
     if (e.dx < -0.1) {
       const xm = Math.round(e.x - (src.sw - src.ax) * src.k);
       g.save(); g.translate(xm + l, y); g.scale(-1, 1); g.drawImage(src.img, src.sx, 0, src.sw, src.sh, 0, 0, l, h); g.restore();
     } else g.drawImage(src.img, src.sx, 0, src.sw, src.sh, x, y, l, h);
     g.imageSmoothingEnabled = false;
+    g.globalAlpha = 1;
+    if (e.rage > 0) { g.fillStyle = '#ff5a4a'; g.fillRect(x + l / 2 - 1 + ((Math.floor(this.horloge * 10) % 3) - 1) * 6, y - 2, 3, 3); }
     if (e.gel > 0) {
       g.fillStyle = 'rgba(170,225,255,.55)'; g.fillRect(x + l * 0.2, y + h * 0.25, l * 0.6, h * 0.6);
       g.strokeStyle = '#e8f8ff'; g.lineWidth = 1; g.strokeRect(x + l * 0.2 + 0.5, y + h * 0.25 + 0.5, l * 0.6, h * 0.6);
@@ -298,7 +313,7 @@ export class Vue {
     }
     // Barre de vie et marques.
     const bx = Math.round(e.x - 13), by = y - 4;
-    if (e.pv < e.pvMax) {
+    if (e.pv < e.pvMax && !e.invisible) {
       g.fillStyle = '#1a1420'; g.fillRect(bx - 1, by - 1, 28, 6);
       const p = Math.max(0, e.pv / e.pvMax);
       g.fillStyle = p > 0.5 ? '#5fd068' : p > 0.25 ? '#f2c14e' : '#e5533d';
@@ -393,7 +408,7 @@ export class Vue {
     g.globalAlpha = a;
     g.fillStyle = 'rgba(26,20,32,.72)'; g.fillRect(0, H / 2 - 44, W, b.sous ? 88 : 70);
     g.textAlign = 'center';
-    g.font = `700 40px ${POLICE}`; g.fillStyle = '#f2c14e'; g.fillText(b.texte, W / 2, H / 2 + 6);
+    g.font = `700 ${b.texte.length > 26 ? 32 : 40}px ${POLICE}`; g.fillStyle = b.alerte ? '#ff8a7a' : '#f2c14e'; g.fillText(b.texte, W / 2, H / 2 + 6);
     if (b.sous) { g.font = `600 18px ${POLICE}`; g.fillStyle = '#fdf6e3'; g.fillText(b.sous, W / 2, H / 2 + 32); }
     g.globalAlpha = 1;
   }

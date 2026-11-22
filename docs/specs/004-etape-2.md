@@ -5,7 +5,7 @@ Statut : **validé** par Thibault le 22 novembre 2026. Chiffres proposés, régl
 ## Livraison
 
 1. **Lot 1** : Baliste, Tempête, les 12 spécialisations du niveau 3. — *réalisé*
-2. **Lot 2** : Slime, Golem, Spectre, l'Ogre chef de guerre, vagues de la Prairie revues.
+2. **Lot 2** : Slime, Golem, Spectre, l'Ogre chef de guerre, vagues de la Prairie revues. — *réalisé*
 3. **Lot 3** : pouvoirs du joueur.
 
 ## Nouvelles tours (touches 5 et 6)
@@ -34,12 +34,13 @@ tirs/s ; 1 → 0,8 tir/s) : avec les chiffres d'origine, un joueur ne posant que
 | Ennemi | PV | Vitesse | Or | Vies | Particularité |
 | --- | --- | --- | --- | --- | --- |
 | Slime | 70 | moyenne | 8 | 1 | se divise en 2 petits slimes (25 PV, rapides, 3 or) |
-| Golem | 400 | très lente | 35 | 3 | armure 30 % |
+| Golem | 320 | très lente | 35 | 3 | armure 30 % |
 | Spectre | 60 | assez rapide | 12 | 1 | invisible 2 s toutes les 5 s : seuls Mage et Tempête le visent alors ; affiché en transparence |
 
 ## Boss : l'Ogre chef de guerre (lot 2)
 
-Vagues 10 et 20 de la Prairie. 2 500 PV (multipliés comme les autres), lent, armure 40 %, 250 or, 10 vies.
+Vagues 10 et 20 de la Prairie. 1 200 PV (multipliés comme les autres : environ 2 500 à la vague 10, 4 500 à la
+vague 20), lent, armure 25 %, 250 or, 10 vies.
 Rugissement toutes les 10 s : les ennemis à moins de 2 cases accélèrent de 30 % pendant 3 s (animation et
 bandeau). Barre de vie dédiée en haut de l'écran.
 
@@ -52,8 +53,14 @@ bandeau). Barre de vie dédiée en haut de l'écran.
 
 ## Vagues de la Prairie (lot 2)
 
-20 vagues ; slime dès la 6, golem dès la 12, spectre dès la 13, boss aux vagues 10 et 20. Repère d'équilibre :
-le joueur automatique « pressé » gagne, le « posé » perd de peu.
+20 vagues ; slime dès la 6, golem dès la 12, spectre dès la 13, boss aux vagues 10 et 20.
+
+Réglage au joueur automatique (lot 2) : avec les chiffres proposés, le boss passait seul et coûtait 10 vies
+(plus de 5 000 PV à la vague 10, 40 % d'armure), et les vagues 16 à 19 étaient injouables. Boss ramené à
+1 200 PV et 25 % d'armure, golem à 320 PV, moins de spectres et de chamans dans les dernières vagues.
+Repère : le joueur « posé » (qui laisse le compte à rebours lancer les vagues et passe une tour sur deux en
+« Plus fort » à partir de la vague 8) gagne avec 3 vies ; le joueur « pressé » (qui appelle chaque vague dès
+que possible) perd vers la vague 10.
 
 ## Hors périmètre
 

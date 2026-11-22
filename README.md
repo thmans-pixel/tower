@@ -5,8 +5,8 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 2, lot 1** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 5 ennemis,
-20 vagues. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
+État : **étape 2, lot 2** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
+(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
 
 ## Lancer le jeu
 
@@ -39,7 +39,10 @@ les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directem
 - Armure (Orc blindé) : la moitié des dégâts physiques (Archers, Canon, Baliste) ; la magie (Givre, Mage,
   Tempête) l'ignore, les Arbalétriers en ignorent la moitié.
 - Le Canon ne touche pas les volants ; la Chauve-souris vole tout droit vers le château.
-- Le Chaman soigne les ennemis proches toutes les 1,2 s.
+- Le Chaman soigne les ennemis proches toutes les 1,2 s. Le Slime se divise en deux à sa mort. Le Spectre devient
+  invisible 2 s toutes les 5 s : seuls le Mage et la Tempête le visent alors.
+- L'Ogre chef de guerre (vagues 10 et 20) coûte 10 vies s'il passe ; son rugissement accélère ses voisins.
+  Le gel ne fait que le ralentir.
 
 ## Tests
 

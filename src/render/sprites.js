@@ -74,10 +74,44 @@ const ENN = {
   },
 };
 
+ENN.slime = (r, f) => {
+  const v = '#8be04e', c = '#c4f59a', s = '#5aa62e';
+  if (f) { r(2, 7, 12, 7, v); r(4, 5, 8, 2, v); r(3, 13, 10, 1, s); r(5, 6, 3, 1, c); }
+  else { r(1, 8, 14, 6, v); r(3, 6, 10, 2, v); r(2, 13, 12, 1, s); r(4, 7, 3, 1, c); }
+  r(5, 9, 2, 2, '#1a1420'); r(9, 9, 2, 2, '#1a1420');
+};
+ENN.slime_petit = (r, f) => {
+  const v = '#8be04e';
+  r(4, 9 + (f ? 0 : 1), 8, 5 - (f ? 0 : 1), v); r(5, 8 + (f ? 0 : 1), 6, 1, v); r(6, 10, 1, 1, '#1a1420'); r(9, 10, 1, 1, '#1a1420');
+};
+ENN.golem = (r, f) => {
+  const p = '#7f8288', c = '#9fa2a8', m = '#5b8f3a', o = '#ff9a3a';
+  r(5, 0, 6, 4, p); r(6, 2, 1, 1, o); r(9, 2, 1, 1, o);
+  r(3, 4, 10, 7, p); r(3, 4, 10, 1, c); r(4, 4, 3, 1, m); r(7, 6, 2, 2, o);
+  r(0, 4, 3, 8, p); r(13, 4, 3, 8, p); r(0, 10, 3, 2, c); r(13, 10, 3, 2, c);
+  if (f) { r(4, 11, 3, 5, p); r(9, 11, 3, 4, p); } else { r(4, 11, 3, 4, p); r(9, 11, 3, 5, p); }
+};
+ENN.spectre = (r, f) => {
+  const d = '#cfe3f0', s = '#a9c4d6';
+  r(4, 1, 8, 4, d); r(3, 4, 10, 7, d); r(3, 4, 2, 7, s);
+  r(6, 3, 1, 2, '#7fd8ff'); r(9, 3, 1, 2, '#7fd8ff');
+  for (let i = 0; i < 5; i++) r(3 + i * 2, 11, 2, (i + f) % 2 ? 4 : 3, i % 2 ? s : d);
+};
+ENN.ogre = (r, f) => {
+  const p = '#8a9a5b', a = '#7a7f86', c = '#c0392b', o = '#f2c14e';
+  r(1, 6, 4, 9, c); r(6, 1, 8, 6, p); r(6, 0, 8, 2, o); r(7, 0, 1, 1, '#ffe08a'); r(12, 0, 1, 1, '#ffe08a');
+  r(8, 3, 1, 1, '#ff3b3b'); r(11, 3, 1, 1, '#ff3b3b'); r(8, 5, 4, 1, '#3a2a1a'); r(8, 6, 1, 1, '#fff'); r(11, 6, 1, 1, '#fff');
+  r(4, 7, 12, 9, p); r(6, 8, 8, 6, a); r(6, 11, 8, 1, '#5b636c');
+  r(16, 3, 3, 3, '#6b4423'); r(17, 6, 2, 9, '#6b4423'); r(16, 2, 1, 1, '#cfd8dc'); r(18, 2, 1, 1, '#cfd8dc');
+  if (f) { r(5, 16, 4, 4, '#4a4e44'); r(11, 16, 4, 3, '#4a4e44'); } else { r(5, 16, 4, 3, '#4a4e44'); r(11, 16, 4, 4, '#4a4e44'); }
+};
+const TAILLES_ENN = { ogre: [20, 20] };
+
 const cacheEnn = {};
 export function spriteEnnemi(sorte, image) {
   const k = sorte + image;
-  return cacheEnn[k] || (cacheEnn[k] = dessiner(16, 16, (r) => ENN[sorte](r, image)));
+  const [l, h] = TAILLES_ENN[sorte] || [16, 16];
+  return cacheEnn[k] || (cacheEnn[k] = dessiner(l, h, (r) => ENN[sorte](r, image)));
 }
 
 // ---------------------------------------------------------------- tours (20 × 30, une image par niveau)

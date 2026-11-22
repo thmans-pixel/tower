@@ -83,6 +83,8 @@ export class Son {
         case 'vague': this.ton('sawtooth', 220, 220, 0.25, 0.06); this.ton('sawtooth', 330, 330, 0.35, 0.06, 0.25); break;
         case 'finVague': this.ton('triangle', 660, 990, 0.18, 0.06); break;
         case 'soin': if (e.soignes && this.libre('soin', 300)) this.ton('sine', 600, 900, 0.15, 0.03); break;
+        case 'boss': [110, 98, 82].forEach((f, i) => this.ton('sawtooth', f, f, 0.5, 0.1, i * 0.45)); break;
+        case 'rugissement': this.ton('sawtooth', 90, 45, 0.7, 0.14); this.souffle(0.6, 0.1, 400); break;
         case 'victoire': [523, 659, 784, 1046].forEach((f, i) => this.ton('square', f, f, 0.18, 0.06, i * 0.16)); break;
         case 'defaite': [392, 330, 262, 196].forEach((f, i) => this.ton('triangle', f, f, 0.3, 0.08, i * 0.25)); break;
         default:

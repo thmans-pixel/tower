@@ -9,7 +9,7 @@ import { spriteTour } from '../render/sprites.js';
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
 const dec = (n, d = 1) => n.toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d });
-const COUL = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0' };
+const COUL = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#c0392b' };
 
 export class Interface {
   constructor(actions) {
@@ -141,6 +141,15 @@ export class Interface {
           `<span class="puce"><i style="background:${COUL[sorte]}"></i>${nombre} ${nombre > 1 ? ENNEMIS[sorte].pluriel : ENNEMIS[sorte].nom}</span>`).join('')
         : '<span>Plus aucune vague après celle-ci.</span>';
     }
+
+    // Barre de vie du boss, tant qu'il est en jeu.
+    const boss = s.ennemis.find((e) => ENNEMIS[e.sorte].boss);
+    const barre = $('barre-boss');
+    if (boss) {
+      barre.hidden = false;
+      this.majChamp('nom-boss', ENNEMIS[boss.sorte].nom);
+      $('jauge-boss').style.width = Math.max(0, (boss.pv / boss.pvMax) * 100).toFixed(1) + '%';
+    } else if (!barre.hidden) barre.hidden = true;
 
     for (const b of document.querySelectorAll('.outil')) {
       const sorte = b.dataset.sorte;

@@ -52,6 +52,11 @@ button.actif { background: var(--or); color: var(--nuit); }
 #pause { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(26,20,32,.55);
   font-size: 48px; font-weight: 700; color: var(--or); pointer-events: none; }
 #pause[hidden] { display: none; }
+#barre-boss { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: min(420px, 60%); padding: 4px 10px 8px;
+  background: rgba(26,20,32,.85); border: 2px solid var(--rouge); border-radius: 6px; text-align: center; font-size: 15px; font-weight: 700; color: #ff8a7a; pointer-events: none; }
+#barre-boss[hidden] { display: none; }
+#barre-boss .jauge { height: 10px; margin-top: 3px; background: #3a1414; border: 2px solid var(--nuit); }
+#barre-boss .jauge i { display: block; height: 100%; width: 100%; background: linear-gradient(#ff6a5a, #c0392b); transition: width .15s; }
 
 #panneau {
   position: absolute; top: 8px; right: 8px; width: 240px; padding: 12px;

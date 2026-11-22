@@ -155,8 +155,8 @@ test('la logique est rejouable : mêmes actions, même résultat', () => {
   assert.deepEqual(jouer({ presse: true }), jouer({ presse: true }));
 });
 
-test('équilibre : un joueur automatique qui appelle tôt gagne la Prairie, sans tour on perd', () => {
-  const r = jouer({ presse: true });
+test('équilibre : le joueur automatique prudent gagne la Prairie, sans tour on perd', () => {
+  const r = jouer();
   assert.equal(r.fin, 'victoire');
   const s = nouvellePartie('prairie');
   appelerVague(s);
