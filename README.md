@@ -52,7 +52,7 @@ Tour canon : le fût `tour_canon_N_fut` est un objet séparé, pointé vers +X, 
 L'empty `pivot_canon_N` (enfant de la tour, propriété `role=pivot_canon`) marque où le poser.
 Même principe pour la baliste : `tour_baliste_N_arme` et `pivot_arme_N` (`role=pivot_arme`).
 
-Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2).
+Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2), `yeux_gobelin` (#FFDE3B, 1).
 
 ### Niveau 3 au choix : versions a et b (x = 12 et 16 sur la ligne de chaque tour)
 
@@ -68,3 +68,15 @@ Propriétés en plus : `variante` (a / b) et `version` (nom affiché). Aperçus 
 | tempête | Orage, 1443 faces | Paratonnerre, 824 faces |
 
 Pivots des variantes : `pivot_canon_3a/3b`, `pivot_arme_3a/3b`.
+
+## Ennemis (collection « Ennemis », ligne Y = -8)
+
+Tournés vers +X, origine au sol sous les pieds. Maillage `<nom>` lié à l'armature `<nom>_armature`
+(chaque morceau lié à 100 % à un os). Marche : action `<nom>_marche` (images 1 à 8, en boucle, sur place),
+rangée dans une piste NLA nommée **marche** (export glTF en mode « pistes NLA » : l'animation s'appelle « marche »).
+Propriétés `type=ennemi`, `ennemi=<nom>` sur le maillage et l'armature. Outils : `scripts/commun_ennemis.py`.
+Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.png`.
+
+| Ennemi | Hauteur | Faces | Os |
+|---|---|---|---|
+| ennemi_gobelin (`scripts/ennemis_gobelin.py`) | 0,55 | 275 | 6 |
