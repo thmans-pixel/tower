@@ -10,9 +10,11 @@ PALETTE = {
     "pierre": "#8D9099", "pierre_claire": "#A9ACB4", "pierre_sombre": "#6E717A",
     "bois": "#9B6B3D", "bois_fonce": "#7A5230", "toits": "#C0392B", "or": "#F2C14E",
     "bleu": "#3A6FC4", "fer_noir": "#2A2D33", "bronze": "#B08D57",
+    "neige": "#E8F6FF", "glace": "#8FD6FF", "eclat": "#5CB8F0",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
+EMISSION = {"glace": 0.3}                   # seuls matériaux émissifs (couleur = couleur de base)
 NOMS = list(PALETTE)
 M = {n: i for i, n in enumerate(NOMS)}      # nom -> index de matériau
 
@@ -33,7 +35,10 @@ def materiau(nom, hexa):
         nt.links.new(b.outputs[0], out.inputs["Surface"])
     b.inputs["Base Color"].default_value = _lin(hexa)
     b.inputs["Roughness"].default_value = 0.8
-    b.inputs["Emission Strength"].default_value = 0.0
+    force = EMISSION.get(nom, 0.0)
+    b.inputs["Emission Strength"].default_value = force
+    if force:
+        b.inputs["Emission Color"].default_value = _lin(hexa)
     m.diffuse_color = _lin(hexa)
     return m
 
