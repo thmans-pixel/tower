@@ -7,7 +7,7 @@ import { T } from '../sim/const.js';
 const NOMS_ENNEMIS = { gob: 'gobelin', loup: 'loup', orc: 'orc_blinde', bat: 'chauve_souris', cham: 'chaman' };
 const sansPrefixe = (nom) => String(nom).replace(/^ennemi_/, '');
 
-export const nomTour = (sorte, niveau) => `tour_${sorte}_${niveau + 1}`;
+export const nomTour = (sorte, niveau, variante) => `tour_${sorte}_${niveau + 1}${niveau === 2 && variante ? variante : ''}`;
 export const nomEnnemi = (sorte) => NOMS_ENNEMIS[sorte];
 
 function image(src) {

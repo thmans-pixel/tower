@@ -2,8 +2,8 @@
 
 Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `docs/specs/001-tower-defense.md`,
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
-(tours, ennemis, boss). Ne rien coder qui n'y figure pas sans le faire
-valider d'abord.
+(tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3). Ne rien coder qui n'y figure
+pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -36,7 +36,12 @@ valider d'abord.
 - Vagues : `appelerVague` construit la file d'apparition ; après la dernière apparition, `compte` démarre
   (`COMPTE_VAGUE`) ; appeler plus tôt rapporte `BONUS_AVANCE` or par seconde restante. Bonus de fin de vague
   quand tous ses ennemis sont tués ou passés (`bilanVagues`).
-- Dégâts : `blesser` applique l'armure aux dégâts physiques seulement ; la magie l'ignore.
+- Dégâts : `blesser` applique l'armure aux dégâts physiques seulement (moins la part `perce`) ; la magie l'ignore.
+- Tours : niveaux 1 et 2 dans `niveaux`, niveau 3 = `specialisations.a|b` (`t.variante`). Toujours lire les
+  caractéristiques par `statsTour(t)`. `ameliorer(s, id, variante)` exige la variante au passage au niveau 3.
+  Effets gérés dans `partie.js` : zone, porteeMin, ralenti, gel (`geler`, boss seulement ralenti), brulure,
+  perce, rebond, transperce, salve, chaine (`eclair`, instantané), etourdit, aura (`auraTour`).
+- `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.
 - Tours et ennemis de Blender : `src/render/modeles.js` (`nomTour`, `nomEnnemi`), dessinés par

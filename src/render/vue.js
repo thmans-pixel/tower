@@ -2,7 +2,7 @@
 // naissent des événements de la logique et ne vivent qu'ici.
 import { T, COLS, ROWS, W, H } from '../sim/const.js';
 import { CHEMIN, LIBRE } from '../sim/carte.js';
-import { TOURS } from '../data/tours.js';
+import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS } from '../data/ennemis.js';
 import { hasard } from '../sim/hasard.js';
 import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
@@ -21,6 +21,7 @@ export class Vue {
     this.eclats = [];
     this.textes = [];
     this.anneaux = [];
+    this.eclairs = [];
     this.bandeau = null;
     this.secousse = 0;
     this.horloge = 0;
@@ -31,7 +32,7 @@ export class Vue {
   preparer(carte, decors) {
     this.carte = carte;
     this.decors = decors;
-    this.eclats = []; this.textes = []; this.anneaux = []; this.bandeau = null;
+    this.eclats = []; this.textes = []; this.anneaux = []; this.eclairs = []; this.bandeau = null;
     const f = document.createElement('canvas');
     f.width = W; f.height = H;
     const g = f.getContext('2d');
@@ -92,11 +93,15 @@ export class Vue {
           this.texte(e.x, e.y - 20, '+' + e.or, '#f2c14e');
           break;
         case 'explosion':
-          this.anneaux.push({ x: e.x, y: e.y, r: 4, max: e.rayon, vie: 0.35, t: 0, col: '255,170,60' });
-          this.eclater(e.x, e.y, '#f29a3a', 8);
+          if (e.feu && e.sorte === 'canon') { this.eclater(e.x, e.y - 4, '#ff8a2b', 4); this.eclater(e.x, e.y - 4, '#ffd23f', 2); break; }
+          this.anneaux.push({ x: e.x, y: e.y, r: 4, max: e.rayon, vie: 0.35, t: 0, col: e.feu ? '255,110,40' : '255,170,60' });
+          this.eclater(e.x, e.y, e.feu ? '#ff6a2b' : '#f29a3a', e.rayon > 60 ? 16 : 8);
           break;
+        case 'eclair': this.eclairs.push({ points: e.points, t: 0, vie: 0.22, col: e.sorte === 'mage' ? '#d29bff' : '#bff0ff' }); break;
+        case 'aura': if (Math.random() < 0.5) this.eclater(e.x + (Math.random() - 0.5) * e.rayon * 1.4, e.y + (Math.random() - 0.5) * e.rayon * 1.2, '#e8f8ff', 1); break;
+        case 'transperce': this.eclairs.push({ points: [{ x: e.x, y: e.y - 8 }, { x: e.x2, y: e.y2 - 8 }], t: 0, vie: 0.15, col: '#f5e6c8', droit: true }); break;
         case 'touche':
-          if (e.sorte === 'givre') this.eclater(e.x, e.y - 6, '#bfe9ff', 4);
+          if (e.sorte === 'givre') this.eclater(e.x, e.y - 6, '#bfe9ff', e.gel ? 10 : 4);
           if (e.sorte === 'mage') this.eclater(e.x, e.y - 6, '#d29bff', 5);
           break;
         case 'soin':
@@ -142,7 +147,7 @@ export class Vue {
 
     // Portées.
     const sel = ui.selection && s.tours.find((t) => t.id === ui.selection);
-    if (sel) this.portee(sel.x, sel.y, TOURS[sel.sorte].niveaux[sel.niveau].portee, true);
+    if (sel) this.portee(sel.x, sel.y, statsTour(sel).portee, true);
     let fantome = null;
     if (ui.construction && ui.fantome) {
       const { c, r } = ui.fantome;
@@ -195,7 +200,7 @@ export class Vue {
 
   tour(t, choisie) {
     const g = this.g;
-    const m = this.modeles.tours[nomTour(t.sorte, t.niveau)];
+    const m = this.modeles.tours[nomTour(t.sorte, t.niveau, t.variante)];
     const bas = t.y + 19;
     if (m) this.tourModele(t, m);
     else this.tourCode(t, bas);
@@ -228,7 +233,15 @@ export class Vue {
     g.fillStyle = 'rgba(0,0,0,.25)';
     g.beginPath(); g.ellipse(t.x + 2, bas - 4, 17, 6, 0, 0, Math.PI * 2); g.fill();
     g.drawImage(sp, Math.round(t.x - l / 2), Math.round(bas - h), l, h);
-    if (t.sorte === 'canon') {
+    if (t.sorte === 'baliste') {
+      g.save(); g.translate(t.x, t.y - 4); g.rotate(t.angle);
+      const recul = t.tir > 0 ? -3 : 0;
+      g.fillStyle = '#1a1420'; g.fillRect(recul - 6, -3, 22, 6); g.fillRect(recul + 2, -11, 4, 22);
+      g.fillStyle = '#9b6b3d'; g.fillRect(recul - 5, -2, 20, 4); g.fillStyle = '#7a5230'; g.fillRect(recul + 3, -10, 2, 20);
+      g.restore();
+    } else if (t.sorte === 'tempete') {
+      if (t.tir > 0) { g.fillStyle = 'rgba(159,227,255,.6)'; g.beginPath(); g.arc(t.x, t.y - 36, 10, 0, Math.PI * 2); g.fill(); }
+    } else if (t.sorte === 'canon') {
       g.save(); g.translate(t.x, t.y - 12); g.rotate(t.angle);
       const recul = t.tir > 0 ? -3 : 0;
       g.fillStyle = '#1a1420'; g.fillRect(recul - 2, -5, 20, 10);
@@ -273,6 +286,11 @@ export class Vue {
       g.save(); g.translate(xm + l, y); g.scale(-1, 1); g.drawImage(src.img, src.sx, 0, src.sw, src.sh, 0, 0, l, h); g.restore();
     } else g.drawImage(src.img, src.sx, 0, src.sw, src.sh, x, y, l, h);
     g.imageSmoothingEnabled = false;
+    if (e.gel > 0) {
+      g.fillStyle = 'rgba(170,225,255,.55)'; g.fillRect(x + l * 0.2, y + h * 0.25, l * 0.6, h * 0.6);
+      g.strokeStyle = '#e8f8ff'; g.lineWidth = 1; g.strokeRect(x + l * 0.2 + 0.5, y + h * 0.25 + 0.5, l * 0.6, h * 0.6);
+    }
+    if (e.brule && Math.random() < 0.5) this.eclats.push({ x: e.x + (Math.random() - 0.5) * 14, y: e.y - 4 - haut - Math.random() * 14, vx: 0, vy: -30, vie: 0.35, t: 0, col: Math.random() < 0.5 ? '#ff8a2b' : '#ffd23f', s: 2 });
     if (e.ralenti > 0) {
       const pied = e.y + 9 - haut;
       g.fillStyle = 'rgba(160,220,255,.45)'; g.fillRect(e.x - 10, pied - 6, 20, 5);
@@ -298,8 +316,18 @@ export class Vue {
       g.strokeStyle = '#6b4423'; g.lineWidth = 2;
       g.beginPath(); g.moveTo(p.x - (dx / n) * 10, p.y - (dy / n) * 10); g.lineTo(p.x, p.y); g.stroke();
       g.fillStyle = '#e8e8e8'; g.fillRect(p.x - 1, p.y - 1, 3, 3);
+    } else if (p.sorte === 'baliste') {
+      g.strokeStyle = '#1a1420'; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(p.x - (dx / n) * 16, p.y - (dy / n) * 16); g.lineTo(p.x, p.y); g.stroke();
+      g.strokeStyle = '#9b6b3d'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(p.x - (dx / n) * 15, p.y - (dy / n) * 15); g.lineTo(p.x, p.y); g.stroke();
+      g.fillStyle = '#cfd8dc'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
+    } else if (p.brulure) {
+      g.fillStyle = 'rgba(255,120,40,.45)'; g.beginPath(); g.arc(p.x, p.y, p.zone > 42 ? 6 : 8, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffd23f'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
+      if (Math.random() < 0.6) this.eclats.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 20, vy: -20, vie: 0.3, t: 0, col: '#ff8a2b', s: 2 });
     } else if (p.sorte === 'canon') {
-      const h = Math.sin(Math.PI * Math.min(1, p.parcours / p.total)) * 28;
+      const h = Math.sin(Math.PI * Math.min(1, p.parcours / p.total)) * (p.zone > 60 ? 70 : 28);
       g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(p.x, p.y, 5, 2, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#1a1420'; g.fillRect(p.x - 4, p.y - h - 4, 8, 8);
       g.fillStyle = '#4a4d55'; g.fillRect(p.x - 3, p.y - h - 3, 4, 3);
@@ -325,6 +353,23 @@ export class Vue {
       const k = a.t / a.vie;
       g.globalAlpha = 1 - k; g.strokeStyle = `rgb(${a.col})`; g.lineWidth = 3;
       g.beginPath(); g.arc(a.x, a.y, a.r + (a.max - a.r) * k, 0, Math.PI * 2); g.stroke();
+    }
+    this.eclairs = this.eclairs.filter((l) => (l.t += dt) < l.vie);
+    for (const l of this.eclairs) {
+      g.globalAlpha = 1 - l.t / l.vie;
+      for (const [w, col] of [[5, 'rgba(120,200,255,.35)'], [2, l.col]]) {
+        g.strokeStyle = col; g.lineWidth = w; g.beginPath();
+        l.points.forEach((p, i) => {
+          if (i === 0) { g.moveTo(p.x, p.y); return; }
+          const a = l.points[i - 1];
+          if (!l.droit) {   // ligne brisée, différente à chaque image
+            const mx = (a.x + p.x) / 2 + (Math.random() - 0.5) * 14, my = (a.y + p.y) / 2 + (Math.random() - 0.5) * 14;
+            g.lineTo(mx, my);
+          }
+          g.lineTo(p.x, p.y);
+        });
+        g.stroke();
+      }
     }
     g.globalAlpha = 1;
     this.textes = this.textes.filter((t) => (t.t += dt) < t.vie);

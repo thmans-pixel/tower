@@ -72,6 +72,10 @@ button.actif { background: var(--or); color: var(--nuit); }
 .action { display: block; width: 100%; min-height: 44px; margin-top: 6px; font-size: 16px; font-weight: 600; }
 .action.ameliorer { background: #3f7f2a; }
 .action.ameliorer:hover { background: #4f9636; }
+.action.specialite { display: grid; gap: 2px; padding: 6px 8px; text-align: left; font-weight: 400; }
+.action.specialite b { font-size: 15px; }
+.action.specialite span { font-size: 13px; color: #e8f5d8; line-height: 1.25; }
+.choix { display: grid; gap: 4px; }
 .action.vendre { background: #7a3426; }
 .action.vendre:hover { background: #924030; }
 
