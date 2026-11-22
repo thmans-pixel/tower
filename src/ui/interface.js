@@ -5,6 +5,7 @@ import { ENNEMIS } from '../data/ennemis.js';
 import { T, W } from '../sim/const.js';
 import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente } from '../sim/partie.js';
 import { spriteTour } from '../render/sprites.js';
+import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
@@ -17,6 +18,7 @@ export class Interface {
     this.cache = {};
     this.signature = '';
     this.creerBoutique();
+    this.creerPouvoirs();
     $('appel').onclick = () => actions.appel();
     $('b-pause').onclick = () => actions.pause();
     $('b-vitesse').onclick = () => actions.vitesse();
@@ -52,6 +54,19 @@ export class Interface {
     zone.addEventListener('click', (e) => {
       const b = e.target.closest('.outil');
       if (b) this.a.construire(b.dataset.sorte);
+    });
+  }
+
+  creerPouvoirs() {
+    const zone = $('pouvoirs');
+    zone.innerHTML = ORDRE_POUVOIRS.map((n) => {
+      const p = POUVOIRS[n];
+      return `<button class="pouvoir" data-pouvoir="${n}" title="${p.nom} — ${p.resume} (touche ${p.touche.toUpperCase()})">
+        <b>${p.nom}</b><span class="etat">Prêt</span><kbd>${p.touche.toUpperCase()}</kbd><i class="charge"></i></button>`;
+    }).join('');
+    zone.addEventListener('click', (e) => {
+      const b = e.target.closest('.pouvoir');
+      if (b) this.a.pouvoir(b.dataset.pouvoir);
     });
   }
 
@@ -140,6 +155,16 @@ export class Interface {
         ? `<span>Prochaine :</span>` + comp.map(({ sorte, nombre }) =>
           `<span class="puce"><i style="background:${COUL[sorte]}"></i>${nombre} ${nombre > 1 ? ENNEMIS[sorte].pluriel : ENNEMIS[sorte].nom}</span>`).join('')
         : '<span>Plus aucune vague après celle-ci.</span>';
+    }
+
+    for (const b of document.querySelectorAll('.pouvoir')) {
+      const n = b.dataset.pouvoir, reste = s.pouvoirs ? s.pouvoirs[n] : 0;
+      const texte = reste > 0 ? Math.ceil(reste) + ' s' : ui.pouvoir === n ? 'Visez…' : 'Prêt';
+      const etat = b.querySelector('.etat');
+      if (etat.textContent !== texte) etat.textContent = texte;
+      b.disabled = reste > 0 || !!s.fin;
+      b.classList.toggle('actif', ui.pouvoir === n);
+      b.querySelector('.charge').style.width = (reste > 0 ? (1 - reste / POUVOIRS[n].recharge) * 100 : 0).toFixed(0) + '%';
     }
 
     // Barre de vie du boss, tant qu'il est en jeu.

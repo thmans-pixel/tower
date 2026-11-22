@@ -47,6 +47,9 @@ pas sans le faire valider d'abord.
   (spectre ; seules les tours de `VOIENT_INVISIBLE` le visent), `boss` + `rugissement` (`pouvoirsEnnemis` :
   `rage` accélère les voisins ; `geler` ne fait que ralentir un boss). Événement `boss` à son apparition ;
   barre de vie dans `#barre-boss`.
+- Pouvoirs (`src/data/pouvoirs.js`) : `lancerMeteores(s, x, y)`, `appelerRenforts(s, c, r)` (case de chemin),
+  recharges dans `s.pouvoirs`, météores en chute dans `s.meteores`, soldats dans `s.renforts` (bloquent dans
+  `deplacer` via `e.bloque`, combattent dans `pouvoirsJoueur`, le boss les écrase). Visée : `ui.pouvoir`/`ui.visee`.
 - `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.
