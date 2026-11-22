@@ -3,9 +3,9 @@
 // assets/ennemis/manifest.json : une bande d'images par action. Ce qui manque garde son sprite en code.
 import { T } from '../sim/const.js';
 
-const NOMS_ENNEMIS = {
-  gob: 'ennemi_gobelin', loup: 'ennemi_loup', orc: 'ennemi_orc_blinde', bat: 'ennemi_chauve_souris', cham: 'ennemi_chaman',
-};
+// Nom de l'ennemi dans le pack (propriété `ennemi` de l'armature, sans le préfixe « ennemi_ »).
+const NOMS_ENNEMIS = { gob: 'gobelin', loup: 'loup', orc: 'orc_blinde', bat: 'chauve_souris', cham: 'chaman' };
+const sansPrefixe = (nom) => String(nom).replace(/^ennemi_/, '');
 
 export const nomTour = (sorte, niveau) => `tour_${sorte}_${niveau + 1}`;
 export const nomEnnemi = (sorte) => NOMS_ENNEMIS[sorte];
@@ -56,7 +56,7 @@ export async function chargerModeles() {
         const img = await image(be + a.fichier);
         if (img) actions[nom] = { img, n: a.images, l: a.largeur, h: a.hauteur, ancre: a.ancre, k, lisse };
       }
-      if (Object.keys(actions).length) res.ennemis[e.nom] = actions;
+      if (Object.keys(actions).length) res.ennemis[sansPrefixe(e.nom)] = actions;
     }));
   }
   return res;

@@ -181,6 +181,7 @@ function boucle(maintenant) {
 (async () => {
   const [d, modeles] = await Promise.all([decorsDe('prairie'), chargerModeles()]);
   vue.modeles = modeles;
+  interfaceJeu.iconesModeles(modeles);
   apercu = nouvellePartie('prairie');
   vue.preparer(apercu.carte, d);
   vue.dessiner(apercu, { construction: null, selection: null }, 0);
