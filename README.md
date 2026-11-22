@@ -88,6 +88,37 @@ Principled BSDF en couleur unie (rugosité 0,8), moins de 1 500 faces, propriét
 | prairie_chateau | 3 × 5 | 1 | 652 |
 | prairie_entree | 1 × 3 | 1 | 521 |
 
+
+## Désert (collection « Decor », ligne Y = -16)
+
+Outils partagés dans `scripts/commun_desert.py` (palette, place fixe de chaque objet, contrôle des faces, aperçu).
+Un script par famille : `scripts/desert_<famille>.py`, aperçu `apercu_desert_<famille>.png`.
+Palette : sable #E3C27A / #C9A35C, grès #C97B4A / #A85F36, rochers rouges #B5523B, cactus #5E8C3A / #7DAA4E,
+palmes #4E8A3C, tronc de palmier #8A6A43, eau #3FA7C9 (et #1F1B18 pour le fond des ouvertures, #E86A92 pour la fleur du saguaro, #EFE6CF pour l'os, #C0392B / #F2C14E pour les bannières).
+
+| Objet | Cases | Bloquant | Faces |
+|---|---|---|---|
+| desert_palmier_1 / 2 (hauteur 1,8, tronc annelé, 7 / 8 palmes, grappe de dattes) | 1 × 1 | 1 | 497 / 515 |
+| desert_cactus_1 / 2 / 3 (saguaros 1,0 / 1,3 / 0,7, bras 1 / 2 / 0, fleur rose sur le 2) | 1 × 1 | 1 | 230 / 355 / 133 |
+| desert_souche (tronc de palmier cassé) | 1 × 1 | 1 | 99 |
+| desert_buisson | 1 × 1 | 1 | 364 |
+| desert_fleurs_1 / 2 (cactus boules fleuris) | 1 × 1 | 0 | 224 / 272 |
+| desert_herbes_hautes | 1 × 1 | 0 | 116 |
+| desert_rocher_petit (grès rouge en couches, 2 dalles) | 1 × 1 | 0 | 40 |
+| desert_rocher_moyen (4 dalles) | 1 × 1 | 1 | 60 |
+| desert_rocher_gros (piles de 5 et 3 dalles) | 2 × 1 | 1 | 120 |
+| desert_cloture | 1 × 1 | 1 | 166 |
+| desert_oasis (eau bordée de pierres et de roseaux, palmier nain) | 2 × 2 | 1 | 640 |
+| desert_chateau | 3 × 5 (porte vers −X) | 1 | 866 |
+| desert_entree | 1 × 3 (ouverture vers +X) | 1 | 155 |
+| desert_dune (croissant, crête vive, face raide côté caméra) | 2 × 1 | 1 | 129 |
+| desert_touffe (herbe sèche jaune et crâne de bœuf) | 1 × 1 | 0 | 210 |
+| desert_forteresse (2 tours à coupoles dorées, porte en bois vers −X, bannières rouge et or, hauteur 3) | 3 × 5 | 1 | 983 |
+| desert_entree_nord (passage sous une arche de grès, `scripts/desert_entrees.py`) | 1 × 3 (ouverture vers +X) | 1 | 231 |
+| desert_entree_sud (gorge ouverte entre deux falaises en gradins) | 1 × 3 (ouverture vers +X) | 1 | 276 |
+| desert_sol_sable (sable ondulé, `scripts/desert_sols.py`) | plan 2 × 2 raccordable, `type=sol` | 0 | 900 |
+| desert_sol_chemin (terre tassée, petits cailloux) | plan 2 × 2 raccordable, `type=sol` | 0 | 384 |
+
 ## Tours (collection « Tours », une ligne par tour : archers Y = 8, canon Y = 12, givre Y = 16, mage Y = 20, baliste Y = 24, tempête Y = 28)
 
 Socle de pierre commun (0,9 × 0,9, hauteur 0,25) dans `scripts/commun_tours.py`. Trois niveaux par tour,
