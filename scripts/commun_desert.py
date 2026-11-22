@@ -21,10 +21,10 @@ PALETTE = {
     "cactus": "#5E8C3A", "cactus_clair": "#7DAA4E",
     "palmes": "#4E8A3C", "tronc_palmier": "#8A6A43",
     "eau": "#3FA7C9",
-    "fleur_rose": "#E86A92",
+    "fleur_rose": "#E86A92",     # fleur du saguaro (demandée en rose, hors palette du désert)
     "os": "#EFE6CF",             # crâne blanchi (hors palette du désert)
     "rouge_royal": "#C0392B",    # bannières : rouge et or du royaume (palette de la Prairie)
-    "or": "#F2C14E",     # fleur du saguaro (demandée en rose, hors palette du désert)
+    "or": "#F2C14E",
     "ombre": "#1F1B18",          # fond de porte / de grotte, comme ombre_grotte de la Prairie
 }
 
