@@ -1,0 +1,177 @@
+{
+ "version": 1,
+ "style": "pixel",
+ "carte": "montagne",
+ "pixels_par_case": 20,
+ "elevation": 50,
+ "elements": [
+  {
+   "nom": "montagne_sapin_1",
+   "fichier": "montagne_sapin_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.7,
+    22.6
+   ]
+  },
+  {
+   "nom": "montagne_sapin_2",
+   "fichier": "montagne_sapin_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    11.0,
+    27.8
+   ]
+  },
+  {
+   "nom": "montagne_sapin_3",
+   "fichier": "montagne_sapin_3.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    9.8,
+    17.5
+   ]
+  },
+  {
+   "nom": "montagne_rocher_petit",
+   "fichier": "montagne_rocher_petit.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    6.6,
+    8.5
+   ]
+  },
+  {
+   "nom": "montagne_rocher_moyen",
+   "fichier": "montagne_rocher_moyen.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.0,
+    12.6
+   ]
+  },
+  {
+   "nom": "montagne_rocher_gros",
+   "fichier": "montagne_rocher_gros.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    20.2,
+    16.7
+   ]
+  },
+  {
+   "nom": "montagne_congere",
+   "fichier": "montagne_congere.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    21.4,
+    9.4
+   ]
+  },
+  {
+   "nom": "montagne_touffe",
+   "fichier": "montagne_touffe.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    9.1,
+    10.0
+   ]
+  },
+  {
+   "nom": "montagne_lac",
+   "fichier": "montagne_lac.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 1,
+   "ancre": [
+    21.4,
+    16.6
+   ]
+  },
+  {
+   "nom": "montagne_pont",
+   "fichier": "montagne_pont.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    12.1,
+    14.7
+   ]
+  },
+  {
+   "nom": "montagne_entree",
+   "fichier": "montagne_entree.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 3,
+   "bloquant": 1,
+   "ancre": [
+    12.4,
+    39.5
+   ]
+  },
+  {
+   "nom": "montagne_fort",
+   "fichier": "montagne_fort.png",
+   "type": "decor",
+   "cases_l": 3,
+   "cases_h": 5,
+   "bloquant": 1,
+   "ancre": [
+    31.0,
+    56.6
+   ]
+  },
+  {
+   "nom": "montagne_sol_neige",
+   "fichier": "montagne_sol_neige.png",
+   "type": "sol",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 0,
+   "ancre": [
+    20.0,
+    20.0
+   ]
+  },
+  {
+   "nom": "montagne_sol_chemin",
+   "fichier": "montagne_sol_chemin.png",
+   "type": "sol",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 0,
+   "ancre": [
+    20.0,
+    20.0
+   ]
+  }
+ ]
+}
