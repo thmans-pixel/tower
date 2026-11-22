@@ -2,7 +2,8 @@
 
 Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `docs/specs/001-tower-defense.md`,
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
-(tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3). Ne rien coder qui n'y figure
+(tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
+étape 3 : `docs/specs/005-etape-3.md` (lot 1 fait : difficultés, étoiles, sauvegarde). Ne rien coder qui n'y figure
 pas sans le faire valider d'abord.
 
 ## Règles du dépôt
@@ -50,6 +51,9 @@ pas sans le faire valider d'abord.
 - Pouvoirs (`src/data/pouvoirs.js`) : `lancerMeteores(s, x, y)`, `appelerRenforts(s, c, r)` (case de chemin),
   recharges dans `s.pouvoirs`, météores en chute dans `s.meteores`, soldats dans `s.renforts` (bloquent dans
   `deplacer` via `e.bloque`, combattent dans `pouvoirsJoueur`, le boss les écrase). Visée : `ui.pouvoir`/`ui.visee`.
+- Difficulté : `nouvellePartie(carte, difficulte)` (`src/data/difficultes.js`) règle `vies`, `or`, `s.multPV`,
+  `s.compteVague`. Progression pure dans `src/sim/progression.js` (`enregistrerVictoire`, `etoilesPartie`,
+  `relire`) ; lecture/écriture navigateur dans `src/ui/sauvegarde.js` (seul endroit qui touche `localStorage`).
 - `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.

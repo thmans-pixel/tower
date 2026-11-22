@@ -27,7 +27,7 @@ const VAGUES_PRAIRIE = [
 export const CARTES = {
   prairie: {
     id: 'prairie', nom: 'La Prairie', resume: 'Un chemin sinueux à travers les prés.',
-    ouverte: true, orDepart: 250, vies: 20, graine: 7,
+    ouverte: true, orDepart: 250, graine: 7,
     vagues: VAGUES_PRAIRIE,
     chemin: [[-1, 3], [5, 3], [5, 11], [10, 11], [10, 4], [15, 4], [15, 12], [19, 12], [19, 7], [20, 7]],
     chateau: { c: 21, r: 5, l: 3, h: 5 },

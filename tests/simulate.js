@@ -13,8 +13,8 @@ function couverture(s, c, r, portee) {
   return n;
 }
 
-export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'], presse = false, max = 60 * 60 * 30 } = {}) {
-  const s = nouvellePartie(carte);
+export function jouer({ carte = 'prairie', difficulte = 'normal', plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'], presse = false, max = 60 * 60 * 30 } = {}) {
+  const s = nouvellePartie(carte, difficulte);
   const places = [];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (peutPoser(s, c, r)) places.push([c, r, couverture(s, c, r, 125)]);
   places.sort((a, b) => b[2] - a[2]);
@@ -47,5 +47,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Joueur pressé  :', jouer({ presse: true }));
   console.log('Que des archers:', jouer({ plan: ['archers'] }));
   console.log('Étape 1 seule :', jouer({ presse: true, plan: ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'archers', 'mage'] }));
+  console.log('Posé, Facile   :', jouer({ difficulte: 'facile' }));
+  console.log('Posé, Difficile:', jouer({ difficulte: 'difficile' }));
   console.log('Sans tour      :', jouer({ plan: [], max: 60 * 60 * 10 }));
 }
