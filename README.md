@@ -52,7 +52,7 @@ Tour canon : le fût `tour_canon_N_fut` est un objet séparé, pointé vers +X, 
 L'empty `pivot_canon_N` (enfant de la tour, propriété `role=pivot_canon`) marque où le poser.
 Même principe pour la baliste : `tour_baliste_N_arme` et `pivot_arme_N` (`role=pivot_arme`).
 
-Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2), `yeux_gobelin` (#FFDE3B, 1), `yeux_rouges` (#FF4D6D, 1).
+Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2), `yeux_gobelin` (#FFDE3B, 1), `yeux_rouges` (#FF4D6D, 1), `cristal_vert` (#5DFF9A, 2).
 
 ### Niveau 3 au choix : versions a et b (x = 12 et 16 sur la ligne de chaque tour)
 
@@ -83,3 +83,4 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | ennemi_loup (`scripts/ennemis_loup.py`), galop, 0,82 de long | 0,45 | 474 | 7 |
 | ennemi_orc_blinde (`scripts/ennemis_orc_blinde.py`), marche lourde | 0,80 | 825 | 6 |
 | ennemi_chauve_souris (`scripts/ennemis_chauve_souris.py`), volant, action **vol** (piste NLA « vol »), envergure 0,71 | 0,34 | 355 | 6 |
+| ennemi_chaman (`scripts/ennemis_chaman.py`), marche courbée sur bâton | 0,65 | 542 | 6 |
