@@ -5,7 +5,8 @@ import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES } from './con
 import { CARTES } from '../data/cartes.js';
 import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
-import { construireCarte, positionSur, centre, LIBRE } from './carte.js';
+import { POUVOIRS } from '../data/pouvoirs.js';
+import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
 
 export function nouvellePartie(idCarte = 'prairie') {
   const def = CARTES[idCarte];
@@ -23,6 +24,9 @@ export function nouvellePartie(idCarte = 'prairie') {
     payees: {},               // vagues dont le bonus de fin a été versé
     fin: null,                // 'victoire' ou 'defaite'
     abattus: 0, orGagne: 0,
+    pouvoirs: { meteores: 0, renforts: 0 },   // secondes de recharge restantes
+    meteores: [],             // météores en train de tomber : { x, y, t }
+    renforts: [],             // groupes de soldats : { id, x, y, d, pv, pvMax, t }
     prochainId: 1,
     evenements: [],
   };
@@ -135,6 +139,7 @@ export function avancer(s, dt = DT) {
   if (s.fin) return;
   soigner(s, dt);
   pouvoirsEnnemis(s, dt);
+  pouvoirsJoueur(s, dt);
   combattre(s, dt);
   bilanVagues(s);
 }
@@ -188,8 +193,17 @@ function deplacer(s, dt) {
     if (e.gel > 0) e.gel -= dt;
     if (e.rage > 0) e.rage -= dt;
     const v = e.gel > 0 ? 0 : d.vitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1);
-    e.d += v * dt;
-    e.pas += v * dt;
+    // Renforts : un ennemi au sol s'arrête devant les soldats (sauf le boss, qui les écrase).
+    e.bloque = null;
+    if (!e.vol) for (const g of s.renforts) {
+      if (e.d > g.d || e.d + v * dt < g.d - 16) continue;
+      if (d.boss) { g.pv = 0; ev(s, 'ecrases', { x: g.x, y: g.y }); continue; }
+      e.bloque = g.id;
+      break;
+    }
+    const avance = e.bloque ? Math.max(0, Math.min(v * dt, s.renforts.find((g) => g.id === e.bloque).d - 16 - e.d)) : v * dt;
+    e.d += avance;
+    e.pas += avance;
     const tr = e.vol ? s.carte.vol : s.carte.sol;
     if (e.d >= tr.longueur) {
       s.ennemis.splice(i, 1);
@@ -241,6 +255,79 @@ function pouvoirsEnnemis(s, dt) {
         for (const o of s.ennemis) if (o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= r.rayon) { o.rage = r.duree; o.rageBonus = r.bonus; }
         ev(s, 'rugissement', { x: e.x, y: e.y, rayon: r.rayon });
       }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- pouvoirs du joueur
+
+export const pouvoirPret = (s, nom) => !s.fin && s.pouvoirs[nom] <= 0;
+
+/** Pluie de météores autour du point (x, y), en pixels de jeu. */
+export function lancerMeteores(s, x, y) {
+  if (!pouvoirPret(s, 'meteores')) return { ok: false, raison: 'recharge' };
+  const p = POUVOIRS.meteores;
+  s.pouvoirs.meteores = p.recharge;
+  // Disposition fixe : un au centre, deux de part et d'autre (rejouable, sans hasard).
+  const places = [[0, 0], [-0.75, 0.55], [0.75, 0.55]].slice(0, p.nombre);
+  places.forEach(([kx, ky], i) => s.meteores.push({ x: x + kx * p.rayon, y: y + ky * p.rayon, t: p.chute + i * p.ecart, chute: p.chute }));
+  ev(s, 'meteores', { x, y, meteores: s.meteores.slice(-p.nombre).map((m) => ({ x: m.x, y: m.y, t: m.t })) });
+  return { ok: true };
+}
+
+/** Renforts sur une case du chemin. */
+export function appelerRenforts(s, c, r) {
+  if (!pouvoirPret(s, 'renforts')) return { ok: false, raison: 'recharge' };
+  if (s.carte.etat(c, r) !== CHEMIN) return { ok: false, raison: 'place' };
+  const p = POUVOIRS.renforts;
+  const d = distanceSurTrajet(s.carte.sol, centre(c), centre(r));
+  const pos = positionSur(s.carte.sol, d);
+  s.pouvoirs.renforts = p.recharge;
+  const g = { id: s.prochainId++, x: pos.x, y: pos.y, d, pv: p.pv * p.soldats, pvMax: p.pv * p.soldats, t: p.duree, coup: 0 };
+  s.renforts.push(g);
+  ev(s, 'renforts', { x: g.x, y: g.y });
+  return { ok: true, groupe: g };
+}
+
+/** Distance le long du trajet du point le plus proche de (x, y). */
+function distanceSurTrajet(tr, x, y) {
+  let best = 0, dmin = Infinity;
+  for (const sg of tr.segs) {
+    const ux = (sg.b.x - sg.a.x) / sg.l, uy = (sg.b.y - sg.a.y) / sg.l;
+    const t = Math.max(0, Math.min(sg.l, (x - sg.a.x) * ux + (y - sg.a.y) * uy));
+    const px = sg.a.x + ux * t, py = sg.a.y + uy * t;
+    const dd = Math.hypot(px - x, py - y);
+    if (dd < dmin) { dmin = dd; best = sg.debut + t; }
+  }
+  return best;
+}
+
+function pouvoirsJoueur(s, dt) {
+  for (const k of Object.keys(s.pouvoirs)) if (s.pouvoirs[k] > 0) s.pouvoirs[k] = Math.max(0, s.pouvoirs[k] - dt);
+  // Météores qui touchent le sol.
+  const pm = POUVOIRS.meteores;
+  for (let i = s.meteores.length - 1; i >= 0; i--) {
+    const m = s.meteores[i];
+    m.t -= dt;
+    if (m.t > 0) continue;
+    s.meteores.splice(i, 1);
+    ev(s, 'impactMeteore', { x: m.x, y: m.y, rayon: pm.zone });
+    for (const e of [...s.ennemis]) if (Math.hypot(e.x - m.x, e.y - m.y) <= pm.zone) blesser(s, e, pm.degats, 'magique', null);
+  }
+  // Soldats : ils frappent un ennemi qu'ils bloquent, encaissent les coups, puis s'en vont.
+  const pr = POUVOIRS.renforts;
+  for (let i = s.renforts.length - 1; i >= 0; i--) {
+    const g = s.renforts[i];
+    g.t -= dt;
+    const bloques = s.ennemis.filter((e) => e.bloque === g.id);
+    g.pv -= bloques.length * pr.coupEnnemi * dt;
+    const soldats = Math.ceil(g.pv / pr.pv);
+    if (bloques.length && soldats > 0) { g.coup = 0.2; blesser(s, bloques[0], pr.dps * soldats * dt, 'physique', null); }
+    else if (g.coup > 0) g.coup -= dt;
+    if (g.t <= 0 || g.pv <= 0) {
+      s.renforts.splice(i, 1);
+      for (const e of s.ennemis) if (e.bloque === g.id) e.bloque = null;
+      ev(s, 'finRenforts', { x: g.x, y: g.y, tombes: g.pv <= 0 });
     }
   }
 }

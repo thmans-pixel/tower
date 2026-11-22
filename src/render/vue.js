@@ -7,6 +7,7 @@ import { ENNEMIS } from '../data/ennemis.js';
 import { hasard } from '../sim/hasard.js';
 import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
 import { nomTour, nomEnnemi } from './modeles.js';
+import { POUVOIRS } from '../data/pouvoirs.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Pixelify Sans", ui-monospace, monospace';
@@ -117,6 +118,13 @@ export class Vue {
           this.anneaux.push({ x: e.x, y: e.y, r: 10, max: e.rayon, vie: 0.6, t: 0, col: '255,80,60' });
           this.texte(e.x, e.y - 70, 'Rugissement !', '#ff8a7a'); this.secousse = 0.3;
           break;
+        case 'impactMeteore':
+          this.anneaux.push({ x: e.x, y: e.y, r: 6, max: e.rayon + 10, vie: 0.4, t: 0, col: '255,120,40' });
+          this.eclater(e.x, e.y, '#ff6a2b', 14); this.eclater(e.x, e.y, '#6b4423', 8); this.secousse = 0.25;
+          break;
+        case 'renforts': this.eclater(e.x, e.y + 6, '#c9a46a', 12); this.texte(e.x, e.y - 34, 'Renforts !', '#8fc0ff'); break;
+        case 'ecrases': this.eclater(e.x, e.y, '#3a6fc4', 12); this.texte(e.x, e.y - 30, 'Écrasés !', '#ff8a7a'); break;
+        case 'finRenforts': if (!e.tombes) this.eclater(e.x, e.y, '#8fc0ff', 6); break;
         case 'pose': this.eclater(e.x, e.y + 12, '#c9a46a', 10); break;
         case 'amelioration': this.eclater(e.x, e.y - 20, '#f2c14e', 16); this.texte(e.x, e.y - 44, 'Niveau ' + (e.niveau + 1), '#f2c14e'); break;
         case 'vente': this.eclater(e.x, e.y, '#c9a46a', 12); this.texte(e.x, e.y - 20, '+' + e.or, '#f2c14e'); break;
@@ -166,6 +174,20 @@ export class Vue {
       this.portee(c * T + T / 2, r * T + T / 2, TOURS[ui.construction].niveaux[0].portee, ok);
     }
 
+    // Visée d'un pouvoir.
+    if (ui.pouvoir && ui.visee) {
+      const v = ui.visee;
+      if (ui.pouvoir === 'meteores') {
+        const p = POUVOIRS.meteores;
+        g.beginPath(); g.arc(v.x, v.y, p.rayon + p.zone, 0, Math.PI * 2);
+        g.fillStyle = 'rgba(255,110,40,.15)'; g.fill(); g.lineWidth = 2; g.strokeStyle = 'rgba(255,150,60,.8)'; g.stroke();
+      } else {
+        const ok = ui.surChemin(v.c, v.r);
+        g.fillStyle = ok ? 'rgba(90,160,255,.3)' : 'rgba(255,80,60,.25)'; g.fillRect(v.c * T, v.r * T, T, T);
+        g.strokeStyle = ok ? '#8fc0ff' : '#ff5a4a'; g.lineWidth = 2; g.strokeRect(v.c * T + 1, v.r * T + 1, T - 2, T - 2);
+      }
+    }
+
     // Objets triés par profondeur.
     const occupees = new Set(s.tours.map((t) => t.c + ',' + t.r));
     const liste = [];
@@ -175,11 +197,13 @@ export class Vue {
     }
     for (const t of s.tours) liste.push({ y: t.y + 1, f: () => this.tour(t, t.id === ui.selection) });
     for (const e of s.ennemis) if (!e.vol) liste.push({ y: e.y, f: () => this.ennemi(e) });
+    for (const gr of s.renforts || []) liste.push({ y: gr.y, f: () => this.soldats(gr) });
     liste.sort((a, b) => a.y - b.y);
     for (const o of liste) o.f();
     for (const e of s.ennemis) if (e.vol) this.ennemi(e);
 
     for (const p of s.projectiles) this.projectile(p);
+    for (const m of s.meteores || []) this.meteore(m);
     this.effets(dt);
 
     if (fantome) {
@@ -189,6 +213,36 @@ export class Vue {
       if (!fantome.ok) { g.strokeStyle = '#ff5a4a'; g.lineWidth = 3; g.strokeRect(fantome.c * T + 3, fantome.r * T + 3, T - 6, T - 6); }
     }
     this.dessinerBandeau(dt);
+  }
+
+  /** Météore en chute : arrive en diagonale depuis le haut, son ombre grandit au sol. */
+  meteore(m) {
+    if (m.t > m.chute) return;
+    const g = this.g, k = 1 - m.t / m.chute;
+    g.fillStyle = `rgba(0,0,0,${0.15 + 0.25 * k})`;
+    g.beginPath(); g.ellipse(m.x, m.y, 6 + 10 * k, 3 + 4 * k, 0, 0, Math.PI * 2); g.fill();
+    const x = m.x + (1 - k) * 140, y = m.y - (1 - k) * 380;
+    g.strokeStyle = 'rgba(255,140,40,.5)'; g.lineWidth = 6;
+    g.beginPath(); g.moveTo(x + 30, y - 80); g.lineTo(x, y); g.stroke();
+    g.fillStyle = '#1a1420'; g.fillRect(x - 8, y - 8, 16, 16);
+    g.fillStyle = '#ff6a2b'; g.fillRect(x - 7, y - 7, 14, 14);
+    g.fillStyle = '#ffd23f'; g.fillRect(x - 4, y - 5, 6, 6);
+    if (Math.random() < 0.8) this.eclats.push({ x: x + (Math.random() - 0.5) * 10, y, vx: 30, vy: -60, vie: 0.4, t: 0, col: Math.random() < 0.5 ? '#ff8a2b' : '#ffd23f', s: 3 });
+  }
+
+  /** Groupe de renforts : un ou deux soldats selon les PV restants, barre de vie commune. */
+  soldats(gr) {
+    const g = this.g;
+    const n = Math.ceil(gr.pv / POUVOIRS.renforts.pv);
+    for (let i = 0; i < n; i++) {
+      const sp = spriteEnnemi('soldat', gr.coup > 0 ? Math.floor(this.horloge * 10) % 2 : 0);
+      const x = gr.x + (i - (n - 1) / 2) * 16;
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, gr.y + 8, 9, 3, 0, 0, Math.PI * 2); g.fill();
+      g.drawImage(sp, Math.round(x - sp.width), Math.round(gr.y + 9 - sp.height * ECHELLE), sp.width * ECHELLE, sp.height * ECHELLE);
+    }
+    const p = Math.max(0, gr.pv / gr.pvMax);
+    g.fillStyle = '#1a1420'; g.fillRect(gr.x - 15, gr.y - 31, 30, 6);
+    g.fillStyle = '#5aa0ff'; g.fillRect(gr.x - 14, gr.y - 30, Math.ceil(28 * p), 4);
   }
 
   portee(x, y, r, ok) {

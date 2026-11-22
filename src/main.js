@@ -2,7 +2,9 @@
 import { W, H, T, DT, COLS, ROWS } from './sim/const.js';
 import { CARTES } from './data/cartes.js';
 import { TOURS, ORDRE_TOURS } from './data/tours.js';
-import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser } from './sim/partie.js';
+import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret } from './sim/partie.js';
+import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
+import { CHEMIN } from './sim/carte.js';
 import { chargerDecors } from './render/decors.js';
 import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
@@ -18,10 +20,14 @@ let apercu = null;          // carte affichée derrière les écrans de menu
 let idCarte = 'prairie';
 let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
-const ui = { construction: null, fantome: null, selection: null, peutPoser: (c, r) => partie && peutPoser(partie, c, r) };
+const ui = {
+  construction: null, fantome: null, selection: null, pouvoir: null, visee: null,
+  peutPoser: (c, r) => partie && peutPoser(partie, c, r),
+  surChemin: (c, r) => partie && partie.carte.etat(c, r) === CHEMIN,
+};
 
 const interfaceJeu = new Interface({
-  construire, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon,
+  construire, pouvoir: choisirPouvoir, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon,
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
@@ -57,7 +63,7 @@ async function commencer(id) {
   const d = await decorsDe(id);
   partie = nouvellePartie(id);
   vue.preparer(partie.carte, d);
-  Object.assign(ui, { construction: null, fantome: null, selection: null });
+  Object.assign(ui, { construction: null, fantome: null, selection: null, pouvoir: null, visee: null });
   vitesse = 1; enPause = false; reste = 0; finMontree = false;
   interfaceJeu.signature = '';
   ecran = 'jeu';
@@ -67,7 +73,7 @@ async function commencer(id) {
 function construire(sorte) {
   if (!partie || partie.fin) return;
   ui.construction = ui.construction === sorte ? null : sorte;
-  ui.selection = null;
+  ui.selection = null; ui.pouvoir = null; ui.visee = null;
   son.jouer('clic');
 }
 
@@ -96,16 +102,48 @@ function caseSous(e) {
   return { c: Math.floor(x / T), r: Math.floor(y / T) };
 }
 
+function choisirPouvoir(nom) {
+  if (!partie || partie.fin) return;
+  if (!pouvoirPret(partie, nom)) { son.jouer('erreur'); return; }
+  ui.pouvoir = ui.pouvoir === nom ? null : nom;
+  ui.construction = null; ui.selection = null; ui.fantome = null; ui.visee = null;
+  son.jouer('clic');
+}
+
+function pointSous(e) {
+  const r = toile.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * W, y = ((e.clientY - r.top) / r.height) * H;
+  return { x, y, c: Math.floor(x / T), r: Math.floor(y / T) };
+}
+
+/** Lance le pouvoir choisi au point visé ; renvoie vrai s'il est parti. */
+function lancerPouvoir(v) {
+  const res = ui.pouvoir === 'meteores' ? lancerMeteores(partie, v.x, v.y) : appelerRenforts(partie, v.c, v.r);
+  if (res.ok) { ui.pouvoir = null; ui.visee = null; return true; }
+  son.jouer('erreur');
+  vue.texte(v.x, v.y - 10, res.raison === 'place' ? 'Sur le chemin seulement' : 'Pas encore prêt', '#ff8a7a');
+  return false;
+}
+
 toile.addEventListener('pointermove', (e) => {
-  if (e.pointerType === 'mouse' && ui.construction) ui.fantome = caseSous(e);
+  if (e.pointerType !== 'mouse') return;
+  if (ui.construction) ui.fantome = caseSous(e);
+  if (ui.pouvoir) ui.visee = pointSous(e);
 });
-toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') ui.fantome = null; });
-toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; });
+toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { ui.fantome = null; ui.visee = null; } });
+toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; ui.pouvoir = null; ui.visee = null; });
 toile.addEventListener('pointerdown', (e) => {
   son.reveiller();
   if (!partie || e.button > 0) return;
   const { c, r } = caseSous(e);
   if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return;
+  if (ui.pouvoir) {
+    // Au doigt, le premier toucher montre la zone, le second lance (comme pour bâtir).
+    const v = pointSous(e);
+    if (e.pointerType !== 'mouse' && (!ui.visee || Math.hypot(ui.visee.x - v.x, ui.visee.y - v.y) > 24)) { ui.visee = v; return; }
+    lancerPouvoir(v);
+    return;
+  }
   if (ui.construction) {
     // Au doigt, le premier toucher montre la portée, le second bâtit.
     if (e.pointerType !== 'mouse' && (!ui.fantome || ui.fantome.c !== c || ui.fantome.r !== r)) { ui.fantome = { c, r }; return; }
@@ -128,9 +166,11 @@ window.addEventListener('keydown', (e) => {
   if (!document.getElementById('question').hidden) return;
   const sorte = ORDRE_TOURS.find((s) => TOURS[s].touche === e.key);
   if (sorte) { construire(sorte); return; }
+  const pv = ORDRE_POUVOIRS.find((n) => POUVOIRS[n].touche === e.key.toLowerCase());
+  if (pv) { choisirPouvoir(pv); return; }
   if (e.key === ' ') { e.preventDefault(); basculerPause(); }
   else if (e.key === 'f' || e.key === 'F') changerVitesse();
-  else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; }
+  else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; }
 });
 window.addEventListener('pointerdown', () => son.reveiller(), { once: true });
 document.addEventListener('visibilitychange', () => {
@@ -167,7 +207,7 @@ function boucle(maintenant) {
     son.evenements(evs);
     if (partie.fin && !finMontree) {
       finMontree = true;
-      ui.construction = null;
+      ui.construction = null; ui.pouvoir = null;
       setTimeout(() => partie && partie.fin && interfaceJeu.fin(partie), 1200);
     }
   }

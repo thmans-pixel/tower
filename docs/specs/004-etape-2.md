@@ -6,7 +6,7 @@ Statut : **validé** par Thibault le 22 novembre 2026. Chiffres proposés, régl
 
 1. **Lot 1** : Baliste, Tempête, les 12 spécialisations du niveau 3. — *réalisé*
 2. **Lot 2** : Slime, Golem, Spectre, l'Ogre chef de guerre, vagues de la Prairie revues. — *réalisé*
-3. **Lot 3** : pouvoirs du joueur.
+3. **Lot 3** : pouvoirs du joueur. — *réalisé*
 
 ## Nouvelles tours (touches 5 et 6)
 
@@ -50,6 +50,9 @@ bandeau). Barre de vie dédiée en haut de l'écran.
 - Renforts (touche R) : 2 soldats sur une case de chemin, bloquent les ennemis au sol 8 s, 150 PV, 10 dégâts/s ;
   le boss les écrase ; recharge 30 s.
 - Deux boutons en bas avec la recharge ; au doigt : bouton puis endroit visé.
+- Réalisation : les météores tombent en 0,8 s, à 0,25 s d'écart, en triangle autour du point visé, et touchent
+  aussi les volants ; chaque ennemi bloqué par les soldats leur inflige 8 dégâts/s. Les pouvoirs sont
+  disponibles dès le début de la partie.
 
 ## Vagues de la Prairie (lot 2)
 

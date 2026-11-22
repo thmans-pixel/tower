@@ -5,8 +5,8 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 2, lot 2** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
-(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
+État : **étape 2 terminée** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
+(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
 
 ## Lancer le jeu
 
@@ -27,6 +27,7 @@ les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directem
 | Bâtir | clic sur une case d'herbe libre | toucher une fois (portée), une seconde fois (bâtir) |
 | Améliorer, spécialiser, vendre, ciblage | clic sur la tour | toucher la tour |
 | Annuler | Échap ou clic droit | toucher le bouton de la tour |
+| Pouvoirs | M (météores), R (renforts), puis clic sur la carte | bouton, toucher une fois (zone), une seconde fois (lancer) |
 | Pause / vitesse | Espace / F | boutons en haut |
 
 ## Règles appliquées
