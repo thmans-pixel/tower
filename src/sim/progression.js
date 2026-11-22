@@ -3,7 +3,7 @@
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, difficulte: 'normal', son: true, infiniOuvert: false };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, difficulte: 'normal', son: true, infiniOuvert: false };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -33,6 +33,16 @@ export function enregistrerVictoire(p, carte, difficulte, etoiles) {
   return { progression: q, nouvelles, infini };
 }
 
+/** Les cartes aléatoires s'ouvrent une fois la Prairie gagnée (spec 007). */
+export const aleatoireOuvert = (p) => p.debloquees.includes('desert');
+
+/** Compte une carte aléatoire gagnée dans cette difficulté. */
+export function enregistrerAleatoire(p, difficulte) {
+  const q = structuredClone(p);
+  q.aleatoires[difficulte] = (q.aleatoires[difficulte] || 0) + 1;
+  return q;
+}
+
 /** Garde le meilleur score du mode infini d'une carte ; renvoie { progression, record: vrai si battu }. */
 export function enregistrerInfini(p, carte, score) {
   const q = structuredClone(p);
@@ -57,6 +67,7 @@ export function relire(brut) {
   }
   if (brut.infini && typeof brut.infini === 'object') for (const c of ORDRE_CARTES) if (Number.isInteger(brut.infini[c])) p.infini[c] = brut.infini[c];
   if (['facile', 'normal', 'difficile'].includes(brut.difficulte)) p.difficulte = brut.difficulte;
+  if (brut.aleatoires && typeof brut.aleatoires === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.aleatoires[d])) p.aleatoires[d] = brut.aleatoires[d];
   if (typeof brut.son === 'boolean') p.son = brut.son;
   p.infiniOuvert = brut.infiniOuvert === true;
   return p;

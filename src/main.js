@@ -5,7 +5,8 @@ import { TOURS, ORDRE_TOURS } from './data/tours.js';
 import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret } from './sim/partie.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
 import { CHEMIN } from './sim/carte.js';
-import { etoilesPartie, enregistrerVictoire, enregistrerInfini, progressionVide } from './sim/progression.js';
+import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, aleatoireOuvert, progressionVide } from './sim/progression.js';
+import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
 import { charger, enregistrer, effacer } from './ui/sauvegarde.js';
 import { chargerDecors } from './render/decors.js';
@@ -13,6 +14,7 @@ import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
 import { Son } from './audio/son.js';
 import { Interface } from './ui/interface.js';
+import { rangDeTouche } from './ui/clavier.js';
 
 const toile = document.getElementById('toile');
 const vue = new Vue(toile);
@@ -21,25 +23,35 @@ const decors = {};
 let partie = null;          // partie en cours
 let apercu = null;          // carte affichée derrière les écrans de menu
 let idCarte = 'prairie';
-let modeInfini = false;        // choix de l'écran des cartes : campagne ou mode infini
+let mode = 'campagne';         // choix de l'écran des cartes : campagne, carte aléatoire ou mode infini
+const alea = { theme: 'prairie', longueur: 25, graine: numeroAuHasard(), vignette: null };
 let progression = charger();   // cartes débloquées, étoiles, difficulté choisie, son
 son.actif = progression.son;
 let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
 const ui = {
   construction: null, fantome: null, selection: null, pouvoir: null, visee: null,
+  verrou: null,     // tour verrouillée par un appui long (tablette) : on en pose plusieurs à la suite
   peutPoser: (c, r) => partie && peutPoser(partie, c, r),
   surChemin: (c, r) => partie && partie.carte.etat(c, r) === CHEMIN,
 };
 
 const interfaceJeu = new Interface({
-  construire, pouvoir: choisirPouvoir, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon,
+  construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon,
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
-  difficulte: (d) => { progression.difficulte = d; enregistrer(progression); interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini); son.jouer('clic'); },
-  mode: (infini) => { modeInfini = infini; interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini); son.jouer('clic'); },
-  effacer: () => { effacer(); progression = progressionVide(); modeInfini = false; son.actif = true; interfaceJeu.listeCartes(CARTES, vignette, progression); },
+  difficulte: (d) => { progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
+  mode: (m) => { mode = m; afficherCartes(); son.jouer('clic'); },
+  alea: async (changement) => {
+    if (changement.graine === 'hasard') changement.graine = numeroAuHasard();
+    Object.assign(alea, changement);
+    alea.vignette = await vignetteAleatoire();
+    afficherCartes();
+    son.jouer('clic');
+  },
+  jouerAleatoire: () => commencer(genererCarte(alea.graine, alea.theme, alea.longueur)),
+  effacer: () => { effacer(); progression = progressionVide(); mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
   vendre: () => { if (partie && vendre(partie, ui.selection).ok) ui.selection = null; },
@@ -54,7 +66,7 @@ function montrer(nom) {
   ecran = nom;
   if (nom !== 'jeu') { partie = null; ui.selection = null; ui.construction = null; enPause = false; }
   interfaceJeu.montrerEcran(nom);
-  if (nom === 'cartes') interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini && progression.infiniOuvert);
+  if (nom === 'cartes') afficherCartes();
 }
 
 let vignettes = {};
@@ -67,10 +79,35 @@ function vignette(id) {
   return c;
 }
 
+/** Écran des cartes selon le mode choisi (un mode qui n'est pas encore ouvert retombe sur la campagne). */
+function afficherCartes() {
+  if ((mode === 'infini' && !progression.infiniOuvert) || (mode === 'aleatoire' && !aleatoireOuvert(progression))) mode = 'campagne';
+  if (mode === 'aleatoire' && !alea.vignette) { vignetteAleatoire().then((v) => { alea.vignette = v; afficherCartes(); }); }
+  interfaceJeu.listeCartes(CARTES, vignette, progression, mode, alea);
+}
+
+function numeroAuHasard() {
+  return 1 + Math.floor(Math.random() * 99999);
+}
+
+/** Aperçu de la carte aléatoire choisie, dessiné sur une toile à part. */
+async function vignetteAleatoire() {
+  const def = genererCarte(alea.graine, alea.theme, alea.longueur);
+  const t = document.createElement('canvas');
+  t.width = W; t.height = H;
+  const v = new Vue(t);
+  const etat = nouvellePartie(def);
+  v.modeles = vue.modeles;
+  v.preparer(etat.carte, await decorsDe(def.id));
+  v.dessiner(etat, { construction: null, selection: null }, 0);
+  return t;
+}
+
+/** `id` : nom d'une carte de la campagne, ou description d'une carte aléatoire (genererCarte). */
 async function commencer(id) {
   idCarte = id;
-  const d = await decorsDe(id);
-  partie = nouvellePartie(id, progression.difficulte, { infini: modeInfini && progression.infiniOuvert });
+  const d = await decorsDe(typeof id === 'object' ? id.id : id);
+  partie = nouvellePartie(id, progression.difficulte, { infini: typeof id !== 'object' && mode === 'infini' && progression.infiniOuvert });
   vue.preparer(partie.carte, d);
   Object.assign(ui, { construction: null, fantome: null, selection: null, pouvoir: null, visee: null });
   vitesse = 1; enPause = false; reste = 0; finMontree = false;
@@ -82,6 +119,7 @@ async function commencer(id) {
 function construire(sorte) {
   if (!partie || partie.fin) return;
   ui.construction = ui.construction === sorte ? null : sorte;
+  if (ui.verrou !== ui.construction) ui.verrou = null;
   ui.selection = null; ui.pouvoir = null; ui.visee = null;
   son.jouer('clic');
 }
@@ -108,7 +146,9 @@ function basculerSon() {
 /** Fin de partie : étoiles et déblocages enregistrés, puis l'écran de fin. */
 function bilanPartie(s) {
   const bilan = { etoiles: etoilesPartie(s), nouvelles: [], infini: false, record: false };
-  if (s.infini) {
+  if (s.carte.def.aleatoire) {
+    if (s.fin === 'victoire') { progression = enregistrerAleatoire(progression, s.difficulte); enregistrer(progression); }
+  } else if (s.infini) {
     const r = enregistrerInfini(progression, idCarte, scoreInfini(s));
     progression = r.progression;
     enregistrer(progression);
@@ -129,6 +169,13 @@ function caseSous(e) {
   const r = toile.getBoundingClientRect();
   const x = ((e.clientX - r.left) / r.width) * W, y = ((e.clientY - r.top) / r.height) * H;
   return { c: Math.floor(x / T), r: Math.floor(y / T) };
+}
+
+function verrouiller(sorte) {
+  if (!partie || partie.fin) return;
+  ui.verrou = ui.verrou === sorte ? null : sorte;
+  if (ui.verrou) { ui.construction = sorte; ui.selection = null; ui.pouvoir = null; }
+  son.jouer('clic');
 }
 
 function choisirPouvoir(nom) {
@@ -160,7 +207,7 @@ toile.addEventListener('pointermove', (e) => {
   if (ui.pouvoir) ui.visee = pointSous(e);
 });
 toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { ui.fantome = null; ui.visee = null; } });
-toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; ui.pouvoir = null; ui.visee = null; });
+toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; });
 toile.addEventListener('pointerdown', (e) => {
   son.reveiller();
   if (!partie || e.button > 0) return;
@@ -177,7 +224,15 @@ toile.addEventListener('pointerdown', (e) => {
     // Au doigt, le premier toucher montre la portée, le second bâtit.
     if (e.pointerType !== 'mouse' && (!ui.fantome || ui.fantome.c !== c || ui.fantome.r !== r)) { ui.fantome = { c, r }; return; }
     const res = poser(partie, ui.construction, c, r);
-    if (res.ok) { ui.construction = null; ui.fantome = null; }
+    if (res.ok) {
+      // Pose en série : Maj maintenue pendant le clic, ou tour verrouillée par un appui long.
+      const serie = e.shiftKey || ui.verrou === ui.construction;
+      if (serie && partie.or >= TOURS[ui.construction].prix) { if (e.pointerType !== 'mouse') ui.fantome = null; }
+      else {
+        if (serie) vue.texte(c * T + T / 2, r * T - 16, 'Pas assez d’or', '#ff8a7a');
+        ui.construction = null; ui.fantome = null; ui.verrou = null;
+      }
+    }
     else {
       son.jouer('erreur');
       vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
@@ -193,13 +248,14 @@ window.addEventListener('keydown', (e) => {
   son.reveiller();
   if (ecran !== 'jeu' || !partie) return;
   if (!document.getElementById('question').hidden) return;
-  const sorte = ORDRE_TOURS.find((s) => TOURS[s].touche === e.key);
-  if (sorte) { construire(sorte); return; }
+  const rang = rangDeTouche(e);
+  if (rang && rang <= ORDRE_TOURS.length) { construire(ORDRE_TOURS[rang - 1]); return; }
+  if (rang > 6) { choisirPouvoir(ORDRE_POUVOIRS[rang - 7]); return; }
   const pv = ORDRE_POUVOIRS.find((n) => POUVOIRS[n].touche === e.key.toLowerCase());
   if (pv) { choisirPouvoir(pv); return; }
   if (e.key === ' ') { e.preventDefault(); basculerPause(); }
   else if (e.key === 'f' || e.key === 'F') changerVitesse();
-  else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; }
+  else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; }
 });
 window.addEventListener('pointerdown', () => son.reveiller(), { once: true });
 document.addEventListener('visibilitychange', () => {

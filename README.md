@@ -6,7 +6,7 @@ Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-to
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
 État : **cahier des charges terminé** — 3 cartes (Prairie, Désert, Montagne enneigée), mode infini, difficultés, étoiles, sauvegarde — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
-(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Specs des étapes 2 et 3 : [004](docs/specs/004-etape-2.md), [005](docs/specs/005-etape-3.md).
+(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Specs des étapes 2 et 3 : [004](docs/specs/004-etape-2.md), [005](docs/specs/005-etape-3.md) ; cartes aléatoires et raccourcis : [007](docs/specs/007-raccourcis-serie-cartes-aleatoires.md).
 
 ## Lancer le jeu
 
@@ -36,12 +36,20 @@ bouton « Jouer » ; un simple rechargement de la page suffit à la voir. Spec :
 
 | Action | Souris / clavier | Tactile |
 | --- | --- | --- |
-| Choisir une tour | bouton en bas, ou 1 à 6 | bouton en bas |
+| Choisir une tour | bouton en bas, ou 1 à 6 (sur un clavier AZERTY, `& é " ' ( -` sans Maj ; pavé numérique aussi) | bouton en bas |
 | Bâtir | clic sur une case d'herbe libre | toucher une fois (portée), une seconde fois (bâtir) |
+| Bâtir en série | Maj + clic : la même tour reste choisie ; un clic sans Maj termine la série | appui long sur le bouton de la tour (badge « en série ») |
 | Améliorer, spécialiser, vendre, ciblage | clic sur la tour | toucher la tour |
 | Annuler | Échap ou clic droit | toucher le bouton de la tour |
-| Pouvoirs | M (météores), R (renforts), puis clic sur la carte | bouton, toucher une fois (zone), une seconde fois (lancer) |
+| Pouvoirs | 7 ou `è` / M (météores), 8 ou `_` / R (renforts), puis clic sur la carte | bouton, toucher une fois (zone), une seconde fois (lancer) |
 | Pause / vitesse | Espace / F | boutons en haut |
+
+## Cartes aléatoires
+
+Une fois le Désert ouvert, l'onglet « Carte aléatoire » propose un chemin neuf à chaque numéro (même numéro,
+même carte : on peut se l'échanger). On choisit le décor (Prairie, Désert, Montagne) et la longueur (20, 25 ou
+30 vagues). Pas d'étoiles : un compteur de cartes aléatoires gagnées par difficulté. Spec :
+[007](docs/specs/007-raccourcis-serie-cartes-aleatoires.md).
 
 ## Règles appliquées
 

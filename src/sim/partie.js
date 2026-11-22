@@ -12,7 +12,8 @@ import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js'
 
 /** `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées). */
 export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', options = {}) {
-  const def = CARTES[idCarte];
+  // Une carte de la campagne par son nom, ou une carte aléatoire déjà décrite (src/sim/generateur.js).
+  const def = typeof idCarte === 'object' ? idCarte : CARTES[idCarte];
   if (!def || !def.ouverte) throw new Error('Carte indisponible : ' + idCarte);
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
