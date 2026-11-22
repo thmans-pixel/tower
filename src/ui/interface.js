@@ -55,6 +55,14 @@ export class Interface {
     });
   }
 
+  /** Icônes de la boutique : modèles de Blender (niveau 1) quand le pack est chargé. */
+  iconesModeles(modeles) {
+    for (const img of document.querySelectorAll('.outil img')) {
+      const m = modeles.tours['tour_' + img.closest('.outil').dataset.sorte + '_1'];
+      if (m) img.src = m.img.src;
+    }
+  }
+
   montrerEcran(nom) {
     $('ecran-titre').hidden = nom !== 'titre';
     $('ecran-cartes').hidden = nom !== 'cartes';
