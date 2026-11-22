@@ -7,14 +7,15 @@
 #
 # Depuis la racine du dépôt (chemins complets obligatoires avec Flatpak) :
 #   flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_blender.py"
-# Pour ne refaire qu'une partie, ajouter après « -- » : decor, tours et/ou ennemis.
-#   ... -P "$PWD/tools/blender/rendu_blender.py" -- tours
+# Après « -- » : decor, tours et/ou ennemis pour n'en refaire qu'une partie, et carte=<nom> pour le décor
+# d'une autre carte (seuls ses objets <nom>_… sont rendus) :
+#   ... -P "$PWD/tools/blender/rendu_blender.py" -- decor carte=desert
 
 import bpy, json, math, os, shutil, sys, tempfile
 from mathutils import Vector
 
 # ------------------------------------------------------------------ réglages
-CARTE = "prairie"          # carte du décor (préfixe des objets de la collection Decor)
+CARTE = "prairie"          # carte du décor par défaut (préfixe des objets) ; remplacée par carte=<nom> après « -- »
 STYLE = "pixel"            # "pixel" (accordé au jeu) ou "lisse"
 ELEVATION = 50             # inclinaison de la caméra au-dessus de l'horizon, en degrés
 ECHANTILLONS = 48          # qualité Cycles
@@ -240,7 +241,11 @@ def rendre_decor(ctx, racine):
     d = os.path.join(racine, "assets", "decors", CARTE)
     os.makedirs(d, exist_ok=True)
     elements = []
-    for obj in [o for o in collection("Decor") if o.type in {"MESH", "CURVE", "META", "FONT", "SURFACE"}]:
+    objets = [o for o in collection("Decor") if o.type in {"MESH", "CURVE", "META", "FONT", "SURFACE"}
+              and o.name.startswith(CARTE + "_")]
+    if not objets:
+        print(f"ATTENTION : aucun objet « {CARTE}_… » dans la collection Decor")
+    for obj in objets:
         typ = str(obj.get("type", "decor"))
         remettre = a_l_origine(obj)
         r = rendre_serie(ctx, [obj], [lambda: None], d, obj.name, PPC, typ != "sol", [Vector((0, 0, 0))], dessus=typ == "sol")
@@ -329,7 +334,12 @@ def main():
     if not bpy.data.filepath:
         raise RuntimeError("Ouvre decor.blend : les images sont écrites dans assets/ à côté de lui.")
     racine = bpy.path.abspath("//")
-    demandes = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else ["decor", "tours", "ennemis"]
+    global CARTE
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    for a in args:
+        if a.startswith("carte="):
+            CARTE = a.split("=", 1)[1]
+    demandes = [a for a in args if a in ("decor", "tours", "ennemis")] or ["decor", "tours", "ennemis"]
     sc, cam, soleil, plan = preparer_scene()
     outils = {cam, soleil, plan}
     cache = {o.name: o.hide_render for o in sc.objects}
