@@ -11,10 +11,12 @@ PALETTE = {
     "bois": "#9B6B3D", "bois_fonce": "#7A5230", "toits": "#C0392B", "or": "#F2C14E",
     "bleu": "#3A6FC4", "fer_noir": "#2A2D33", "bronze": "#B08D57",
     "neige": "#E8F6FF", "glace": "#8FD6FF", "eclat": "#5CB8F0",
+    "pierre_violette": "#5B4A8A", "fenetre": "#FFD36B", "toit_mage": "#3D2E66",
+    "toit_mage_fonce": "#2A1F4D", "orbe": "#C77DFF",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
-EMISSION = {"glace": 0.3}                   # seuls matériaux émissifs (couleur = couleur de base)
+EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
 NOMS = list(PALETTE)
 M = {n: i for i, n in enumerate(NOMS)}      # nom -> index de matériau
 
@@ -99,6 +101,29 @@ def boule(bm, c, r, mat, sub=1):
     rr = r if isinstance(r, (tuple, list)) else (r, r, r)
     m = Matrix.Translation(c) @ Matrix.Diagonal((rr[0], rr[1], rr[2], 1))
     _colorie(bmesh.ops.create_icosphere(bm, subdivisions=sub, radius=1.0, matrix=m), mat)
+
+
+def plaque(bm, pts2d, y0, y1, mat):
+    """Plaque verticale (plan XZ) de contour pts2d [(x, z)...], épaisse de y0 à y1."""
+    av = [bm.verts.new((x, y0, z)) for x, z in pts2d]
+    ar = [bm.verts.new((x, y1, z)) for x, z in pts2d]
+    faces = [bm.faces.new(av), bm.faces.new(list(reversed(ar)))]
+    n = len(pts2d)
+    for i in range(n):
+        j = (i + 1) % n
+        faces.append(bm.faces.new((av[i], ar[i], ar[j], av[j])))
+    for f in faces: f.material_index = M[mat]
+
+
+def anneau(bm, c, r, ep, mat, n=16, tilt=0.0, az=0.0):
+    """Anneau fait de n pavés tangents, centré en c, incliné de tilt (autour de l'axe az)."""
+    R = Matrix.Translation(c) @ Matrix.Rotation(az, 4, "Z") @ Matrix.Rotation(tilt, 4, "X")
+    l = 2 * math.pi * r / n * 1.08
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        m = R @ Matrix.Translation((r * math.cos(a), r * math.sin(a), 0)) @ Matrix.Rotation(a, 4, "Z") \
+            @ Matrix.Diagonal((ep, l, ep, 1))
+        _colorie(bmesh.ops.create_cube(bm, size=1.0, matrix=m), mat)
 
 
 def socle(bm):
