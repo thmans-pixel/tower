@@ -2,3 +2,4 @@
 *.blend@
 __pycache__/
 .rendu_tmp/
+decors_*.zip
