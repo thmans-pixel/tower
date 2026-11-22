@@ -18,6 +18,7 @@ PALETTE = {
     "orbe_bleue": "#4FA3FF", "orbe_feu": "#FF6A2B", "flamme": "#F39C12",
     # ennemis
     "peau_gobelin": "#5FAE3A", "yeux_gobelin": "#FFDE3B", "tunique_gobelin": "#8A5A2B", "cuir": "#4A2F17",
+    "loup": "#8C8F99", "loup_dos": "#5C5F68", "loup_ventre": "#C9CCD4", "truffe": "#1E1F24",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }

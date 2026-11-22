@@ -31,6 +31,16 @@ class Corps:
             v[self.dl][gi] = 1.0
 
 
+def teinte_dos_ventre(corps, mat, dos, ventre, seuil_dos=0.55, seuil_ventre=-0.45):
+    """Recolore les faces du matériau `mat` : dessus -> dos, dessous -> ventre (selon la normale)."""
+    bm = corps.bm
+    bm.normal_update()
+    for f in bm.faces:
+        if f.material_index != ct.M[mat]: continue
+        if f.normal.z > seuil_dos: f.material_index = ct.M[dos]
+        elif f.normal.z < seuil_ventre: f.material_index = ct.M[ventre]
+
+
 def _supprime(nom):
     o = bpy.data.objects.get(nom)
     if o: bpy.data.objects.remove(o, do_unlink=True)
