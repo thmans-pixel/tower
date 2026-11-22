@@ -136,20 +136,22 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | ennemi_spectre (`scripts/ennemis_spectre.py`), flottement ondulant, matériaux opaques | 0,73 | 301 | 5 |
 | boss_ogre (`scripts/boss_ogre.py`), boss : actions « marche » (pas lourds) et « rugissement », pistes NLA du même nom | 1,60 | 1 101 | 9 |
 
-## Rendre le pack de décor pour le jeu
+## Rendre les packs pour le jeu
 
-Rendre le pack que le jeu charge (PNG + `manifest.json` dans `assets/decors/prairie/`, zip à côté) :
+Une seule commande rend le décor (`assets/decors/prairie/`), les tours (`assets/tours/`, pièces mobiles en
+16 orientations) et les ennemis (`assets/ennemis/`, bandes de 8 images par action) — spec 003 :
 
 ```sh
-flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_decors.py"
+flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_blender.py"
 ```
 
-Le fichier `decor.blend` n'est pas modifié. Sans pack, le jeu dessine son décor en code.
+Ajouter `-- decor`, `-- tours` ou `-- ennemis` à la fin pour n'en refaire qu'une partie. Le fichier
+`decor.blend` n'est pas modifié. Ce qui manque dans les packs, le jeu le dessine en code.
 
 ## Organisation
 
 - `src/sim/` : logique (carte, vagues, tirs, or), sans navigateur, déterministe.
 - `src/data/` : tours, ennemis, cartes et vagues, sortes de décor.
-- `src/render/` : sprites en code, chargement des décors de Blender, dessin de la partie.
+- `src/render/` : sprites en code, chargement des packs de Blender (décors, tours, ennemis), dessin de la partie.
 - `src/ui/`, `src/audio/` : barres, panneau, écrans ; sons synthétisés.
-- `tools/serveur.py` : serveur local sans cache ; `tools/blender/` : rendu des décors.
+- `tools/serveur.py` : serveur local sans cache ; `tools/blender/` : rendu des packs depuis `decor.blend`.

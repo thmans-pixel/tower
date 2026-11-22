@@ -6,6 +6,7 @@ import { TOURS } from '../data/tours.js';
 import { ENNEMIS } from '../data/ennemis.js';
 import { hasard } from '../sim/hasard.js';
 import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
+import { nomTour, nomEnnemi } from './modeles.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0' };
 const POLICE = '"Pixelify Sans", ui-monospace, monospace';
@@ -23,6 +24,7 @@ export class Vue {
     this.bandeau = null;
     this.secousse = 0;
     this.horloge = 0;
+    this.modeles = { tours: {}, ennemis: {} };   // remplis par main.js quand les packs Blender sont chargés
   }
 
   /** Prépare le fond et le décor d'une carte construite par la logique. */
@@ -193,9 +195,36 @@ export class Vue {
 
   tour(t, choisie) {
     const g = this.g;
+    const m = this.modeles.tours[nomTour(t.sorte, t.niveau)];
+    const bas = t.y + 19;
+    if (m) this.tourModele(t, m);
+    else this.tourCode(t, bas);
+    for (let i = 0; i <= t.niveau; i++) { g.fillStyle = '#1a1420'; g.fillRect(t.x - 10 + i * 8, bas + 1, 6, 4); g.fillStyle = '#f2c14e'; g.fillRect(t.x - 9 + i * 8, bas + 2, 4, 2); }
+    if (choisie) { g.strokeStyle = '#f2c14e'; g.lineWidth = 2; g.strokeRect(t.x - T / 2 + 1, t.y - T / 2 + 1, T - 2, T - 2); }
+  }
+
+  /** Tour de Blender : le corps ancré au centre de la case, la pièce mobile dans l'orientation la plus proche. */
+  tourModele(t, m) {
+    const g = this.g, k = m.k;
+    g.imageSmoothingEnabled = m.lisse;
+    g.drawImage(m.img, Math.round(t.x - m.ancre[0] * k), Math.round(t.y - m.ancre[1] * k), m.img.width * k, m.img.height * k);
+    const p = m.piece;
+    if (p) {
+      // À l'écran y descend ; dans Blender l'angle tourne vers +Y (le haut de l'écran) : d'où le signe moins.
+      const pas = (2 * Math.PI) / p.n;
+      const i = ((Math.round(-t.angle / pas) % p.n) + p.n) % p.n;
+      const recul = t.tir > 0 ? -3 : 0;
+      const px = t.x + (p.pivot[0] - m.ancre[0]) * k + Math.cos(t.angle) * recul;
+      const py = t.y + (p.pivot[1] - m.ancre[1]) * k + Math.sin(t.angle) * recul;
+      g.drawImage(p.img, i * p.l, 0, p.l, p.h, Math.round(px - p.ancre[0] * k), Math.round(py - p.ancre[1] * k), p.l * k, p.h * k);
+    }
+    g.imageSmoothingEnabled = false;
+  }
+
+  tourCode(t, bas) {
+    const g = this.g;
     const sp = spriteTour(t.sorte, t.niveau);
     const l = sp.width * ECHELLE, h = sp.height * ECHELLE;
-    const bas = t.y + 19;
     g.fillStyle = 'rgba(0,0,0,.25)';
     g.beginPath(); g.ellipse(t.x + 2, bas - 4, 17, 6, 0, 0, Math.PI * 2); g.fill();
     g.drawImage(sp, Math.round(t.x - l / 2), Math.round(bas - h), l, h);
@@ -216,23 +245,38 @@ export class Vue {
     } else if (t.sorte === 'archers' && t.tir > 0) {
       g.fillStyle = '#ffe9a8'; g.fillRect(t.x - 2, t.y - 30, 4, 2);
     }
-    for (let i = 0; i <= t.niveau; i++) { g.fillStyle = '#1a1420'; g.fillRect(t.x - 10 + i * 8, bas + 1, 6, 4); g.fillStyle = '#f2c14e'; g.fillRect(t.x - 9 + i * 8, bas + 2, 4, 2); }
-    if (choisie) { g.strokeStyle = '#f2c14e'; g.lineWidth = 2; g.strokeRect(t.x - T / 2 + 1, t.y - T / 2 + 1, T - 2, T - 2); }
   }
 
   ennemi(e) {
     const g = this.g;
-    const sp = spriteEnnemi(e.sorte, Math.floor(e.pas / 14) % 2);
-    const l = sp.width * ECHELLE, h = sp.height * ECHELLE;
     const haut = e.vol ? 22 + Math.sin(this.horloge * 8 + e.id) * 3 : 0;
-    g.fillStyle = 'rgba(0,0,0,.25)';
-    g.beginPath(); g.ellipse(e.x, e.y + 8, e.vol ? 9 : 12, 4, 0, 0, Math.PI * 2); g.fill();
-    const x = Math.round(e.x - l / 2), y = Math.round(e.y + 10 - h - haut);
-    if (e.dx < -0.1) { g.save(); g.translate(x + l, y); g.scale(-1, 1); g.drawImage(sp, 0, 0, l, h); g.restore(); }
-    else g.drawImage(sp, x, y, l, h);
+    // Image à dessiner : bande de Blender si elle existe, sinon sprite en code. Point d'ancrage = les pieds.
+    const actions = this.modeles.ennemis[nomEnnemi(e.sorte)];
+    const a = actions && (actions.marche || actions.vol || Object.values(actions)[0]);
+    let src;
+    if (a) {
+      const i = e.vol ? Math.floor(this.horloge * 12 + e.id) % a.n : Math.floor(e.pas / 5) % a.n;
+      src = { img: a.img, sx: i * a.l, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse };
+    } else {
+      const sp = spriteEnnemi(e.sorte, Math.floor(e.pas / 14) % 2);
+      src = { img: sp, sx: 0, sw: sp.width, sh: sp.height, ax: sp.width / 2, ay: sp.height - 1, k: ECHELLE, lisse: false };
+    }
+    if (!a || e.vol) {
+      g.fillStyle = 'rgba(0,0,0,.25)';
+      g.beginPath(); g.ellipse(e.x, e.y + 8, e.vol ? 9 : 12, 4, 0, 0, Math.PI * 2); g.fill();
+    }
+    const l = src.sw * src.k, h = src.sh * src.k;
+    const x = Math.round(e.x - src.ax * src.k), y = Math.round(e.y + 9 - haut - src.ay * src.k);
+    g.imageSmoothingEnabled = src.lisse;
+    if (e.dx < -0.1) {
+      const xm = Math.round(e.x - (src.sw - src.ax) * src.k);
+      g.save(); g.translate(xm + l, y); g.scale(-1, 1); g.drawImage(src.img, src.sx, 0, src.sw, src.sh, 0, 0, l, h); g.restore();
+    } else g.drawImage(src.img, src.sx, 0, src.sw, src.sh, x, y, l, h);
+    g.imageSmoothingEnabled = false;
     if (e.ralenti > 0) {
-      g.fillStyle = 'rgba(160,220,255,.45)'; g.fillRect(x + 6, y + h - 8, l - 12, 6);
-      g.fillStyle = '#e8f8ff'; g.fillRect(x + 8 + ((Math.floor(this.horloge * 6) * 5) % (l - 16)), y + 6, 2, 2);
+      const pied = e.y + 9 - haut;
+      g.fillStyle = 'rgba(160,220,255,.45)'; g.fillRect(e.x - 10, pied - 6, 20, 5);
+      g.fillStyle = '#e8f8ff'; g.fillRect(e.x - 8 + ((Math.floor(this.horloge * 6) * 5) % 16), y + 6, 2, 2);
     }
     // Barre de vie et marques.
     const bx = Math.round(e.x - 13), by = y - 4;

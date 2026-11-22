@@ -25,11 +25,11 @@ place des décors dessinés en code.
 - Propriétés personnalisées : `cases_l`, `cases_h`, `bloquant` (1 ou 0), et `type=sol` pour les textures de sol.
 - Caméra, lumière et ombres posées par le script.
 
-## Script `tools/blender/rendu_decors.py`
+## Script `tools/blender/rendu_blender.py`
 
 Lancé une fois dans Blender (fichier enregistré) : caméra orthographique inclinée à 50°, soleil venant du haut
 à gauche, rendu Cycles sur fond transparent avec ombre portée (attrape-ombre), cadrage au plus juste, PNG et
-`manifest.json` écrits dans `assets/decors/<carte>/` (le `.blend` est à la racine du dépôt), plus un zip `decors_<carte>.zip`. Lancement : `flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_decors.py"`.
+`manifest.json` écrits dans `assets/decors/<carte>/` (le `.blend` est à la racine du dépôt), plus un zip `decors_<carte>.zip`. Lancement : `flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_blender.py"`.
 
 Style *pixel* (par défaut, accordé aux tours et ennemis) : 20 pixels par case affichés ×2, sans anticrénelage,
 ombre unie, contour sombre d'un pixel. Style *lisse* : 80 pixels par case.

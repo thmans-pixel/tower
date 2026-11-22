@@ -1,7 +1,8 @@
 # Les Tours du Royaume — repères pour Claude
 
 Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `docs/specs/001-tower-defense.md`,
-avenant décors Blender : `docs/specs/002-decors-blender.md`. Ne rien coder qui n'y figure pas sans le faire
+avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
+(tours, ennemis, boss). Ne rien coder qui n'y figure pas sans le faire
 valider d'abord.
 
 ## Règles du dépôt
@@ -38,6 +39,9 @@ valider d'abord.
 - Dégâts : `blesser` applique l'armure aux dégâts physiques seulement ; la magie l'ignore.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.
+- Tours et ennemis de Blender : `src/render/modeles.js` (`nomTour`, `nomEnnemi`), dessinés par
+  `Vue.tourModele` (fût : orientation `round(-angle / pas)`, l'angle de Blender tourne vers le haut de l'écran)
+  et `Vue.ennemi` (bande d'images, ancre aux pieds). Packs produits par `tools/blender/rendu_blender.py`.
 - Sprites en code : `dessiner(l, h, trace)` (sprites.js) trace en basse résolution puis ajoute le contour ;
   affichés ×2 (`ECHELLE`).
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé).
