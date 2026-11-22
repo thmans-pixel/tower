@@ -2,8 +2,9 @@
 # Rend chaque objet de la collection « Decor » en PNG transparent + manifest.json,
 # prêt à être chargé par le jeu (dossier decors/<carte>/ et zip à côté).
 #
-# Utilisation, depuis la racine du dépôt (le fichier .blend n'est pas modifié) :
-#   flatpak run org.blender.Blender -b decor.blend -P tools/blender/rendu_decors.py
+# Utilisation, depuis la racine du dépôt (le fichier .blend n'est pas modifié). Chemins complets obligatoires
+# avec Flatpak, qui lance Blender dans son propre dossier :
+#   flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_decors.py"
 # Les images et manifest.json vont dans assets/decors/<carte>/, là où le jeu les lit.
 
 import bpy, json, math, os, shutil
@@ -46,10 +47,16 @@ def creer_scene():
     sc.view_settings.look = "None"
 
     monde = bpy.data.worlds.new("TD_Monde")
-    monde.use_nodes = True
-    fond = monde.node_tree.nodes.get("Background")
-    fond.inputs[0].default_value = (0.75, 0.8, 0.9, 1)
-    fond.inputs[1].default_value = 0.55
+    if hasattr(monde, "use_nodes") and not getattr(monde, "node_tree", None):
+        monde.use_nodes = True          # Blender 4 ; en 5.x l'arbre de nœuds existe déjà
+    nt = monde.node_tree
+    fond = next((n for n in nt.nodes if n.type == "BACKGROUND"), None)
+    if fond is None:                    # Blender 5 : monde neuf sans nœud « Background »
+        fond = nt.nodes.new("ShaderNodeBackground")
+        sortie = next((n for n in nt.nodes if n.type == "OUTPUT_WORLD"), None) or nt.nodes.new("ShaderNodeOutputWorld")
+        nt.links.new(fond.outputs["Background"], sortie.inputs["Surface"])
+    fond.inputs["Color"].default_value = (0.75, 0.8, 0.9, 1)
+    fond.inputs["Strength"].default_value = 0.55
     sc.world = monde
 
     cam_data = bpy.data.cameras.new("TD_Camera")

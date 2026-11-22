@@ -141,7 +141,7 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 Rendre le pack que le jeu charge (PNG + `manifest.json` dans `assets/decors/prairie/`, zip à côté) :
 
 ```sh
-flatpak run org.blender.Blender -b decor.blend -P tools/blender/rendu_decors.py
+flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_decors.py"
 ```
 
 Le fichier `decor.blend` n'est pas modifié. Sans pack, le jeu dessine son décor en code.

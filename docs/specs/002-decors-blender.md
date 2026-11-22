@@ -29,7 +29,7 @@ place des décors dessinés en code.
 
 Lancé une fois dans Blender (fichier enregistré) : caméra orthographique inclinée à 50°, soleil venant du haut
 à gauche, rendu Cycles sur fond transparent avec ombre portée (attrape-ombre), cadrage au plus juste, PNG et
-`manifest.json` écrits dans `assets/decors/<carte>/` (le `.blend` est à la racine du dépôt), plus un zip `decors_<carte>.zip`. Lancement : `flatpak run org.blender.Blender -b decor.blend -P tools/blender/rendu_decors.py`.
+`manifest.json` écrits dans `assets/decors/<carte>/` (le `.blend` est à la racine du dépôt), plus un zip `decors_<carte>.zip`. Lancement : `flatpak run org.blender.Blender -b "$PWD/decor.blend" -P "$PWD/tools/blender/rendu_decors.py"`.
 
 Style *pixel* (par défaut, accordé aux tours et ennemis) : 20 pixels par case affichés ×2, sans anticrénelage,
 ombre unie, contour sombre d'un pixel. Style *lisse* : 80 pixels par case.
