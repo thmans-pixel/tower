@@ -6,6 +6,8 @@ import { T, W } from '../sim/const.js';
 import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente } from '../sim/partie.js';
 import { spriteTour } from '../render/sprites.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
+import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
+import { estDebloquee, meilleuresEtoiles, ORDRE_CARTES } from '../sim/progression.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
@@ -27,6 +29,7 @@ export class Interface {
     $('b-menu').onclick = () => actions.menu();
     $('b-jouer').onclick = () => actions.ecran('cartes');
     $('b-retour').onclick = () => actions.ecran('titre');
+    $('b-effacer').onclick = () => this.question('Effacer toute la progression (cartes débloquées, étoiles, scores) ?', () => actions.effacer());
     $('b-rejouer').onclick = () => actions.rejouer();
     $('b-fin-cartes').onclick = () => actions.ecran('cartes');
     $('b-non').onclick = () => { $('question').hidden = true; };
@@ -84,17 +87,29 @@ export class Interface {
     if (nom !== 'jeu') { $('fin').hidden = true; $('question').hidden = true; }
   }
 
-  listeCartes(cartes, vignette) {
+  /** Écran des cartes : difficulté, puis une carte par case, avec ses étoiles ou son cadenas. */
+  listeCartes(cartes, vignette, prog) {
+    const diff = prog.difficulte;
+    $('choix-difficulte').innerHTML = ORDRE_DIFFICULTES.map((d) => {
+      const x = DIFFICULTES[d];
+      return `<button data-diff="${d}" class="${d === diff ? 'actif' : ''}" aria-pressed="${d === diff}">${x.nom}<small>${x.vies} vies</small></button>`;
+    }).join('');
+    for (const b of $('choix-difficulte').querySelectorAll('button')) b.onclick = () => this.a.difficulte(b.dataset.diff);
     const zone = $('liste-cartes');
     zone.innerHTML = '';
-    for (const c of Object.values(cartes)) {
+    const etoiles = (n) => '<span class="etoiles">' + [1, 2, 3].map((i) => (i <= n ? '★' : '<span class="vide">★</span>')).join('') + '</span>';
+    for (const id of ORDRE_CARTES) {
+      const c = cartes[id];
+      const ouverte = estDebloquee(prog, id);
+      const jouable = ouverte && c.ouverte;
       const b = document.createElement('button');
       b.className = 'carte-choix';
-      b.disabled = !c.ouverte;
-      if (c.ouverte && vignette) { const v = vignette(c.id); if (v) b.appendChild(v); }
-      else b.insertAdjacentHTML('beforeend', '<div class="vide">Bientôt</div>');
-      b.insertAdjacentHTML('beforeend', `<b>${c.nom}</b><span>${c.ouverte ? c.resume + ' ' + c.vagues.length + ' vagues.' : 'Carte à venir.'}</span>`);
-      if (c.ouverte) b.onclick = () => this.a.carte(c.id);
+      b.disabled = !jouable;
+      if (jouable && vignette) { const v = vignette(id); if (v) b.appendChild(v); }
+      else b.insertAdjacentHTML('beforeend', `<div class="vide">${ouverte ? 'Bientôt' : 'Verrouillée'}</div>`);
+      const texte = !c.ouverte ? 'Carte à venir.' : !ouverte ? 'Gagnez la carte précédente pour l’ouvrir.' : `${c.resume} ${c.vagues.length} vagues.`;
+      b.insertAdjacentHTML('beforeend', `<b>${c.nom}</b>${jouable ? etoiles(meilleuresEtoiles(prog, id, diff)) : ''}<span>${texte}</span>`);
+      if (jouable) b.onclick = () => this.a.carte(id);
       zone.appendChild(b);
     }
   }
@@ -105,9 +120,17 @@ export class Interface {
     $('b-oui').onclick = () => { $('question').hidden = true; oui(); };
   }
 
-  fin(s) {
+  /** `bilan` : { etoiles, nouvelles: [noms de cartes], infini } — ce que la partie a débloqué. */
+  fin(s, bilan = {}) {
     $('fin-titre').textContent = s.fin === 'victoire' ? 'Victoire !' : 'Le château est tombé';
+    const et = $('fin-etoiles');
+    et.hidden = s.fin !== 'victoire';
+    et.innerHTML = [1, 2, 3].map((i) => (i <= (bilan.etoiles || 0) ? '★' : '<span class="vide">★</span>')).join('');
+    const msg = [...(bilan.nouvelles || []).map((n) => `Nouvelle carte : ${n} !`), ...(bilan.infini ? ['Mode infini débloqué !'] : [])];
+    $('fin-nouveau').hidden = !msg.length;
+    $('fin-nouveau').textContent = msg.join(' ');
     const lignes = [
+      ['Difficulté', DIFFICULTES[s.difficulte]?.nom || ''],
       ['Vague atteinte', `${s.vague} / ${s.nbVagues}`],
       ['Vies restantes', `${s.vies} / ${s.viesDepart}`],
       ['Ennemis abattus', nb(s.abattus)],

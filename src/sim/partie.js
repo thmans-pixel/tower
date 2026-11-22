@@ -6,14 +6,18 @@ import { CARTES } from '../data/cartes.js';
 import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
+import { DIFFICULTES } from '../data/difficultes.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
 
-export function nouvellePartie(idCarte = 'prairie') {
+export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal') {
   const def = CARTES[idCarte];
   if (!def || !def.ouverte) throw new Error('Carte indisponible : ' + idCarte);
+  const diff = DIFFICULTES[difficulte];
+  if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
   return {
+    difficulte, multPV: diff.pv, compteVague: diff.compte,
     carte: construireCarte(def),
-    or: def.orDepart, vies: def.vies, viesDepart: def.vies,
+    or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
     vague: 0, nbVagues: def.vagues.length,
     temps: 0,
     tours: [], ennemis: [], projectiles: [],
@@ -159,7 +163,7 @@ function lancer(s, dt) {
     if (!l.file.length) {
       s.finies[l.vague] = true;
       s.lancement = null;
-      if (s.vague < s.nbVagues) s.compte = COMPTE_VAGUE;
+      if (s.vague < s.nbVagues) s.compte = s.compteVague;
     }
   } else if (s.compte !== null) {
     s.compte -= dt;
@@ -169,7 +173,7 @@ function lancer(s, dt) {
 
 function apparaitre(s, sorte, vague, distance = 0) {
   const d = ENNEMIS[sorte];
-  const m = multPV(vague);
+  const m = multPV(vague) * s.multPV;
   const tr = d.vol ? s.carte.vol : s.carte.sol;
   const p = positionSur(tr, distance);
   const e = {

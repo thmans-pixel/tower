@@ -5,8 +5,8 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 2 terminée** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
-(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
+État : **étape 3, lot 1** (difficultés, étoiles, sauvegarde) — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
+(slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Specs des étapes 2 et 3 : [004](docs/specs/004-etape-2.md), [005](docs/specs/005-etape-3.md).
 
 ## Lancer le jeu
 
@@ -32,7 +32,10 @@ les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directem
 
 ## Règles appliquées
 
-- Or de départ 250, 20 vies. Or à chaque ennemi tué, bonus à chaque vague terminée (15 + 4 × n).
+- Trois difficultés (Facile, Normal, Difficile) : vies, or de départ, PV des ennemis et temps entre les vagues.
+  Étoiles de 1 à 3 selon les vies restantes ; gagner une carte ouvre la suivante. Progression gardée dans le
+  navigateur (bouton « Effacer la progression » sur l'écran des cartes).
+- En Normal : or de départ 250, 20 vies. Or à chaque ennemi tué, bonus à chaque vague terminée (15 + 4 × n).
 - Après l'arrivée complète d'une vague, la suivante part au bout de 18 s ; l'appeler plus tôt rapporte 2 or par
   seconde gagnée.
 - Revente à 70 % de tout ce que la tour a coûté (construction et améliorations).

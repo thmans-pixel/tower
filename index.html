@@ -65,15 +65,21 @@
 <section id="ecran-cartes" class="ecran" hidden>
   <div class="carton large">
     <h2>Choisissez une carte</h2>
+    <div id="choix-difficulte" class="difficultes" role="group" aria-label="Difficulté"></div>
     <div id="liste-cartes" class="cartes"></div>
-    <button id="b-retour" class="petit">Retour</button>
+    <div class="rangee">
+      <button id="b-retour" class="petit">Retour</button>
+      <button id="b-effacer" class="petit">Effacer la progression</button>
+    </div>
   </div>
 </section>
 
 <div id="fin" class="voile" hidden>
   <div class="carton">
     <h2 id="fin-titre">Victoire !</h2>
+    <div id="fin-etoiles" class="etoiles-fin" hidden></div>
     <dl id="fin-bilan" class="bilan"></dl>
+    <p id="fin-nouveau" class="nouveau" hidden></p>
     <div class="rangee">
       <button id="b-rejouer" class="grand">Rejouer</button>
       <button id="b-fin-cartes" class="petit">Cartes</button>
