@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Les Tours du Royaume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="haut">
+    <div class="compteurs">
+      <span class="compteur" title="Vies du château"><i class="ico coeur"></i><b id="vies">20</b></span>
+      <span class="compteur" title="Or"><i class="ico piece"></i><b id="or">0</b></span>
+      <span class="compteur" title="Vague"><span class="etiquette">Vague</span><b id="vague">0/20</b></span>
+    </div>
+    <nav class="commandes">
+      <button id="b-son" class="petit" title="Couper le son">Son</button>
+      <button id="b-pause" class="petit" title="Pause (Espace)">Pause</button>
+      <button id="b-vitesse" class="petit" title="Vitesse (F)">×1</button>
+      <button id="b-recommencer" class="petit" title="Recommencer">Recommencer</button>
+      <button id="b-menu" class="petit" title="Retour aux cartes">Cartes</button>
+    </nav>
+  </header>
+
+  <main id="scene">
+    <div id="cadre">
+      <canvas id="toile" width="960" height="640"></canvas>
+      <aside id="panneau" hidden></aside>
+      <div id="pause" hidden>Pause</div>
+    </div>
+  </main>
+
+  <footer id="bas">
+    <div id="boutique"></div>
+    <div id="bloc-vague">
+      <div id="apercu"></div>
+      <button id="appel" class="appel">Lancer la vague 1</button>
+    </div>
+  </footer>
+</div>
+
+<section id="ecran-titre" class="ecran">
+  <div class="carton">
+    <h1>Les Tours du Royaume</h1>
+    <p class="accroche">Les créatures sortent de la grotte. Bâtissez vos tours le long du chemin et tenez le château jusqu'à la dernière vague.</p>
+    <button id="b-jouer" class="grand">Jouer</button>
+    <details class="aide">
+      <summary>Comment jouer</summary>
+      <ul>
+        <li>Choisissez une tour en bas (ou touches 1 à 4), puis une case d'herbe libre. Au doigt : touchez la case une fois pour voir la portée, une seconde fois pour bâtir.</li>
+        <li>Touchez une tour pour l'améliorer, la revendre ou changer sa cible.</li>
+        <li>Chaque ennemi qui atteint le château coûte des vies. Lancer la vague suivante en avance rapporte de l'or.</li>
+        <li>Espace : pause. F : vitesse. Échap : annuler.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<section id="ecran-cartes" class="ecran" hidden>
+  <div class="carton large">
+    <h2>Choisissez une carte</h2>
+    <div id="liste-cartes" class="cartes"></div>
+    <button id="b-retour" class="petit">Retour</button>
+  </div>
+</section>
+
+<div id="fin" class="voile" hidden>
+  <div class="carton">
+    <h2 id="fin-titre">Victoire !</h2>
+    <dl id="fin-bilan" class="bilan"></dl>
+    <div class="rangee">
+      <button id="b-rejouer" class="grand">Rejouer</button>
+      <button id="b-fin-cartes" class="petit">Cartes</button>
+    </div>
+  </div>
+</div>
+
+<div id="question" class="voile" hidden>
+  <div class="carton">
+    <p id="question-texte"></p>
+    <div class="rangee">
+      <button id="b-oui" class="grand">Oui</button>
+      <button id="b-non" class="petit">Non</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

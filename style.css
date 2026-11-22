@@ -1,0 +1,144 @@
+/*
+VOICE    : jeu de plateau médiéval, chaleureux, lisible d'un coup d'œil.
+IDEA     : une table de guerre en bois sombre ; la carte est posée au centre, les commandes gravées autour.
+PICTURE  : la carte en pixel-art, toujours la plus grande possible.
+COLOUR   : bois #2a1c12 / #4a3020, or #f2c14e en accent, parchemin clair pour le texte.
+TYPE     : Pixelify Sans, quatre tailles.
+*/
+:root {
+  color-scheme: dark;
+  --bois: #2a1c12; --bois2: #4a3020; --bois3: #6b4a2b;
+  --or: #f2c14e; --texte: #fdf6e3; --doux: #d9c7a3;
+  --rouge: #e5533d; --vert: #5fd068; --nuit: #1a1420;
+  --police: "Pixelify Sans", ui-monospace, monospace;
+}
+* { box-sizing: border-box; min-width: 0; }
+html, body { margin: 0; height: 100%; background: var(--nuit); color: var(--texte); font: 16px/1.4 var(--police); overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--or); outline-offset: 2px; }
+
+#app { display: flex; flex-direction: column; height: 100dvh; }
+
+#haut {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 6px 12px; background: var(--bois); border-bottom: 3px solid var(--nuit);
+}
+.compteurs { display: flex; gap: 18px; flex: 1; align-items: center; }
+.compteur { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 700; }
+.compteur b { min-width: 2ch; }
+.etiquette { color: var(--doux); font-weight: 400; font-size: 15px; }
+.ico { display: inline-block; width: 20px; height: 20px; image-rendering: pixelated; }
+.ico.coeur { background: radial-gradient(circle at 30% 35%, #ff8a7a 0 3px, transparent 4px), var(--rouge);
+  clip-path: polygon(50% 95%, 5% 45%, 5% 20%, 25% 5%, 50% 22%, 75% 5%, 95% 20%, 95% 45%); }
+.ico.piece { border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff2b8 0 3px, var(--or) 4px 7px, #b8862a 8px); box-shadow: 0 0 0 2px var(--nuit); }
+.commandes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.petit, .grand, .appel, .outil, .ciblage button, .action {
+  border: 2px solid var(--nuit); border-radius: 4px; background: var(--bois3);
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.12);
+}
+.petit { min-height: 40px; padding: 4px 12px; font-size: 15px; }
+.grand { min-height: 48px; padding: 6px 28px; font-size: 20px; font-weight: 700; background: var(--or); color: var(--nuit); }
+.petit:hover, .outil:hover, .ciblage button:hover, .action:hover { background: #7f5a35; }
+.grand:hover { background: #ffd56e; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.actif { background: var(--or); color: var(--nuit); }
+
+#scene { flex: 1; display: grid; place-items: center; background:
+  repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 2px, transparent 2px 46px), var(--bois2); overflow: hidden; }
+#cadre { position: relative; border: 4px solid var(--nuit); box-shadow: 0 0 0 4px var(--bois3), 0 12px 30px rgba(0,0,0,.5); }
+#toile { display: block; width: 100%; height: 100%; image-rendering: pixelated; touch-action: none; cursor: crosshair; }
+
+#pause { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(26,20,32,.55);
+  font-size: 48px; font-weight: 700; color: var(--or); pointer-events: none; }
+#pause[hidden] { display: none; }
+
+#panneau {
+  position: absolute; top: 8px; right: 8px; width: 240px; padding: 12px;
+  background: rgba(42,28,18,.96); border: 3px solid var(--nuit); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  font-size: 15px;
+}
+#panneau.gauche { right: auto; left: 8px; }
+#panneau[hidden] { display: none; }
+#panneau h3 { margin: 0 28px 6px 0; font-size: 20px; color: var(--or); }
+#panneau h3 small { display: block; color: var(--doux); font-size: 14px; font-weight: 400; }
+#panneau .fermer { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border: 0; background: none; font-size: 22px; color: var(--doux); }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 0 0 10px; }
+.stats dt { color: var(--doux); }
+.stats dd { margin: 0; text-align: right; font-weight: 600; white-space: nowrap; }
+.stats dd em { color: var(--vert); font-style: normal; }
+.ciblage { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 10px; }
+.ciblage button { min-height: 36px; font-size: 14px; }
+.action { display: block; width: 100%; min-height: 44px; margin-top: 6px; font-size: 16px; font-weight: 600; }
+.action.ameliorer { background: #3f7f2a; }
+.action.ameliorer:hover { background: #4f9636; }
+.action.vendre { background: #7a3426; }
+.action.vendre:hover { background: #924030; }
+
+#bas {
+  display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap;
+  padding: 8px 12px; background: var(--bois); border-top: 3px solid var(--nuit);
+}
+#boutique { display: flex; gap: 8px; flex: 1 1 auto; }
+.outil { position: relative; display: grid; grid-template-columns: 40px auto; grid-template-rows: auto auto; align-items: center;
+  column-gap: 8px; flex: 1 1 0; max-width: 170px; min-height: 64px; padding: 6px 10px 6px 6px; text-align: left; }
+.outil img { grid-row: 1 / 3; width: 40px; height: 60px; image-rendering: pixelated; object-fit: contain; }
+.outil .nom { font-weight: 700; font-size: 16px; }
+.outil .prix { display: inline-flex; align-items: center; gap: 4px; color: var(--or); font-size: 15px; }
+.outil .prix .ico { width: 13px; height: 13px; }
+.outil kbd { position: absolute; top: 3px; right: 5px; font: 12px var(--police); color: var(--doux); }
+.outil.trop-cher .prix { color: var(--rouge); }
+
+#bloc-vague { display: flex; flex-direction: column; gap: 4px; justify-content: center; flex: 0 1 380px; min-width: 240px; }
+#apercu { display: flex; gap: 6px; flex-wrap: wrap; font-size: 14px; color: var(--doux); }
+#apercu .puce { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; background: rgba(0,0,0,.25); border-radius: 3px; color: var(--texte); }
+#apercu .puce i { width: 10px; height: 10px; border: 2px solid var(--nuit); }
+.appel { min-height: 44px; padding: 4px 14px; font-size: 16px; font-weight: 700; background: #3f7f2a; }
+.appel:hover:not(:disabled) { background: #4f9636; }
+.appel.attente { animation: battre 1.2s ease-in-out infinite; background: var(--or); color: var(--nuit); }
+@keyframes battre { 50% { transform: scale(1.04); } }
+
+.ecran, .voile { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(26,20,32,.72); z-index: 10; }
+.ecran[hidden], .voile[hidden] { display: none; }
+.ecran { background: linear-gradient(rgba(26,20,32,.35), rgba(26,20,32,.8)); }
+.carton { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 24px 28px; text-align: center;
+  background: var(--bois); border: 4px solid var(--nuit); border-radius: 8px; box-shadow: 0 0 0 4px var(--bois3), 0 20px 50px rgba(0,0,0,.6); }
+.carton.large { width: min(860px, 100%); }
+h1 { margin: 0 0 8px; font-size: 52px; line-height: 1.05; color: var(--or); text-wrap: balance; text-shadow: 3px 3px 0 var(--nuit); }
+h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
+.accroche { margin: 0 auto 20px; max-width: 42ch; color: var(--doux); }
+.aide { margin-top: 18px; text-align: left; color: var(--doux); font-size: 15px; }
+.aide summary { cursor: pointer; color: var(--texte); text-align: center; }
+.aide li { margin: 6px 0; }
+.rangee { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.bilan { display: grid; grid-template-columns: auto auto; gap: 4px 16px; justify-content: center; margin: 0; font-size: 18px; }
+.bilan dt { color: var(--doux); text-align: right; }
+.bilan dd { margin: 0; text-align: left; font-weight: 700; }
+
+.cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.carte-choix { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 3px solid var(--nuit); border-radius: 6px; background: var(--bois2); text-align: left; }
+.carte-choix:hover:not(:disabled) { border-color: var(--or); }
+.carte-choix canvas, .carte-choix .vide { width: 100%; aspect-ratio: 3 / 2; image-rendering: pixelated; border: 2px solid var(--nuit); background: #2a2f36; }
+.carte-choix .vide { display: grid; place-items: center; color: var(--doux); }
+.carte-choix b { font-size: 18px; }
+.carte-choix span { color: var(--doux); font-size: 14px; }
+
+@media (max-width: 860px) {
+  #bas { flex-wrap: wrap; }
+  #boutique { flex: 1 1 100%; flex-wrap: wrap; }
+  .outil { max-width: none; flex: 1 1 calc(50% - 8px); min-height: 56px; }
+  .outil img { height: 48px; }
+  #bloc-vague { min-width: 0; flex: 1 1 100%; }
+}
+@media (max-width: 700px) {
+  #haut { padding: 6px 8px; gap: 6px; }
+  .compteurs { flex: 1 1 100%; justify-content: space-between; }
+  .compteur { font-size: 18px; }
+  .commandes { flex: 1 1 100%; }
+  .commandes .petit { flex: 1 1 auto; padding: 4px 6px; font-size: 14px; }
+  #panneau { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 55dvh; overflow: auto;
+    border-radius: 10px 10px 0 0; z-index: 5; font-size: 15px; }
+  #panneau.gauche { left: 0; }
+  #panneau .ciblage { grid-template-columns: repeat(4, 1fr); }
+  h1 { font-size: 36px; }
+}
