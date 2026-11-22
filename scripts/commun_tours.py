@@ -24,10 +24,11 @@ PALETTE = {
     "masque_os": "#E8E2C8", "robe_chaman": "#7B3FA0", "cristal_vert": "#5DFF9A",
     "slime": "#8BE04E", "slime_reflet": "#D8FFB0", "oeil_blanc": "#FFFFFF",
     "pierre_golem": "#7F8288", "mousse": "#5C9E3F", "rune_orange": "#FF9A3A",
+    "drap_spectre": "#CFE3F0", "ombre_capuche": "#1C1A2A", "yeux_bleus": "#7FD8FF",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
-EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0, "eclair": 2.0, "orbe_bleue": 2.0, "orbe_feu": 2.0, "yeux_gobelin": 1.0, "yeux_rouges": 1.0, "cristal_vert": 2.0, "rune_orange": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
+EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0, "eclair": 2.0, "orbe_bleue": 2.0, "orbe_feu": 2.0, "yeux_gobelin": 1.0, "yeux_rouges": 1.0, "cristal_vert": 2.0, "rune_orange": 2.0, "yeux_bleus": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
 NOMS = list(PALETTE)
 M = {n: i for i, n in enumerate(NOMS)}      # nom -> index de matériau
 

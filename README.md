@@ -52,7 +52,7 @@ Tour canon : le fût `tour_canon_N_fut` est un objet séparé, pointé vers +X, 
 L'empty `pivot_canon_N` (enfant de la tour, propriété `role=pivot_canon`) marque où le poser.
 Même principe pour la baliste : `tour_baliste_N_arme` et `pivot_arme_N` (`role=pivot_arme`).
 
-Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2), `yeux_gobelin` (#FFDE3B, 1), `yeux_rouges` (#FF4D6D, 1), `cristal_vert` (#5DFF9A, 2), `rune_orange` (#FF9A3A, 2).
+Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2), `yeux_gobelin` (#FFDE3B, 1), `yeux_rouges` (#FF4D6D, 1), `cristal_vert` (#5DFF9A, 2), `rune_orange` (#FF9A3A, 2), `yeux_bleus` (#7FD8FF, 2).
 
 ### Niveau 3 au choix : versions a et b (x = 12 et 16 sur la ligne de chaque tour)
 
@@ -86,3 +86,4 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | ennemi_chaman (`scripts/ennemis_chaman.py`), marche courbée sur bâton | 0,65 | 542 | 6 |
 | ennemi_slime / ennemi_slime_petit (`scripts/ennemis_slime.py`), rebonds avec écrasement et étirement (os animé en échelle) | 0,50 / 0,30 | 620 | 1 |
 | ennemi_golem (`scripts/ennemis_golem.py`), marche très lente | 1,06 | 656 | 6 |
+| ennemi_spectre (`scripts/ennemis_spectre.py`), flottement ondulant, matériaux opaques | 0,73 | 301 | 5 |
