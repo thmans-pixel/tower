@@ -14,10 +14,11 @@ PALETTE = {
     "pierre_violette": "#5B4A8A", "fenetre": "#FFD36B", "toit_mage": "#3D2E66",
     "toit_mage_fonce": "#2A1F4D", "orbe": "#C77DFF",
     "corde": "#C8A165",
+    "pierre_tempete": "#4A4E5A", "cuivre": "#B87333", "eclair": "#9FE3FF", "nuage": "#7A869C",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
-EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
+EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0, "eclair": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
 NOMS = list(PALETTE)
 M = {n: i for i, n in enumerate(NOMS)}      # nom -> index de matériau
 
