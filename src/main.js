@@ -4,6 +4,7 @@ import { CARTES } from './data/cartes.js';
 import { TOURS, ORDRE_TOURS } from './data/tours.js';
 import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser } from './sim/partie.js';
 import { chargerDecors } from './render/decors.js';
+import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
 import { Son } from './audio/son.js';
 import { Interface } from './ui/interface.js';
@@ -178,7 +179,8 @@ function boucle(maintenant) {
 
 // Démarrage : la Prairie s'affiche derrière l'écran titre.
 (async () => {
-  const d = await decorsDe('prairie');
+  const [d, modeles] = await Promise.all([decorsDe('prairie'), chargerModeles()]);
+  vue.modeles = modeles;
   apercu = nouvellePartie('prairie');
   vue.preparer(apercu.carte, d);
   vue.dessiner(apercu, { construction: null, selection: null }, 0);

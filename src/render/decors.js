@@ -1,4 +1,4 @@
-// Packs de décors rendus par Blender (tools/blender/rendu_decors.py) : assets/decors/<carte>/manifest.json + PNG.
+// Packs de décors rendus par Blender (tools/blender/rendu_blender.py) : assets/decors/<carte>/manifest.json + PNG.
 // Chaque élément du pack remplace l'élément de code du même nom ; ce qui manque garde sa version en code.
 import { T } from '../sim/const.js';
 import { decorsDeSecours } from './sprites.js';
