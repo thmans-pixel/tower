@@ -5,9 +5,11 @@ import { ENNEMIS } from '../data/ennemis.js';
 import { T, W } from '../sim/const.js';
 import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente } from '../sim/partie.js';
 import { spriteTour } from '../render/sprites.js';
+import { etiquetteRang } from './clavier.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
 import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
-import { estDebloquee, meilleuresEtoiles, infiniJouable, ORDRE_CARTES } from '../sim/progression.js';
+import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_CARTES } from '../sim/progression.js';
+import { THEMES, LONGUEURS } from '../sim/generateur.js';
 import { scoreInfini } from '../sim/partie.js';
 
 const $ = (id) => document.getElementById(id);
@@ -47,26 +49,39 @@ export class Interface {
 
   creerBoutique() {
     const zone = $('boutique');
-    zone.innerHTML = ORDRE_TOURS.map((s) => {
+    zone.innerHTML = ORDRE_TOURS.map((s, i) => {
       const d = TOURS[s];
-      return `<button class="outil" data-sorte="${s}" title="${d.nom} — ${d.resume} (touche ${d.touche})">
+      return `<button class="outil" data-sorte="${s}" title="${d.nom} — ${d.resume} (touche ${etiquetteRang(i + 1)} ; Maj + clic pour en poser plusieurs ; appui long pour verrouiller)">
         <img alt="" src="${spriteTour(s, 0).toDataURL()}">
         <span class="nom">${d.nom}</span>
         <span class="prix"><i class="ico piece"></i>${d.prix}</span>
-        <kbd>${d.touche}</kbd></button>`;
+        <kbd>${etiquetteRang(i + 1)}</kbd><span class="serie">en série</span></button>`;
     }).join('');
+    // Appui long (tablette) : verrouille la tour pour en poser plusieurs à la suite ; un nouvel appui long la libère.
+    let minuteur = null, appuiLong = false;
+    zone.addEventListener('pointerdown', (e) => {
+      const b = e.target.closest('.outil');
+      if (!b) return;
+      appuiLong = false;
+      minuteur = setTimeout(() => { appuiLong = true; this.a.verrouiller(b.dataset.sorte); }, 500);
+    });
+    for (const fin of ['pointerup', 'pointerleave', 'pointercancel']) zone.addEventListener(fin, () => clearTimeout(minuteur));
+    zone.addEventListener('contextmenu', (e) => { if (e.target.closest('.outil')) e.preventDefault(); });
     zone.addEventListener('click', (e) => {
       const b = e.target.closest('.outil');
-      if (b) this.a.construire(b.dataset.sorte);
+      if (!b) return;
+      if (appuiLong) { appuiLong = false; return; }
+      this.a.construire(b.dataset.sorte);
     });
   }
 
   creerPouvoirs() {
     const zone = $('pouvoirs');
-    zone.innerHTML = ORDRE_POUVOIRS.map((n) => {
+    zone.innerHTML = ORDRE_POUVOIRS.map((n, k) => {
       const p = POUVOIRS[n];
-      return `<button class="pouvoir" data-pouvoir="${n}" title="${p.nom} — ${p.resume} (touche ${p.touche.toUpperCase()})">
-        <b>${p.nom}</b><span class="etat">Prêt</span><kbd>${p.touche.toUpperCase()}</kbd><i class="charge"></i></button>`;
+      const touches = `${etiquetteRang(7 + k)} ${p.touche.toUpperCase()}`;
+      return `<button class="pouvoir" data-pouvoir="${n}" title="${p.nom} — ${p.resume} (touches ${touches})">
+        <b>${p.nom}</b><span class="etat">Prêt</span><kbd>${touches}</kbd><i class="charge"></i></button>`;
     }).join('');
     zone.addEventListener('click', (e) => {
       const b = e.target.closest('.pouvoir');
@@ -89,13 +104,18 @@ export class Interface {
   }
 
   /** Écran des cartes : difficulté, puis une carte par case, avec ses étoiles ou son cadenas. */
-  listeCartes(cartes, vignette, prog, infini = false) {
+  /** `mode` : 'campagne', 'aleatoire' ou 'infini' ; `alea` : réglages et vignette de la carte aléatoire. */
+  listeCartes(cartes, vignette, prog, mode = 'campagne', alea = null) {
     const diff = prog.difficulte;
+    const infini = mode === 'infini';
     const modes = $('choix-mode');
-    modes.hidden = !prog.infiniOuvert;
-    modes.innerHTML = [['campagne', 'Campagne', 'cartes à gagner'], ['infini', 'Mode infini', 'vagues sans fin']].map(([m, nom, sous]) =>
-      `<button data-mode="${m}" class="${(m === 'infini') === infini ? 'actif' : ''}" aria-pressed="${(m === 'infini') === infini}">${nom}<small>${sous}</small></button>`).join('');
-    for (const b of modes.querySelectorAll('button')) b.onclick = () => this.a.mode(b.dataset.mode === 'infini');
+    const offerts = [['campagne', 'Campagne', 'cartes à gagner'],
+      ...(aleatoireOuvert(prog) ? [['aleatoire', 'Carte aléatoire', 'un chemin neuf']] : []),
+      ...(prog.infiniOuvert ? [['infini', 'Mode infini', 'vagues sans fin']] : [])];
+    modes.hidden = offerts.length < 2;
+    modes.innerHTML = offerts.map(([m, nom, sous]) =>
+      `<button data-mode="${m}" class="${m === mode ? 'actif' : ''}" aria-pressed="${m === mode}">${nom}<small>${sous}</small></button>`).join('');
+    for (const b of modes.querySelectorAll('button')) b.onclick = () => this.a.mode(b.dataset.mode);
     $('choix-difficulte').innerHTML = ORDRE_DIFFICULTES.map((d) => {
       const x = DIFFICULTES[d];
       return `<button data-diff="${d}" class="${d === diff ? 'actif' : ''}" aria-pressed="${d === diff}">${x.nom}<small>${x.vies} vies</small></button>`;
@@ -103,6 +123,7 @@ export class Interface {
     for (const b of $('choix-difficulte').querySelectorAll('button')) b.onclick = () => this.a.difficulte(b.dataset.diff);
     const zone = $('liste-cartes');
     zone.innerHTML = '';
+    if (mode === 'aleatoire' && alea) { this.ecranAleatoire(zone, prog, alea); return; }
     const etoiles = (n) => '<span class="etoiles">' + [1, 2, 3].map((i) => (i <= n ? '★' : '<span class="eteinte">★</span>')).join('') + '</span>';
     for (const id of ORDRE_CARTES) {
       const c = cartes[id];
@@ -123,6 +144,35 @@ export class Interface {
     }
   }
 
+  /** Carte aléatoire : décor, longueur, numéro (graine), aperçu, puis Jouer. */
+  ecranAleatoire(zone, prog, alea) {
+    const noms = { prairie: 'Prairie', desert: 'Désert', montagne: 'Montagne' };
+    const gagnees = prog.aleatoires[prog.difficulte] || 0;
+    zone.innerHTML = `<div class="alea">
+      <div class="alea-apercu"></div>
+      <div class="alea-reglages">
+        <div class="etiquette">Décor</div>
+        <div class="difficultes">${Object.keys(THEMES).map((t) => `<button data-theme="${t}" class="${t === alea.theme ? 'actif' : ''}">${noms[t]}</button>`).join('')}</div>
+        <div class="etiquette">Longueur</div>
+        <div class="difficultes">${LONGUEURS.map((n) => `<button data-long="${n}" class="${n === alea.longueur ? 'actif' : ''}">${n} vagues</button>`).join('')}</div>
+        <div class="etiquette">Numéro de la carte</div>
+        <div class="alea-numero"><input id="num-carte" type="number" inputmode="numeric" min="1" max="99999" value="${alea.graine}" aria-label="Numéro de la carte">
+          <button id="b-hasard" class="petit">Au hasard</button></div>
+        <p class="alea-note">Même numéro, même carte : donnez-le à quelqu’un pour qu’il la joue aussi.</p>
+        <button id="b-jouer-alea" class="grand">Jouer la carte n° ${alea.graine}</button>
+        <p class="alea-note">Cartes aléatoires gagnées en ${DIFFICULTES[prog.difficulte].nom} : ${gagnees}</p>
+      </div></div>`;
+    if (alea.vignette) zone.querySelector('.alea-apercu').appendChild(alea.vignette);
+    for (const b of zone.querySelectorAll('[data-theme]')) b.onclick = () => this.a.alea({ theme: b.dataset.theme });
+    for (const b of zone.querySelectorAll('[data-long]')) b.onclick = () => this.a.alea({ longueur: Number(b.dataset.long) });
+    $('b-hasard').onclick = () => this.a.alea({ graine: 'hasard' });
+    $('num-carte').onchange = (e) => {
+      const n = Math.max(1, Math.min(99999, Math.floor(Number(e.target.value) || 1)));
+      this.a.alea({ graine: n });
+    };
+    $('b-jouer-alea').onclick = () => this.a.jouerAleatoire();
+  }
+
   question(texte, oui) {
     $('question-texte').textContent = texte;
     $('question').hidden = false;
@@ -141,6 +191,7 @@ export class Interface {
     $('fin-nouveau').textContent = msg.join(' ');
     const lignes = [
       ['Difficulté', DIFFICULTES[s.difficulte]?.nom || ''],
+      ...(s.carte.def.aleatoire ? [['Carte', `n° ${s.carte.def.aleatoire.graine}`]] : []),
       s.infini ? ['Vagues repoussées', String(scoreInfini(s))] : ['Vague atteinte', `${s.vague} / ${s.nbVagues}`],
       ['Vies restantes', `${s.vies} / ${s.viesDepart}`],
       ['Ennemis abattus', nb(s.abattus)],
@@ -212,6 +263,7 @@ export class Interface {
     for (const b of document.querySelectorAll('.outil')) {
       const sorte = b.dataset.sorte;
       b.classList.toggle('actif', ui.construction === sorte);
+      b.classList.toggle('verrou', ui.verrou === sorte);
       b.classList.toggle('trop-cher', s.or < TOURS[sorte].prix);
     }
     this.majPanneau(s, ui);
