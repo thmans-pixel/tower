@@ -15,6 +15,8 @@ NIVEAUX = {
     1: dict(R=0.36, T=0.98, cerclage=None, L=0.22, futs=1),
     2: dict(R=0.40, T=1.16, cerclage="bronze", L=0.32, futs=1),
     3: dict(R=0.425, T=1.30, cerclage="or", L=0.30, futs=2),
+    "3a": dict(R=0.40, T=1.16, cerclage="bronze", L=0.0, futs=0),       # Mortier
+    "3b": dict(R=0.34, T=1.36, cerclage="bronze", L=0.0, futs=0),       # Lance-flammes
 }
 
 
@@ -96,6 +98,57 @@ def empty_pivot(nom, parent, z, col):
     return e
 
 
+def mortier():
+    """Gros mortier trapu tourné vers le ciel (vers +X), origine au pivot."""
+    bm = bmesh.new()
+    ct.cylindre(bm, 0, 0, 0.0, 0.07, 0.17, 0.16, 12, "fer_noir")                       # plateau
+    for sy in (-1, 1):
+        ct.boite(bm, -0.09, sy * 0.13 - 0.025, 0.07, 0.09, sy * 0.13 + 0.025, 0.20, "fer_noir")
+    e = math.radians(55)
+    d = (math.cos(e), 0, math.sin(e))
+    b0 = (-0.04, 0, 0.14)
+    b1 = (b0[0] + d[0] * 0.26, 0, b0[2] + d[2] * 0.26)
+    ct.boule(bm, b0, 0.115, "fer_noir")
+    ct.cone(bm, b0, b1, 0.115, 0.135, 12, "fer_noir")
+    for t, mat in ((0.10, "bronze"), (0.24, "bronze")):
+        p0 = (b0[0] + d[0] * t, 0, b0[2] + d[2] * t)
+        p1 = (p0[0] + d[0] * 0.03, 0, p0[2] + d[2] * 0.03)
+        ct.cone(bm, p0, p1, 0.128 + t * 0.05, 0.128 + t * 0.05, 12, mat)
+    # bouche sombre (disque enfoncé)
+    ct.cone(bm, (b1[0] - d[0] * 0.01, 0, b1[2] - d[2] * 0.01), (b1[0] + d[0] * 0.004, 0, b1[2] + d[2] * 0.004), 0.10, 0.10, 12, "pierre_sombre")
+    ct.cone(bm, b0, (0, 0.0, 0.14), 0.03, 0.03, 6, "bronze")
+    ct.cone(bm, (-0.04, -0.15, 0.14), (-0.04, 0.15, 0.14), 0.03, 0.03, 8, "bronze")  # tourillons
+    return bm
+
+
+def buse():
+    """Buse de lance-flammes pointée vers +X avec flammes stylisées, origine au pivot."""
+    bm = bmesh.new()
+    ct.cylindre(bm, 0, 0, 0.0, 0.06, 0.12, 0.11, 10, "fer_noir")
+    ct.boite(bm, -0.06, -0.05, 0.06, 0.06, 0.05, 0.15, "fer_noir")
+    ct.cone(bm, (-0.10, 0, 0.12), (0.23, 0, 0.14), 0.045, 0.032, 8, "cuivre")
+    ct.cone(bm, (0.23, 0, 0.14), (0.29, 0, 0.145), 0.032, 0.055, 8, "fer_noir")
+    for x in (-0.02, 0.10):
+        ct.cone(bm, (x, 0, 0.13), (x + 0.025, 0, 0.13), 0.052, 0.052, 8, "bronze")
+    ct.cone(bm, (-0.10, 0, 0.12), (-0.10, 0, 0.0), 0.025, 0.025, 6, "cuivre")
+    # flammes : trois cônes emboîtés, de l'orange au jaune
+    ct.cone(bm, (0.285, 0, 0.145), (0.45, 0, 0.17), 0.075, 0.0, 7, "flamme")
+    ct.cone(bm, (0.29, 0, 0.15), (0.42, 0.02, 0.20), 0.05, 0.0, 6, "toits")
+    ct.cone(bm, (0.29, 0, 0.145), (0.40, -0.01, 0.15), 0.045, 0.0, 6, "or")
+    return bm
+
+
+def lance_flammes_reservoirs(bm, T):
+    """Deux réservoirs de cuivre adossés aux flancs de la tour, tuyaux vers la plateforme."""
+    for sx in (-1, 1):
+        x, y = sx * 0.315, 0.06
+        ct.cylindre(bm, x, y, 0.25, 0.92, 0.11, 0.11, 10, "cuivre")
+        ct.boule(bm, (x, y, 0.92), (0.11, 0.11, 0.07), "cuivre")
+        for z in (0.40, 0.75):
+            ct.cylindre(bm, x, y, z, z + 0.035, 0.117, 0.117, 10, "bronze")
+        ct.cone(bm, (x, y, 0.97), (sx * 0.20, 0.10, T + 0.06), 0.025, 0.025, 6, "cuivre")
+
+
 scene, col, mats = ct.ouvrir("Tours")
 objs = []
 for n in (1, 2, 3):
@@ -103,8 +156,21 @@ for n in (1, 2, 3):
     t = ct.finir(tour(n), f"tour_canon_{n}", col, mats, (x, LIGNE_Y, 0.0),
                  {"type": "tour", "tour": "canon", "niveau": n})
     T = NIVEAUX[n]["T"] + 0.04
-    empty_pivot(f"pivot_canon_{n}", t, T, col)
+    ct.empty_pivot(f"pivot_canon_{n}", t, T, col, "pivot_canon")
     ct.finir(fut(n), f"tour_canon_{n}_fut", col, mats, (x, LIGNE_Y, T),
              {"type": "fut", "tour": "canon", "niveau": n})
     objs.append(t)
-ct.sauver_et_apercu(scene, objs, "apercu_tours_canon.png", cible_z=0.85, largeur=9.5)
+variantes = []
+for v, x, nom, piece in (("3a", 12.0, "Mortier", mortier), ("3b", 16.0, "Lance-flammes", buse)):
+    bm = tour(v)
+    if v == "3b": lance_flammes_reservoirs(bm, NIVEAUX[v]["T"])
+    t = ct.finir(bm, f"tour_canon_{v}", col, mats, (x, LIGNE_Y, 0.0),
+                 {"type": "tour", "tour": "canon", "niveau": 3, "variante": v[1], "version": nom})
+    T = NIVEAUX[v]["T"] + 0.04
+    ct.empty_pivot(f"pivot_canon_{v}", t, T, col, "pivot_canon")
+    f = ct.finir(piece(), f"tour_canon_{v}_fut", col, mats, (x, LIGNE_Y, T),
+                 {"type": "fut", "tour": "canon", "niveau": 3, "variante": v[1], "piece": "mortier" if v == "3a" else "buse"})
+    print(f"  hauteur totale {v} : {T + f.dimensions.z:.2f}")
+    variantes.append(t)
+ct.sauver_et_apercu(scene, objs, "apercu_tours_canon.png", cible_z=0.85, largeur=9.5,
+                    autres=[([objs[1]] + variantes, "apercu_tours_canon_variantes.png", 15)])

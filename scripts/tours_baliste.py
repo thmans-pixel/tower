@@ -7,7 +7,7 @@ import commun_tours as ct
 importlib.reload(ct)
 
 LIGNE_Y = 24.0
-NIVEAUX = {1: dict(T=0.98), 2: dict(T=1.15), 3: dict(T=1.32)}
+NIVEAUX = {1: dict(T=0.98), 2: dict(T=1.15), 3: dict(T=1.32), "3a": dict(T=1.15), "3b": dict(T=1.15)}
 
 
 def tour(n):
@@ -110,6 +110,46 @@ def empty_pivot(nom, parent, z, col):
     return e
 
 
+def arme_lourde():
+    """Baliste lourde : arme du niveau 2 agrandie, renforts de fer en plus."""
+    bm = arme(2)
+    for v in bm.verts:
+        v.co.x *= 1.15; v.co.y *= 1.30; v.co.z *= 1.30
+    ct.boite(bm, -0.30, -0.075, 0.18, -0.16, 0.075, 0.30, "fer_noir")            # contrepoids de fer
+    for sy in (-1, 1):
+        ct.boite(bm, -0.06, sy * 0.10 - 0.02, 0.06, 0.08, sy * 0.10 + 0.02, 0.26, "fer_noir")
+    return bm
+
+
+def arme_repetition():
+    """Répétition : arme du niveau 2 surmontée d'un barillet de carreaux."""
+    bm = arme(2)
+    zr = 0.20
+    zb = zr + 0.15
+    ct.cone(bm, (-0.12, 0, zb), (0.12, 0, zb), 0.075, 0.075, 8, "bois_fonce")
+    for x in (-0.10, 0.10):
+        ct.cone(bm, (x, 0, zb), (x + 0.025, 0, zb), 0.082, 0.082, 8, "fer_noir")
+    for i in range(6):
+        a = 2 * math.pi * i / 6
+        y, z = 0.05 * math.cos(a), zb + 0.05 * math.sin(a)
+        ct.cone(bm, (0.12, y, z), (0.17, y, z), 0.012, 0.012, 4, "bois")
+        ct.cone(bm, (0.17, y, z), (0.21, y, z), 0.022, 0.0, 4, "fer_noir")
+    for sy in (-1, 1):                                                              # montants
+        ct.boite(bm, -0.02, sy * 0.06 - 0.012, zr + 0.03, 0.02, sy * 0.06 + 0.012, zb, "fer_noir")
+    ct.cone(bm, (0.0, 0.08, zb), (0.0, 0.16, zb), 0.012, 0.012, 4, "fer_noir")      # manivelle
+    ct.boite(bm, -0.012, 0.15, zb - 0.07, 0.012, 0.17, zb, "fer_noir")
+    return bm
+
+
+def reserve_carreaux(bm, T, gros):
+    """Petite réserve de carreaux posée sur la plateforme, coin arrière gauche."""
+    r = 0.022 if gros else 0.014
+    for k in range(3):
+        y = 0.24 + k * (2.2 * r)
+        ct.cone(bm, (-0.36, y, T + r), (-0.12, y, T + r), r, r, 5, "bois")
+        ct.cone(bm, (-0.12, y, T + r), (-0.07, y, T + r), r * 2, 0.0, 4, "fer_noir")
+
+
 scene, col, mats = ct.ouvrir("Tours")
 objs = []
 for n in (1, 2, 3):
@@ -117,9 +157,22 @@ for n in (1, 2, 3):
     t = ct.finir(tour(n), f"tour_baliste_{n}", col, mats, (x, LIGNE_Y, 0.0),
                  {"type": "tour", "tour": "baliste", "niveau": n})
     zp = NIVEAUX[n]["T"] + (0.02 if n == 1 else 0.035)
-    empty_pivot(f"pivot_arme_{n}", t, zp, col)
+    ct.empty_pivot(f"pivot_arme_{n}", t, zp, col, "pivot_arme")
     a = ct.finir(arme(n), f"tour_baliste_{n}_arme", col, mats, (x, LIGNE_Y, zp),
                  {"type": "arme", "tour": "baliste", "niveau": n})
     print(f"  hauteur totale niveau {n} : {zp + a.dimensions.z:.2f}")
     objs.append(t)
-ct.sauver_et_apercu(scene, objs, "apercu_tours_baliste.png", cible_z=0.85, largeur=9.5)
+variantes = []
+for v, x, nom, piece in (("3a", 12.0, "Baliste lourde", arme_lourde), ("3b", 16.0, "Répétition", arme_repetition)):
+    bm = tour(v)
+    reserve_carreaux(bm, NIVEAUX[v]["T"], v == "3a")
+    t = ct.finir(bm, f"tour_baliste_{v}", col, mats, (x, LIGNE_Y, 0.0),
+                 {"type": "tour", "tour": "baliste", "niveau": 3, "variante": v[1], "version": nom})
+    zp = NIVEAUX[v]["T"] + 0.035
+    ct.empty_pivot(f"pivot_arme_{v}", t, zp, col, "pivot_arme")
+    a = ct.finir(piece(), f"tour_baliste_{v}_arme", col, mats, (x, LIGNE_Y, zp),
+                 {"type": "arme", "tour": "baliste", "niveau": 3, "variante": v[1]})
+    print(f"  hauteur totale {v} : {zp + a.dimensions.z:.2f}")
+    variantes.append(t)
+ct.sauver_et_apercu(scene, objs, "apercu_tours_baliste.png", cible_z=0.85, largeur=9.5,
+                    autres=[([objs[1]] + variantes, "apercu_tours_baliste_variantes.png", 15)])

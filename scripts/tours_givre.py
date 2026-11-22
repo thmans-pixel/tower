@@ -91,9 +91,53 @@ def tour(n):
     return bm
 
 
+def tour_3a():
+    """Blizzard : tourbillon de neige figé autour du cristal (base niveau 2)."""
+    rnd = random.Random("givre3a")
+    bm = bmesh.new()
+    ct.socle(bm)
+    neige(bm, rnd)
+    ct.cylindre(bm, 0, 0, ZN - 0.02, 0.40, 0.29, 0.27, 8, "pierre", math.pi / 8)
+    ct.cylindre(bm, 0, 0, 0.38, 0.42, 0.28, 0.28, 8, "pierre_claire", math.pi / 8)
+    cristal(bm, (0, 0, 0.40), 0.14, 1.30, 6, "glace", tilt=0.0)
+    for i in range(4):
+        az = math.pi / 4 + i * math.pi / 2
+        cristal(bm, (0.17 * math.cos(az), 0.17 * math.sin(az), 0.40), 0.06, 0.32, 6, "eclat", tilt=0.45, az=az, rot=0.3 * i)
+    # spirale de neige figée : ruban + paquets de neige + éclats
+    pts = []
+    for i in range(22):
+        a = i * 0.62
+        z = 0.48 + i * 0.048
+        r = 0.34 - i * 0.007
+        pts.append((r * math.cos(a), r * math.sin(a), z))
+    for a, b in zip(pts, pts[1:]):
+        ct.cone(bm, a, b, 0.028, 0.024, 5, "neige")
+    for i, p in enumerate(pts):
+        if i % 3 == 0:
+            ct.boule(bm, p, (0.055, 0.055, 0.035), "neige")
+        elif i % 3 == 1 and i % 2:
+            cristal(bm, p, 0.035, 0.12, 4, "eclat", tilt=0.6, az=i, flottant=True)
+    return bm
+
+
+def tour_3b():
+    """Cristal éternel : un seul cristal énorme."""
+    rnd = random.Random("givre3b")
+    bm = bmesh.new()
+    ct.socle(bm)
+    neige(bm, rnd, givre=True)
+    cristal(bm, (0, 0, ZN - 0.02), 0.31, 1.70 - ZN + 0.02, 8, "glace", tilt=0.0, rot=0.2)
+    return bm
+
+
 scene, col, mats = ct.ouvrir("Tours")
 objs = []
 for n in (1, 2, 3):
     objs.append(ct.finir(tour(n), f"tour_givre_{n}", col, mats, (4.0 * (n - 1), LIGNE_Y, 0.0),
                          {"type": "tour", "tour": "givre", "niveau": n}))
-ct.sauver_et_apercu(scene, objs, "apercu_tours_givre.png", cible_z=0.85, largeur=9.5)
+va = ct.finir(tour_3a(), "tour_givre_3a", col, mats, (12.0, LIGNE_Y, 0.0),
+              {"type": "tour", "tour": "givre", "niveau": 3, "variante": "a", "version": "Blizzard"})
+vb = ct.finir(tour_3b(), "tour_givre_3b", col, mats, (16.0, LIGNE_Y, 0.0),
+              {"type": "tour", "tour": "givre", "niveau": 3, "variante": "b", "version": "Cristal éternel"})
+ct.sauver_et_apercu(scene, objs, "apercu_tours_givre.png", cible_z=0.85, largeur=9.5,
+                    autres=[([objs[1], va, vb], "apercu_tours_givre_variantes.png", 15)])

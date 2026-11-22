@@ -52,4 +52,19 @@ Tour canon : le fût `tour_canon_N_fut` est un objet séparé, pointé vers +X, 
 L'empty `pivot_canon_N` (enfant de la tour, propriété `role=pivot_canon`) marque où le poser.
 Même principe pour la baliste : `tour_baliste_N_arme` et `pivot_arme_N` (`role=pivot_arme`).
 
-Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2).
+Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2), `eclair` (#9FE3FF, 2), `orbe_bleue` (#4FA3FF, 2), `orbe_feu` (#FF6A2B, 2).
+
+### Niveau 3 au choix : versions a et b (x = 12 et 16 sur la ligne de chaque tour)
+
+Propriétés en plus : `variante` (a / b) et `version` (nom affiché). Aperçus : `apercu_tours_<nom>_variantes.png`.
+
+| Tour | 3a | 3b |
+|---|---|---|
+| archers | Tireurs d'élite, 264 faces | Arbalétriers, 317 faces |
+| canon | Mortier, 196 + fût 120 | Lance-flammes, 324 + buse 88 (objet `tour_canon_3b_fut`) |
+| givre | Blizzard, 600 faces | Cristal éternel, 273 faces |
+| mage | Arcanes, 921 faces | Pyromancien, 473 faces |
+| baliste | Baliste lourde, 250 + arme 197 | Répétition, 250 + arme 299 |
+| tempête | Orage, 1443 faces | Paratonnerre, 824 faces |
+
+Pivots des variantes : `pivot_canon_3a/3b`, `pivot_arme_3a/3b`.

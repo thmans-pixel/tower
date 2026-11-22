@@ -15,10 +15,11 @@ PALETTE = {
     "toit_mage_fonce": "#2A1F4D", "orbe": "#C77DFF",
     "corde": "#C8A165",
     "pierre_tempete": "#4A4E5A", "cuivre": "#B87333", "eclair": "#9FE3FF", "nuage": "#7A869C",
+    "orbe_bleue": "#4FA3FF", "orbe_feu": "#FF6A2B", "flamme": "#F39C12",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
-EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0, "eclair": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
+EMISSION = {"glace": 0.3, "fenetre": 1.0, "orbe": 2.0, "eclair": 2.0, "orbe_bleue": 2.0, "orbe_feu": 2.0}                   # seuls matériaux émissifs (couleur = couleur de base)
 NOMS = list(PALETTE)
 M = {n: i for i, n in enumerate(NOMS)}      # nom -> index de matériau
 
@@ -154,11 +155,34 @@ def finir(bm, nom, col, mats, loc, props):
     return ob
 
 
-def sauver_et_apercu(scene, objs, png, cible_z=0.8, largeur=None):
-    """Enregistre decor.blend puis rend un aperçu en vue de jeu (caméra inclinée à 50°)."""
+def empty_pivot(nom, parent, z, col, role):
+    """Empty enfant de la tour marquant où poser la pièce mobile (propriété role)."""
+    old = bpy.data.objects.get(nom)
+    if old: bpy.data.objects.remove(old, do_unlink=True)
+    e = bpy.data.objects.new(nom, None)
+    e.empty_display_type = "ARROWS"; e.empty_display_size = 0.25
+    col.objects.link(e)
+    e.parent = parent
+    e.location = (0, 0, z)
+    e["role"] = role
+    return e
+
+
+VERSIONS = {}      # rempli par les scripts : nom d'objet -> nom de la version (propriété « version »)
+
+
+def sauver_et_apercu(scene, objs, png, cible_z=0.8, largeur=None, autres=()):
+    """Enregistre decor.blend puis rend un aperçu en vue de jeu (caméra inclinée à 50°).
+    autres : [(objs, png, largeur), ...] aperçus supplémentaires."""
     bpy.ops.wm.save_as_mainfile(filepath=BLEND)
-    cam = bpy.data.objects.new("apercu_cam", bpy.data.cameras.new("apercu_cam"))
-    scene.collection.objects.link(cam)
+    _rendu(scene, objs, png, cible_z, largeur)
+    for o2, p2, l2 in autres:
+        _rendu(scene, o2, p2, cible_z, l2)
+
+
+def _rendu(scene, objs, png, cible_z, largeur):
+    cam = bpy.data.objects.get("apercu_cam") or bpy.data.objects.new("apercu_cam", bpy.data.cameras.new("apercu_cam"))
+    if cam.name not in scene.collection.objects: scene.collection.objects.link(cam)
     xs = [o.location.x for o in objs]
     cx, cy = (min(xs) + max(xs)) / 2, objs[0].location.y
     cam.data.type = "ORTHO"
