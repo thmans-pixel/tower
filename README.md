@@ -41,4 +41,4 @@ hauteurs 1,3 / 1,5 / 1,7, face vers -Y, propriétés `type=tour`, `tour=<nom>`, 
 
 | Tour | Niveau 1 | Niveau 2 | Niveau 3 |
 |---|---|---|---|
-| archers (`scripts/tours_archers.py`) | 280 faces | 286 faces | 367 faces |
+| archers (`scripts/tours_archers.py`) | 280 faces | 285 faces | 367 faces |
