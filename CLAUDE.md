@@ -3,7 +3,7 @@
 Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `docs/specs/001-tower-defense.md`,
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
-étape 3 : `docs/specs/005-etape-3.md` (lots 1 et 2 faits : progression, Désert). Ne rien coder qui n'y figure
+étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Ne rien coder qui n'y figure
 pas sans le faire valider d'abord.
 
 ## Règles du dépôt
@@ -26,7 +26,8 @@ pas sans le faire valider d'abord.
   le compte à rebours lancer les vagues, une tour sur deux en « Plus fort » dès la vague 8) gagne avec 3 vies
   environ ; « pressé » (appelle chaque vague dès que possible) perd vers la vague 10 ; sans tour, défaite.
   `journal` donne les vies au lancement de chaque vague. Désert (`jouer({ carte: 'desert' })`) : « posé »
-  gagne en Normal avec 8 vies environ. Toute retouche des chiffres de `src/data/` se
+  gagne en Normal avec 8 vies environ. Montagne : `jouer({ carte: 'montagne', maxTours: 30 })` gagne avec
+  2 vies environ (le plafond par défaut de 20 tours ne suffit pas sur ce chemin). Toute retouche des chiffres de `src/data/` se
   contrôle avec lui.
 - Rendu : `python3 tools/serveur.py` (port 8028, sans cache navigateur). `?jouer=prairie` démarre directement,
   `?test=1` expose `window.td` (partie, poser, appelerVague, avancer) pour les essais automatisés.
@@ -58,6 +59,9 @@ pas sans le faire valider d'abord.
 - Difficulté : `nouvellePartie(carte, difficulte)` (`src/data/difficultes.js`) règle `vies`, `or`, `s.multPV`,
   `s.compteVague`. Progression pure dans `src/sim/progression.js` (`enregistrerVictoire`, `etoilesPartie`,
   `relire`) ; lecture/écriture navigateur dans `src/ui/sauvegarde.js` (seul endroit qui touche `localStorage`).
+- Vagues générées (`src/data/vagues.js`, `genererVague(graine, n, taille)`) : Montagne et mode infini
+  (`nouvellePartie(carte, diff, { infini: true })`, `nbVagues = Infinity`, `scoreInfini`). Particularités de
+  carte : `vitesse` (neige), `pvParVague`, `ponts`. Records : `enregistrerInfini`, ouverture : `infiniJouable`.
 - `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.

@@ -13,7 +13,7 @@ function couverture(s, c, r, portee) {
   return n;
 }
 
-export function jouer({ carte = 'prairie', difficulte = 'normal', plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'], presse = false, max = 60 * 60 * 30 } = {}) {
+export function jouer({ carte = 'prairie', difficulte = 'normal', maxTours = 20, plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'], presse = false, max = 60 * 60 * 30 } = {}) {
   const s = nouvellePartie(carte, difficulte);
   const places = [];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (peutPoser(s, c, r)) places.push([c, r, couverture(s, c, r, 125)]);
@@ -24,7 +24,7 @@ export function jouer({ carte = 'prairie', difficulte = 'normal', plan = ['arche
   for (let i = 0; i < max && !s.fin; i++) {
     if (i % 30 === 0) {
       const sorte = plan[k % plan.length];
-      const prochaine = plan.length && s.tours.length < 20 ? TOURS[sorte].prix : Infinity;
+      const prochaine = plan.length && s.tours.length < maxTours ? TOURS[sorte].prix : Infinity;
       // Améliorer la moins chère quand on a déjà assez de tours, sinon poser.
       const amel = s.tours.filter((t) => prixAmelioration(t) !== null).sort((a, b) => prixAmelioration(a) - prixAmelioration(b))[0];
       if (s.or >= prochaine && (s.tours.length < 8 || !amel || prixAmelioration(amel) > prochaine)) {

@@ -7,7 +7,8 @@ import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente } f
 import { spriteTour } from '../render/sprites.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
 import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
-import { estDebloquee, meilleuresEtoiles, ORDRE_CARTES } from '../sim/progression.js';
+import { estDebloquee, meilleuresEtoiles, infiniJouable, ORDRE_CARTES } from '../sim/progression.js';
+import { scoreInfini } from '../sim/partie.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
@@ -88,8 +89,13 @@ export class Interface {
   }
 
   /** Écran des cartes : difficulté, puis une carte par case, avec ses étoiles ou son cadenas. */
-  listeCartes(cartes, vignette, prog) {
+  listeCartes(cartes, vignette, prog, infini = false) {
     const diff = prog.difficulte;
+    const modes = $('choix-mode');
+    modes.hidden = !prog.infiniOuvert;
+    modes.innerHTML = [['campagne', 'Campagne', 'cartes à gagner'], ['infini', 'Mode infini', 'vagues sans fin']].map(([m, nom, sous]) =>
+      `<button data-mode="${m}" class="${(m === 'infini') === infini ? 'actif' : ''}" aria-pressed="${(m === 'infini') === infini}">${nom}<small>${sous}</small></button>`).join('');
+    for (const b of modes.querySelectorAll('button')) b.onclick = () => this.a.mode(b.dataset.mode === 'infini');
     $('choix-difficulte').innerHTML = ORDRE_DIFFICULTES.map((d) => {
       const x = DIFFICULTES[d];
       return `<button data-diff="${d}" class="${d === diff ? 'actif' : ''}" aria-pressed="${d === diff}">${x.nom}<small>${x.vies} vies</small></button>`;
@@ -100,15 +106,18 @@ export class Interface {
     const etoiles = (n) => '<span class="etoiles">' + [1, 2, 3].map((i) => (i <= n ? '★' : '<span class="eteinte">★</span>')).join('') + '</span>';
     for (const id of ORDRE_CARTES) {
       const c = cartes[id];
-      const ouverte = estDebloquee(prog, id);
+      const ouverte = infini ? infiniJouable(prog, id) : estDebloquee(prog, id);
       const jouable = ouverte && c.ouverte;
       const b = document.createElement('button');
       b.className = 'carte-choix';
       b.disabled = !jouable;
       if (jouable && vignette) { const v = vignette(id); if (v) b.appendChild(v); }
       else b.insertAdjacentHTML('beforeend', `<div class="vide">${ouverte ? 'Bientôt' : 'Verrouillée'}</div>`);
-      const texte = !c.ouverte ? 'Carte à venir.' : !ouverte ? 'Gagnez la carte précédente pour l’ouvrir.' : `${c.resume} ${c.vagues.length} vagues.`;
-      b.insertAdjacentHTML('beforeend', `<b>${c.nom}</b>${jouable ? etoiles(meilleuresEtoiles(prog, id, diff)) : ''}<span>${texte}</span>`);
+      const texte = !c.ouverte ? 'Carte à venir.'
+        : !ouverte ? (infini ? 'Gagnez cette carte pour y jouer sans fin.' : 'Gagnez la carte précédente pour l’ouvrir.')
+          : infini ? 'Des vagues sans fin, de plus en plus fortes.' : `${c.resume} ${c.vagues.length} vagues.`;
+      const note = !jouable ? '' : infini ? `<span class="record">Record : ${prog.infini[id] ? prog.infini[id] + ' vagues' : 'aucun'}</span>` : etoiles(meilleuresEtoiles(prog, id, diff));
+      b.insertAdjacentHTML('beforeend', `<b>${c.nom}</b>${note}<span>${texte}</span>`);
       if (jouable) b.onclick = () => this.a.carte(id);
       zone.appendChild(b);
     }
@@ -122,16 +131,17 @@ export class Interface {
 
   /** `bilan` : { etoiles, nouvelles: [noms de cartes], infini } — ce que la partie a débloqué. */
   fin(s, bilan = {}) {
-    $('fin-titre').textContent = s.fin === 'victoire' ? 'Victoire !' : 'Le château est tombé';
+    $('fin-titre').textContent = s.fin === 'victoire' ? 'Victoire !' : s.infini ? 'Fin de la partie sans fin' : 'Le château est tombé';
     const et = $('fin-etoiles');
     et.hidden = s.fin !== 'victoire';
     et.innerHTML = [1, 2, 3].map((i) => (i <= (bilan.etoiles || 0) ? '★' : '<span class="eteinte">★</span>')).join('');
-    const msg = [...(bilan.nouvelles || []).map((n) => `Nouvelle carte : ${n} !`), ...(bilan.infini ? ['Mode infini débloqué !'] : [])];
+    const msg = [...(bilan.nouvelles || []).map((n) => `Nouvelle carte : ${n} !`), ...(bilan.infini ? ['Mode infini débloqué !'] : []),
+      ...(bilan.record ? ['Nouveau record !'] : [])];
     $('fin-nouveau').hidden = !msg.length;
     $('fin-nouveau').textContent = msg.join(' ');
     const lignes = [
       ['Difficulté', DIFFICULTES[s.difficulte]?.nom || ''],
-      ['Vague atteinte', `${s.vague} / ${s.nbVagues}`],
+      s.infini ? ['Vagues repoussées', String(scoreInfini(s))] : ['Vague atteinte', `${s.vague} / ${s.nbVagues}`],
       ['Vies restantes', `${s.vies} / ${s.viesDepart}`],
       ['Ennemis abattus', nb(s.abattus)],
       ['Or gagné', nb(s.orGagne)],
@@ -152,7 +162,7 @@ export class Interface {
     if (!s) return;
     this.majChamp('vies', String(s.vies));
     this.majChamp('or', nb(s.or));
-    this.majChamp('vague', `${s.vague}/${s.nbVagues}`);
+    this.majChamp('vague', s.infini ? `${s.vague} · sans fin` : `${s.vague}/${s.nbVagues}`);
     this.majChamp('b-vitesse', '×' + opts.vitesse);
     this.majChamp('b-pause', opts.pause ? 'Reprendre' : 'Pause');
     this.majChamp('b-son', opts.son ? 'Son' : 'Muet');

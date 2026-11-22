@@ -7,18 +7,20 @@ import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 import { DIFFICULTES } from '../data/difficultes.js';
+import { genererVague } from '../data/vagues.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
 
-export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal') {
+/** `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées). */
+export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', options = {}) {
   const def = CARTES[idCarte];
   if (!def || !def.ouverte) throw new Error('Carte indisponible : ' + idCarte);
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
   return {
-    difficulte, multPV: diff.pv, compteVague: diff.compte,
+    difficulte, multPV: diff.pv, pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: construireCarte(def),
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
-    vague: 0, nbVagues: def.vagues.length,
+    vague: 0, nbVagues: options.infini ? Infinity : def.vagues.length, infini: !!options.infini,
     temps: 0,
     tours: [], ennemis: [], projectiles: [],
     lancement: null,          // vague en train d'arriver : { vague, file: [{ sorte, a }], t }
@@ -114,7 +116,7 @@ export function appelerVague(s) {
   s.vague++;
   const file = [];
   let a = 0;
-  for (const [sorte, nombre, ecart] of s.carte.def.vagues[s.vague - 1]) {
+  for (const [sorte, nombre, ecart] of vagueN(s, s.vague)) {
     for (let n = 0; n < nombre; n++) { file.push({ sorte, a }); a += ecart; }
     a += ECART_GROUPES - ecart;
   }
@@ -125,9 +127,21 @@ export function appelerVague(s) {
   return { ok: true, bonus };
 }
 
+/** Groupes de la vague n : ceux de la carte, ou tirés au hasard (à graine) en mode infini. */
+function vagueN(s, n) {
+  return s.infini ? genererVague(s.carte.def.graine, n) : s.carte.def.vagues[n - 1];
+}
+
+/** Score du mode infini : nombre de vagues entièrement repoussées (lancées, et plus aucun de leurs ennemis). */
+export function scoreInfini(s) {
+  let n = 0;
+  while (s.payees[n + 1]) n++;
+  return n;
+}
+
 /** Composition d'une vague (numérotée à partir de 1), pour l'aperçu. */
 export function composition(s, n) {
-  const v = s.carte.def.vagues[n - 1];
+  const v = vagueN(s, n);
   if (!v) return [];
   const tot = {};
   for (const [sorte, nombre] of v) tot[sorte] = (tot[sorte] || 0) + nombre;
@@ -177,7 +191,7 @@ export const trajetDe = (s, e) => (e.vol ? s.carte.vols : s.carte.sols)[e.route 
 
 function apparaitre(s, sorte, vague, distance = 0, route = null) {
   const d = ENNEMIS[sorte];
-  const m = multPV(vague) * s.multPV;
+  const m = multPV(vague) * s.multPV * (1 + s.pvParVague * (vague - 1));
   // Sur une carte à plusieurs entrées, les ennemis partent de chacune à tour de rôle.
   if (route === null) { route = s.routeSuivante % s.carte.sols.length; s.routeSuivante++; }
   const tr = (d.vol ? s.carte.vols : s.carte.sols)[route];
@@ -202,7 +216,7 @@ function deplacer(s, dt) {
     if (e.ralenti > 0) { e.ralenti -= dt; if (e.ralenti <= 0) e.ralFacteur = 0; }
     if (e.gel > 0) e.gel -= dt;
     if (e.rage > 0) e.rage -= dt;
-    const v = e.gel > 0 ? 0 : d.vitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1);
+    const v = e.gel > 0 ? 0 : d.vitesse * s.multVitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1);
     // Renforts : un ennemi au sol s'arrête devant les soldats (sauf le boss, qui les écrase).
     e.bloque = null;
     if (!e.vol) for (const g of s.renforts) {
