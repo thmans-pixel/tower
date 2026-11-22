@@ -5,7 +5,8 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 1 — la Prairie** (4 tours à 3 niveaux, 5 ennemis, 20 vagues).
+État : **étape 2, lot 1** — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 5 ennemis,
+20 vagues. Spec de l'étape 2 : [docs/specs/004-etape-2.md](docs/specs/004-etape-2.md).
 
 ## Lancer le jeu
 
@@ -22,9 +23,9 @@ les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directem
 
 | Action | Souris / clavier | Tactile |
 | --- | --- | --- |
-| Choisir une tour | bouton en bas, ou 1 à 4 | bouton en bas |
+| Choisir une tour | bouton en bas, ou 1 à 6 | bouton en bas |
 | Bâtir | clic sur une case d'herbe libre | toucher une fois (portée), une seconde fois (bâtir) |
-| Améliorer, vendre, ciblage | clic sur la tour | toucher la tour |
+| Améliorer, spécialiser, vendre, ciblage | clic sur la tour | toucher la tour |
 | Annuler | Échap ou clic droit | toucher le bouton de la tour |
 | Pause / vitesse | Espace / F | boutons en haut |
 
@@ -34,14 +35,16 @@ les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directem
 - Après l'arrivée complète d'une vague, la suivante part au bout de 18 s ; l'appeler plus tôt rapporte 2 or par
   seconde gagnée.
 - Revente à 70 % de tout ce que la tour a coûté (construction et améliorations).
-- Armure (Orc blindé) : la moitié des dégâts physiques (Archers, Canon) ; la magie (Givre, Mage) l'ignore.
+- Au niveau 3, chaque tour devient l'une de deux spécialisations (même prix, choix définitif).
+- Armure (Orc blindé) : la moitié des dégâts physiques (Archers, Canon, Baliste) ; la magie (Givre, Mage,
+  Tempête) l'ignore, les Arbalétriers en ignorent la moitié.
 - Le Canon ne touche pas les volants ; la Chauve-souris vole tout droit vers le château.
 - Le Chaman soigne les ennemis proches toutes les 1,2 s.
 
 ## Tests
 
 ```sh
-npm test            # logique : carte, pose, améliorations, vagues, armure, ciblage, équilibre
+npm test            # logique : carte, pose, améliorations, vagues, armure, ciblage, spécialisations, équilibre
 npm run simulate    # joueur automatique sur la Prairie
 ```
 

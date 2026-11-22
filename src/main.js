@@ -26,7 +26,7 @@ const interfaceJeu = new Interface({
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
   deselectionner: () => { ui.selection = null; },
-  ameliorer: () => { const r = partie && ameliorer(partie, ui.selection); if (r && !r.ok) son.jouer('erreur'); },
+  ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
   vendre: () => { if (partie && vendre(partie, ui.selection).ok) ui.selection = null; },
   cibler: (m) => { if (partie) { cibler(partie, ui.selection, m); son.jouer('clic'); } },
 });

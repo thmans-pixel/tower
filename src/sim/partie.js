@@ -3,7 +3,7 @@
 // toute action du joueur passe par les commandes exportées (poser, ameliorer, vendre, cibler, appelerVague).
 import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES } from './const.js';
 import { CARTES } from '../data/cartes.js';
-import { TOURS } from '../data/tours.js';
+import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV } from '../data/ennemis.js';
 import { construireCarte, positionSur, centre, LIBRE } from './carte.js';
 
@@ -44,7 +44,7 @@ export function poser(s, sorte, c, r) {
   s.or -= d.prix;
   const t = {
     id: s.prochainId++, sorte, niveau: 0, c, r, x: centre(c), y: centre(r),
-    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: d.prix, angle: 0, tir: 0,
+    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: d.prix, angle: 0, tir: 0, variante: null,
   };
   s.tours.push(t);
   ev(s, 'pose', { tour: t.id, x: t.x, y: t.y });
@@ -56,16 +56,19 @@ export function prixAmelioration(t) {
   return t.niveau < d.ameliorations.length ? d.ameliorations[t.niveau] : null;
 }
 
-export function ameliorer(s, id) {
+/** Au niveau 2, l'amélioration demande le choix d'une spécialisation : `variante` = 'a' ou 'b'. */
+export function ameliorer(s, id, variante) {
   const t = s.tours.find((x) => x.id === id);
   if (!t || s.fin) return { ok: false, raison: 'impossible' };
   const prix = prixAmelioration(t);
   if (prix === null) return { ok: false, raison: 'max' };
+  if (t.niveau === 1 && variante !== 'a' && variante !== 'b') return { ok: false, raison: 'choix' };
   if (s.or < prix) return { ok: false, raison: 'or' };
   s.or -= prix;
+  if (t.niveau === 1) t.variante = variante;
   t.niveau++;
   t.depense += prix;
-  ev(s, 'amelioration', { tour: t.id, x: t.x, y: t.y, niveau: t.niveau });
+  ev(s, 'amelioration', { tour: t.id, x: t.x, y: t.y, niveau: t.niveau, variante: t.variante });
   return { ok: true };
 }
 
@@ -131,9 +134,15 @@ export function avancer(s, dt = DT) {
   deplacer(s, dt);
   if (s.fin) return;
   soigner(s, dt);
+  combattre(s, dt);
+  bilanVagues(s);
+}
+
+/** Brûlures, tirs et projectiles, sans déplacement des ennemis (utilisé seul par les tests des tours). */
+export function combattre(s, dt = DT) {
+  bruler(s, dt);
   tirer(s, dt);
   voler(s, dt);
-  bilanVagues(s);
 }
 
 function lancer(s, dt) {
@@ -160,7 +169,7 @@ function apparaitre(s, sorte, vague) {
   s.ennemis.push({
     id: s.prochainId++, sorte, vague, pv: d.pv * m, pvMax: d.pv * m, mult: m,
     d: 0, x: p.x, y: p.y, dx: p.dx, dy: p.dy, vol: !!d.vol,
-    ralenti: 0, ralFacteur: 0, soinT: d.soin ? d.soin.toutes : 0, pas: 0,
+    ralenti: 0, ralFacteur: 0, gel: 0, brule: null, soinT: d.soin ? d.soin.toutes : 0, pas: 0,
   });
   s.vivants[vague]++;
 }
@@ -170,7 +179,8 @@ function deplacer(s, dt) {
     const e = s.ennemis[i];
     const d = ENNEMIS[e.sorte];
     if (e.ralenti > 0) { e.ralenti -= dt; if (e.ralenti <= 0) e.ralFacteur = 0; }
-    const v = d.vitesse * (1 - e.ralFacteur);
+    if (e.gel > 0) e.gel -= dt;
+    const v = e.gel > 0 ? 0 : d.vitesse * (1 - e.ralFacteur);
     e.d += v * dt;
     e.pas += v * dt;
     const tr = e.vol ? s.carte.vol : s.carte.sol;
@@ -207,13 +217,12 @@ function soigner(s, dt) {
 const avance = (s, e) => e.d / (e.vol ? s.carte.vol.longueur : s.carte.sol.longueur);
 
 export function choisirCible(s, t) {
-  const d = TOURS[t.sorte];
-  const n = d.niveaux[t.niveau];
+  const n = statsTour(t);
   let best = null, score = -Infinity;
   for (const e of s.ennemis) {
-    if (e.vol && !d.volants) continue;
+    if (e.vol && !n.volants) continue;
     const dist = Math.hypot(e.x - t.x, e.y - t.y);
-    if (dist > n.portee) continue;
+    if (dist > n.portee || dist < (n.porteeMin || 0)) continue;
     let v;
     switch (t.ciblage) {
       case 'dernier': v = -avance(s, e); break;
@@ -226,27 +235,96 @@ export function choisirCible(s, t) {
   return best;
 }
 
-const VITESSE_PROJ = { archers: 520, canon: 300, givre: 420, mage: 360 };
+const VITESSE_PROJ = { archers: 520, canon: 300, givre: 420, mage: 360, baliste: 650 };
 
 function tirer(s, dt) {
   for (const t of s.tours) {
     t.recharge -= dt;
     if (t.tir > 0) t.tir -= dt;
     if (t.recharge > 0) continue;
+    const n = statsTour(t);
+    if (n.aura) { auraTour(s, t, n); continue; }
     const cible = choisirCible(s, t);
     if (!cible) continue;
-    const d = TOURS[t.sorte], n = d.niveaux[t.niveau];
     t.recharge = n.cadence;
     t.tir = 0.15;
     t.angle = Math.atan2(cible.y - t.y, cible.x - t.x);
+    if (n.chaine) { eclair(s, t, n, cible); continue; }
     const depart = { x: t.x, y: t.y - T * 0.55 };
-    s.projectiles.push({
-      sorte: t.sorte, x: depart.x, y: depart.y, cible: cible.id, tx: cible.x, ty: cible.y,
-      vitesse: VITESSE_PROJ[t.sorte], degats: n.degats, degat: d.degat, zone: n.zone || 0,
-      ralenti: n.ralenti || 0, duree: n.duree || 0, tour: t.id,
-      parcours: 0, total: Math.hypot(cible.x - depart.x, cible.y - depart.y) || 1,
-    });
-    ev(s, 'tir', { sorte: t.sorte, x: t.x, y: t.y });
+    const salve = n.salve || 1;
+    for (let k = 0; k < salve; k++) {
+      const dec = (k - (salve - 1) / 2) * 7;          // carreaux d'une salve légèrement décalés
+      const x = depart.x + Math.sin(t.angle) * dec, y = depart.y - Math.cos(t.angle) * dec;
+      s.projectiles.push({
+        sorte: t.sorte, variante: t.variante, x, y, x0: x, y0: y, cible: cible.id, tx: cible.x, ty: cible.y,
+        vitesse: n.brulure && n.zone ? 400 : VITESSE_PROJ[t.sorte], degats: n.degats, degat: n.degat,
+        zone: n.zone || 0, ralenti: n.ralenti || 0, duree: n.duree || 0, gel: n.gel || 0, brulure: n.brulure || null,
+        perce: n.perce || 0, rebond: n.rebond || null, transperce: n.transperce || 0, volants: n.volants, tour: t.id,
+        parcours: 0, total: Math.hypot(cible.x - x, cible.y - y) || 1,
+      });
+    }
+    ev(s, 'tir', { sorte: t.sorte, variante: t.variante, x: t.x, y: t.y });
+  }
+}
+
+/** Blizzard : ralentit et blesse tout ce qui est à portée, sans projectile. */
+function auraTour(s, t, n) {
+  t.recharge = n.cadence;
+  let touches = 0;
+  for (const e of [...s.ennemis]) {
+    if ((e.vol && !n.volants) || Math.hypot(e.x - t.x, e.y - t.y) > n.portee) continue;
+    ralentir(e, n.ralenti, n.duree);
+    blesser(s, e, n.degats, n.degat, t);
+    touches++;
+  }
+  if (touches) { t.tir = 0.15; ev(s, 'aura', { x: t.x, y: t.y, rayon: n.portee }); }
+}
+
+/** Tempête : éclair instantané qui saute de proche en proche, plus faible à chaque saut. */
+function eclair(s, t, n, cible) {
+  const touches = [cible];
+  let courant = cible;
+  while (touches.length < n.chaine.nombre) {
+    let best = null, dmin = n.chaine.saut;
+    for (const e of s.ennemis) {
+      if (touches.includes(e) || (e.vol && !n.volants)) continue;
+      const d = Math.hypot(e.x - courant.x, e.y - courant.y);
+      if (d <= dmin) { dmin = d; best = e; }
+    }
+    if (!best) break;
+    touches.push(best);
+    courant = best;
+  }
+  const points = [{ x: t.x, y: t.y - T * 0.6 }];
+  let degats = n.degats;
+  for (const e of touches) {
+    points.push({ x: e.x, y: e.y - (e.vol ? 26 : 8) });
+    if (n.etourdit) geler(e, n.etourdit);
+    blesser(s, e, degats, n.degat, t);
+    degats *= 1 - n.chaine.baisse;
+  }
+  ev(s, 'eclair', { points, sorte: t.sorte });
+}
+
+export function ralentir(e, facteur, duree) {
+  if (facteur >= e.ralFacteur) e.ralFacteur = facteur;
+  e.ralenti = Math.max(e.ralenti, duree);
+}
+
+/** Gel et étourdissement immobilisent ; le boss n'est que ralenti de moitié. */
+export function geler(e, duree) {
+  if (ENNEMIS[e.sorte].boss) ralentir(e, 0.5, duree);
+  else e.gel = Math.max(e.gel, duree);
+}
+
+function bruler(s, dt) {
+  for (const e of [...s.ennemis]) {
+    if (!e.brule) continue;
+    e.brule.t -= dt;
+    const tour = s.tours.find((t) => t.id === e.brule.tour);
+    const dps = e.brule.dps;
+    if (e.brule.t <= 0) e.brule = null;
+    blesser(s, e, dps * dt, 'magique', tour);
   }
 }
 
@@ -271,24 +349,54 @@ function voler(s, dt) {
 
 function impact(s, p, cible, parId) {
   const tour = s.tours.find((t) => t.id === p.tour);
+  const effets = (e) => {
+    if (p.ralenti) ralentir(e, p.ralenti, p.duree);
+    if (p.gel) geler(e, p.gel);
+    if (p.brulure) e.brule = { dps: p.brulure.dps, t: p.brulure.duree, tour: p.tour };
+  };
   if (p.zone) {
-    ev(s, 'explosion', { x: p.tx, y: p.ty, rayon: p.zone });
+    ev(s, 'explosion', { x: p.tx, y: p.ty, rayon: p.zone, feu: !!p.brulure, sorte: p.sorte });
     for (const e of [...s.ennemis]) {
-      if (e.vol || Math.hypot(e.x - p.tx, e.y - p.ty) > p.zone) continue;
-      blesser(s, e, p.degats, p.degat, tour);
+      if ((e.vol && !p.volants) || Math.hypot(e.x - p.tx, e.y - p.ty) > p.zone) continue;
+      effets(e);
+      blesser(s, e, p.degats, p.degat, tour, p.perce);
     }
     return;
   }
   if (!cible || !parId.has(cible.id) || cible.pv <= 0) return;
-  ev(s, 'touche', { sorte: p.sorte, x: cible.x, y: cible.y });
-  if (p.ralenti && p.ralenti >= cible.ralFacteur) { cible.ralFacteur = p.ralenti; cible.ralenti = Math.max(cible.ralenti, p.duree); }
-  else if (p.ralenti) cible.ralenti = Math.max(cible.ralenti, p.duree);
-  blesser(s, cible, p.degats, p.degat, tour);
+  ev(s, 'touche', { sorte: p.sorte, x: cible.x, y: cible.y, gel: !!p.gel });
+  effets(cible);
+  const { x: cx, y: cy } = cible;
+  blesser(s, cible, p.degats, p.degat, tour, p.perce);
+  if (p.rebond) {
+    let best = null, dmin = p.rebond.portee;
+    for (const e of s.ennemis) {
+      if (e === cible || (e.vol && !p.volants)) continue;
+      const d = Math.hypot(e.x - cx, e.y - cy);
+      if (d <= dmin) { dmin = d; best = e; }
+    }
+    if (best) {
+      ev(s, 'eclair', { points: [{ x: cx, y: cy - 8 }, { x: best.x, y: best.y - 8 }], sorte: p.sorte });
+      blesser(s, best, p.degats * p.rebond.facteur, p.degat, tour, p.perce);
+    }
+  }
+  if (p.transperce) {
+    // Les ennemis alignés derrière la cible, dans le prolongement du tir, sont touchés aussi.
+    const dx = cx - p.x0, dy = cy - p.y0, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l;
+    for (const e of [...s.ennemis]) {
+      if (e.vol && !p.volants) continue;
+      const vx = e.x - cx, vy = e.y - cy;
+      const le = vx * ux + vy * uy, travers = Math.abs(vx * uy - vy * ux);
+      if (le > 0 && le <= p.transperce && travers <= 14) blesser(s, e, p.degats, p.degat, tour, p.perce);
+    }
+    ev(s, 'transperce', { x: cx, y: cy, x2: cx + ux * p.transperce, y2: cy + uy * p.transperce });
+  }
 }
 
-export function blesser(s, e, degats, type, tour) {
+/** `perce` : part de l'armure ignorée (Arbalétriers). */
+export function blesser(s, e, degats, type, tour, perce = 0) {
   if (e.pv <= 0) return;
-  const reel = type === 'physique' ? degats * (1 - ENNEMIS[e.sorte].armure) : degats;
+  const reel = type === 'physique' ? degats * (1 - ENNEMIS[e.sorte].armure * (1 - perce)) : degats;
   const avant = e.pv;
   e.pv -= reel;
   if (tour) tour.degats += Math.min(reel, avant);

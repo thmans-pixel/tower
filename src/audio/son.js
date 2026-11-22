@@ -67,10 +67,13 @@ export class Son {
         case 'tir':
           if (!this.libre('tir' + e.sorte, 70)) break;
           if (e.sorte === 'archers') this.ton('square', 900, 500, 0.05, 0.025);
-          else if (e.sorte === 'canon') { this.ton('sine', 140, 45, 0.25, 0.18); this.souffle(0.15, 0.08, 900); }
+          else if (e.sorte === 'canon' && e.variante !== 'b') { this.ton('sine', 140, 45, 0.25, 0.18); this.souffle(0.15, 0.08, 900); }
           else if (e.sorte === 'givre') this.ton('sine', 1300, 2000, 0.09, 0.04);
+          else if (e.sorte === 'baliste') { this.ton('triangle', 220, 90, 0.18, 0.12); this.souffle(0.08, 0.06, 2500); }
+          else if (e.sorte === 'canon' && e.variante === 'b') this.souffle(0.25, 0.05, 1800);
           else this.ton('triangle', 480, 960, 0.14, 0.06);
           break;
+        case 'eclair': if (this.libre('eclair', 90)) { this.souffle(0.12, 0.09, 6000); this.ton('sawtooth', 1800, 300, 0.12, 0.04); } break;
         case 'explosion': if (this.libre('boum', 80)) this.souffle(0.3, 0.16, 600); break;
         case 'mort': if (this.libre('mort', 50)) this.ton('square', 320, 70, 0.12, 0.05); break;
         case 'fuite': this.ton('sawtooth', 220, 90, 0.35, 0.09); break;

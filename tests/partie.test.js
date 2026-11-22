@@ -49,9 +49,11 @@ test('améliorer jusqu’au niveau 3 puis revendre à 70 % de tout ce qui a ét�
   const [c, r] = libre(s);
   const t = poser(s, 'canon', c, r).tour;
   assert.equal(ameliorer(s, t.id).ok, true);
-  assert.equal(ameliorer(s, t.id).ok, true);
+  assert.equal(ameliorer(s, t.id).raison, 'choix', 'le niveau 3 demande une spécialisation');
+  assert.equal(ameliorer(s, t.id, 'a').ok, true);
   assert.equal(t.niveau, 2);
-  assert.equal(ameliorer(s, t.id).raison, 'max');
+  assert.equal(t.variante, 'a');
+  assert.equal(ameliorer(s, t.id, 'b').raison, 'max');
   const paye = TOURS.canon.prix + TOURS.canon.ameliorations[0] + TOURS.canon.ameliorations[1];
   const avant = s.or;
   assert.equal(vendre(s, t.id).or, Math.floor(paye * 0.7));
@@ -112,7 +114,7 @@ test('armure : les dégâts physiques sont réduits, la magie non', () => {
 
 test('ciblage : premier, dernier, plus fort, plus proche ; le canon ignore les volants', () => {
   const s = nouvellePartie('prairie');
-  const t = { id: 1, sorte: 'archers', niveau: 2, x: 200, y: 200, ciblage: 'premier' };
+  const t = { id: 1, sorte: 'archers', niveau: 1, x: 200, y: 200, ciblage: 'premier' };
   const e = (id, d, x, pv, vol = false) => ({ id, sorte: vol ? 'bat' : 'gob', d, x, y: 200, pv, pvMax: pv, vol });
   s.ennemis = [e(1, 100, 230, 10), e(2, 300, 300, 50), e(3, 200, 205, 20)];
   assert.equal(choisirCible(s, t).id, 2);

@@ -13,7 +13,7 @@ function couverture(s, c, r, portee) {
   return n;
 }
 
-export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'archers', 'mage'], presse = false, max = 60 * 60 * 30 } = {}) {
+export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'], presse = false, max = 60 * 60 * 30 } = {}) {
   const s = nouvellePartie(carte);
   const places = [];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (peutPoser(s, c, r)) places.push([c, r, couverture(s, c, r, 125)]);
@@ -29,7 +29,7 @@ export function jouer({ carte = 'prairie', plan = ['archers', 'archers', 'mage',
       if (s.or >= prochaine && (s.tours.length < 8 || !amel || prixAmelioration(amel) > prochaine)) {
         const p = places.find(([c, r]) => peutPoser(s, c, r));
         if (p && poser(s, sorte, p[0], p[1]).ok) k++;
-      } else if (amel && s.or >= prixAmelioration(amel)) ameliorer(s, amel.id);
+      } else if (amel && s.or >= prixAmelioration(amel)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
       if (presse && peutAppeler(s)) appelerVague(s);
     }
     avancer(s);
@@ -42,5 +42,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Joueur posé    :', jouer());
   console.log('Joueur pressé  :', jouer({ presse: true }));
   console.log('Que des archers:', jouer({ plan: ['archers'] }));
-  console.log('Sans tour      :', jouer({ plan: ['archers'], max: 1, _x: 60 * 60 * 10 }));
+  console.log('Étape 1 seule :', jouer({ presse: true, plan: ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'archers', 'mage'] }));
+  console.log('Sans tour      :', jouer({ plan: [], max: 60 * 60 * 10 }));
 }
