@@ -1,0 +1,297 @@
+{
+ "version": 1,
+ "style": "pixel",
+ "carte": "desert",
+ "pixels_par_case": 20,
+ "elevation": 50,
+ "elements": [
+  {
+   "nom": "desert_cactus_1",
+   "fichier": "desert_cactus_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    7.2,
+    15.4
+   ]
+  },
+  {
+   "nom": "desert_cactus_2",
+   "fichier": "desert_cactus_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    11.5,
+    20.8
+   ]
+  },
+  {
+   "nom": "desert_cactus_3",
+   "fichier": "desert_cactus_3.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    7.8,
+    11.5
+   ]
+  },
+  {
+   "nom": "desert_souche",
+   "fichier": "desert_souche.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.4,
+    11.6
+   ]
+  },
+  {
+   "nom": "desert_buisson",
+   "fichier": "desert_buisson.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.8,
+    14.2
+   ]
+  },
+  {
+   "nom": "desert_fleurs_1",
+   "fichier": "desert_fleurs_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    8.3,
+    7.7
+   ]
+  },
+  {
+   "nom": "desert_fleurs_2",
+   "fichier": "desert_fleurs_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    8.9,
+    7.9
+   ]
+  },
+  {
+   "nom": "desert_herbes_hautes",
+   "fichier": "desert_herbes_hautes.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    8.8,
+    10.3
+   ]
+  },
+  {
+   "nom": "desert_cloture",
+   "fichier": "desert_cloture.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    13.1,
+    11.7
+   ]
+  },
+  {
+   "nom": "desert_entree",
+   "fichier": "desert_entree.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 3,
+   "bloquant": 1,
+   "ancre": [
+    12.0,
+    42.4
+   ]
+  },
+  {
+   "nom": "desert_chateau",
+   "fichier": "desert_chateau.png",
+   "type": "decor",
+   "cases_l": 3,
+   "cases_h": 5,
+   "bloquant": 1,
+   "ancre": [
+    31.8,
+    62.8
+   ]
+  },
+  {
+   "nom": "desert_palmier_1",
+   "fichier": "desert_palmier_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    11.6,
+    29.2
+   ]
+  },
+  {
+   "nom": "desert_palmier_2",
+   "fichier": "desert_palmier_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    21.6,
+    31.6
+   ]
+  },
+  {
+   "nom": "desert_rocher_petit",
+   "fichier": "desert_rocher_petit.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    6.8,
+    7.3
+   ]
+  },
+  {
+   "nom": "desert_rocher_moyen",
+   "fichier": "desert_rocher_moyen.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    8.7,
+    15.2
+   ]
+  },
+  {
+   "nom": "desert_rocher_gros",
+   "fichier": "desert_rocher_gros.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    19.7,
+    17.4
+   ]
+  },
+  {
+   "nom": "desert_touffe",
+   "fichier": "desert_touffe.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    8.1,
+    10.4
+   ]
+  },
+  {
+   "nom": "desert_dune",
+   "fichier": "desert_dune.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    22.0,
+    10.1
+   ]
+  },
+  {
+   "nom": "desert_oasis",
+   "fichier": "desert_oasis.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 1,
+   "ancre": [
+    21.4,
+    21.8
+   ]
+  },
+  {
+   "nom": "desert_forteresse",
+   "fichier": "desert_forteresse.png",
+   "type": "decor",
+   "cases_l": 3,
+   "cases_h": 5,
+   "bloquant": 1,
+   "ancre": [
+    32.2,
+    72.4
+   ]
+  },
+  {
+   "nom": "desert_entree_nord",
+   "fichier": "desert_entree_nord.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 3,
+   "bloquant": 1,
+   "ancre": [
+    12.3,
+    41.0
+   ]
+  },
+  {
+   "nom": "desert_entree_sud",
+   "fichier": "desert_entree_sud.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 3,
+   "bloquant": 1,
+   "ancre": [
+    12.3,
+    35.2
+   ]
+  },
+  {
+   "nom": "desert_sol_sable",
+   "fichier": "desert_sol_sable.png",
+   "type": "sol",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 0,
+   "ancre": [
+    22.0,
+    22.0
+   ]
+  },
+  {
+   "nom": "desert_sol_chemin",
+   "fichier": "desert_sol_chemin.png",
+   "type": "sol",
+   "cases_l": 2,
+   "cases_h": 2,
+   "bloquant": 0,
+   "ancre": [
+    22.0,
+    22.0
+   ]
+  }
+ ]
+}
