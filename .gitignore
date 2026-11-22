@@ -1,5 +1,5 @@
 *.blend1
 *.blend@
 __pycache__/
-
+.rendu_tmp/
 decors_*.zip
