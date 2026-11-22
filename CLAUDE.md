@@ -3,7 +3,7 @@
 Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `docs/specs/001-tower-defense.md`,
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
-étape 3 : `docs/specs/005-etape-3.md` (lot 1 fait : difficultés, étoiles, sauvegarde). Ne rien coder qui n'y figure
+étape 3 : `docs/specs/005-etape-3.md` (lots 1 et 2 faits : progression, Désert). Ne rien coder qui n'y figure
 pas sans le faire valider d'abord.
 
 ## Règles du dépôt
@@ -25,7 +25,8 @@ pas sans le faire valider d'abord.
 - `npm run simulate` : joueur automatique sur la Prairie. Repères actuels (étape 2, lot 2) : « posé » (laisse
   le compte à rebours lancer les vagues, une tour sur deux en « Plus fort » dès la vague 8) gagne avec 3 vies
   environ ; « pressé » (appelle chaque vague dès que possible) perd vers la vague 10 ; sans tour, défaite.
-  `journal` donne les vies au lancement de chaque vague. Toute retouche des chiffres de `src/data/` se
+  `journal` donne les vies au lancement de chaque vague. Désert (`jouer({ carte: 'desert' })`) : « posé »
+  gagne en Normal avec 8 vies environ. Toute retouche des chiffres de `src/data/` se
   contrôle avec lui.
 - Rendu : `python3 tools/serveur.py` (port 8028, sans cache navigateur). `?jouer=prairie` démarre directement,
   `?test=1` expose `window.td` (partie, poser, appelerVague, avancer) pour les essais automatisés.
@@ -33,9 +34,12 @@ pas sans le faire valider d'abord.
 ## Repères du code
 
 - Grille de 24 × 16 cases de 40 px (`src/sim/const.js`) ; la toile fait 960 × 640 et est agrandie en CSS.
-- `construireCarte` (carte.js) : cases du chemin (`CHEMIN`), cases prises (`PRIS`) par le château, l'entrée et
-  le décor bloquant, trajet au sol (`sol`) et trajet des volants (`vol`, ligne droite). Le décor bloquant reste
-  à plus d'une case du chemin.
+- `construireCarte` (carte.js) : une carte a un ou plusieurs chemins (`chemins`, ou `chemin`) et autant
+  d'`entrees` ; cases du chemin (`CHEMIN`), cases prises (`PRIS`) par le château, les entrées et le décor
+  bloquant ; trajets au sol `sols[k]` et des volants `vols[k]` (ligne droite). Chaque ennemi a une `route`
+  (entrées à tour de rôle, `trajetDe(s, e)`). Les renforts gardent une distance par route (`ds`). Noms des
+  éléments fixes dans `def.noms`, couleurs du sol de secours dans `def.sol`. Le décor bloquant reste à plus
+  d'une case du chemin.
 - Vagues : `appelerVague` construit la file d'apparition ; après la dernière apparition, `compte` démarre
   (`COMPTE_VAGUE`) ; appeler plus tôt rapporte `BONUS_AVANCE` or par seconde restante. Bonus de fin de vague
   quand tous ses ennemis sont tués ou passés (`bilanVagues`).

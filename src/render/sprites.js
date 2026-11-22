@@ -245,5 +245,10 @@ export function decorsDeSecours(carte) {
   for (const [nom, [l, h, t]] of Object.entries(BOUQUETS)) ajouter(nom, l, h, t, nom === 'rocher_gros' ? [16, 12] : null);
   ajouter('chateau', 60, 100, chateau, [31, 51]);
   ajouter('entree', 24, 64, entree, [13, 33]);
+  // Désert : éléments de secours tirés des précédents (le pack de Blender les remplace).
+  const alias = { forteresse: 'chateau', entree_nord: 'entree', entree_sud: 'entree', cactus_1: 'sapin_1', cactus_2: 'sapin_2',
+    cactus_3: 'sapin_1', palmier_1: 'chene_2', palmier_2: 'chene_1', dune: 'rocher_gros', touffe: 'herbes_hautes' };
+  for (const [nom, base] of Object.entries(alias)) els[carte + '_' + nom] = els[carte + '_' + base];
+  ajouter('oasis', 34, 30, (r) => { r(2, 6, 30, 20, '#8a8d93'); r(4, 8, 26, 16, '#3fa7c9'); r(8, 10, 10, 3, '#8fd6ff'); r(24, 2, 3, 14, '#8a6a43'); r(20, 0, 11, 4, '#4e8a3c'); }, [17, 16]);
   return els;
 }

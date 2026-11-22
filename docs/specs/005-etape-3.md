@@ -6,7 +6,7 @@ sert de boss sur les trois cartes).
 ## Livraison
 
 1. **Lot 1 — progression** (sur la Prairie) : difficultés, étoiles, sauvegarde, déblocage des cartes. — *réalisé*
-2. **Lot 2 — le Désert**, avec son décor Blender.
+2. **Lot 2 — le Désert**, avec son décor Blender. — *réalisé*
 3. **Lot 3 — la Montagne enneigée et le mode infini.**
 
 ## Difficultés (choisies sur l'écran des cartes, gardées d'une visite à l'autre)
@@ -35,6 +35,11 @@ la Montagne débloque le mode infini. Une carte débloquée mais pas encore cons
 
 25 vagues ; deux entrées dont les chemins se rejoignent avant la forteresse ; boss aux vagues 10, 20 et 25.
 Décor : cactus, rochers rouges, dunes, palmiers, oasis, forteresse de grès (modélisés dans Blender).
+
+Réalisation : les ennemis partent de chaque entrée à tour de rôle ; les volants vont tout droit de leur entrée à
+la forteresse ; des renforts posés sur le tronçon commun bloquent les deux routes. Or de départ 280. Repères du
+joueur automatique « posé » : Facile gagné sans perte, Normal gagné avec 8 vies (pertes aux vagues 8 et 14,
+quand les deux entrées poussent), Difficile perdu tôt (comme sur la Prairie).
 
 ## La Montagne enneigée (lot 3)
 

@@ -97,7 +97,7 @@ export class Interface {
     for (const b of $('choix-difficulte').querySelectorAll('button')) b.onclick = () => this.a.difficulte(b.dataset.diff);
     const zone = $('liste-cartes');
     zone.innerHTML = '';
-    const etoiles = (n) => '<span class="etoiles">' + [1, 2, 3].map((i) => (i <= n ? '★' : '<span class="vide">★</span>')).join('') + '</span>';
+    const etoiles = (n) => '<span class="etoiles">' + [1, 2, 3].map((i) => (i <= n ? '★' : '<span class="eteinte">★</span>')).join('') + '</span>';
     for (const id of ORDRE_CARTES) {
       const c = cartes[id];
       const ouverte = estDebloquee(prog, id);
@@ -125,7 +125,7 @@ export class Interface {
     $('fin-titre').textContent = s.fin === 'victoire' ? 'Victoire !' : 'Le château est tombé';
     const et = $('fin-etoiles');
     et.hidden = s.fin !== 'victoire';
-    et.innerHTML = [1, 2, 3].map((i) => (i <= (bilan.etoiles || 0) ? '★' : '<span class="vide">★</span>')).join('');
+    et.innerHTML = [1, 2, 3].map((i) => (i <= (bilan.etoiles || 0) ? '★' : '<span class="eteinte">★</span>')).join('');
     const msg = [...(bilan.nouvelles || []).map((n) => `Nouvelle carte : ${n} !`), ...(bilan.infini ? ['Mode infini débloqué !'] : [])];
     $('fin-nouveau').hidden = !msg.length;
     $('fin-nouveau').textContent = msg.join(' ');

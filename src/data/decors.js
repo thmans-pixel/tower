@@ -12,4 +12,10 @@ export const SORTES = {
   petit_rocher: { l: 1, h: 1, bloquant: false, noms: ['rocher_petit'] },
   fleurs:       { l: 1, h: 1, bloquant: false, noms: ['fleurs_1', 'fleurs_2'] },
   herbes:       { l: 1, h: 1, bloquant: false, noms: ['herbes_hautes'] },
+  // Désert
+  cactus:       { l: 1, h: 1, bloquant: true,  noms: ['cactus_1', 'cactus_2', 'cactus_3'] },
+  palmier:      { l: 1, h: 1, bloquant: true,  noms: ['palmier_1', 'palmier_2'] },
+  dune:         { l: 2, h: 1, bloquant: true,  noms: ['dune'] },
+  oasis:        { l: 2, h: 2, bloquant: true,  noms: ['oasis'] },
+  touffe:       { l: 1, h: 1, bloquant: false, noms: ['touffe'] },
 };

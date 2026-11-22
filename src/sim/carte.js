@@ -13,10 +13,15 @@ export function construireCarte(def) {
   const grille = new Uint8Array(COLS * ROWS);
   const ix = (c, r) => r * COLS + c;
 
-  // Chemin case par case.
+  // Une carte a un ou plusieurs chemins (`chemins`, ou `chemin` seul), chacun de son entrée au château ;
+  // ils peuvent se rejoindre et partager la fin du trajet.
+  const chemins = def.chemins || [def.chemin];
+  const entrees = def.entrees || [def.entree];
+
+  // Chemins case par case.
   const cheminCases = [];
-  for (let i = 0; i + 1 < def.chemin.length; i++) {
-    const [c0, r0] = def.chemin[i], [c1, r1] = def.chemin[i + 1];
+  for (const chemin of chemins) for (let i = 0; i + 1 < chemin.length; i++) {
+    const [c0, r0] = chemin[i], [c1, r1] = chemin[i + 1];
     const dc = Math.sign(c1 - c0), dr = Math.sign(r1 - r0);
     let c = c0, r = r0;
     for (;;) {
@@ -26,18 +31,16 @@ export function construireCarte(def) {
     }
   }
 
-  // Trajet au sol : segments entre centres de cases.
-  const points = def.chemin.map(([c, r]) => ({ x: centre(c), y: centre(r) }));
-  const sol = trajet(points);
-  // Les volants vont tout droit de l'entrée au château.
-  const vol = trajet([points[0], points[points.length - 1]]);
+  // Trajets au sol : segments entre centres de cases. Les volants vont tout droit de leur entrée au château.
+  const sols = chemins.map((ch) => trajet(ch.map(([c, r]) => ({ x: centre(c), y: centre(r) }))));
+  const vols = sols.map((tr) => trajet([tr.points[0], tr.points[tr.points.length - 1]]));
 
   const prendre = (z) => {
     for (let r = z.r; r < z.r + z.h; r++) for (let c = z.c; c < z.c + z.l; c++)
       if (dedans(c, r) && grille[ix(c, r)] === LIBRE) grille[ix(c, r)] = PRIS;
   };
   prendre(def.chateau);
-  prendre(def.entree);
+  entrees.forEach(prendre);
 
   // Décor : les éléments qui bloquent restent à plus d'une case du chemin, pour laisser les bonnes places libres.
   const presDuChemin = (c, r) => {
@@ -74,8 +77,9 @@ export function construireCarte(def) {
   }
 
   return {
-    def, grille, cheminCases, sol, vol, decors,
-    chateau: def.chateau, entree: def.entree,
+    def, grille, cheminCases, sols, vols, decors,
+    sol: sols[0], vol: vols[0],                  // premier trajet (cartes à un seul chemin)
+    chateau: def.chateau, entrees,
     etat: (c, r) => (dedans(c, r) ? grille[ix(c, r)] : PRIS),
   };
 }

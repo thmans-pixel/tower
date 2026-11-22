@@ -12,6 +12,24 @@ import { POUVOIRS } from '../data/pouvoirs.js';
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Pixelify Sans", ui-monospace, monospace';
 
+/** Rectangle intérieur d'une image de sol : sans bords transparents, et sans le contour sombre d'un pixel. */
+function partiePleine(img) {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+  const plein = (x, y) => d[(y * c.width + x) * 4 + 3] === 255;
+  let x0 = 0, y0 = 0, x1 = c.width - 1, y1 = c.height - 1;
+  const mid = (a, b) => Math.floor((a + b) / 2);
+  while (x0 < x1 && !plein(x0, mid(y0, y1))) x0++;
+  while (x1 > x0 && !plein(x1, mid(y0, y1))) x1--;
+  while (y0 < y1 && !plein(mid(x0, x1), y0)) y0++;
+  while (y1 > y0 && !plein(mid(x0, x1), y1)) y1--;
+  const k = d[(mid(y0, y1) * c.width + x0) * 4] < 60 ? 1 : 0;   // contour sombre : un pixel de plus
+  return [x0 + k, y0 + k, x1 - x0 + 1 - 2 * k, y1 - y0 + 1 - 2 * k];
+}
+
 export class Vue {
   constructor(toile) {
     this.toile = toile;
@@ -46,22 +64,26 @@ export class Vue {
       c.width = 2 * T; c.height = 2 * T;
       const cg = c.getContext('2d');
       cg.imageSmoothingEnabled = !!s.lisse;
-      cg.drawImage(s.img, 0, 0, 2 * T, 2 * T);
+      // Les textures de sol doivent se répéter sans couture : on ne garde que leur partie pleine (sans la marge
+      // transparente ni le contour qu'un ancien rendu leur ajoutait).
+      const [x0, y0, l, h] = partiePleine(s.img);
+      cg.drawImage(s.img, x0, y0, l, h, 0, 0, 2 * T, 2 * T);
       return g.createPattern(c, 'repeat');
     };
-    const herbe = motif('herbe'), terre = motif('chemin');
+    const herbe = motif('herbe') || motif('sable'), terre = motif('chemin');
+    const sol = carte.def.sol || { fond: '#5c9e3f', taches: ['#4f8f35', '#6db34b'], chemin: '#c8a165', cailloux: ['#b08d57', '#dcc08a'] };
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const x = c * T, y = r * T, chemin = carte.etat(c, r) === CHEMIN;
       if (chemin) {
-        g.fillStyle = terre || '#c8a165'; g.fillRect(x, y, T, T);
+        g.fillStyle = terre || sol.chemin; g.fillRect(x, y, T, T);
         if (!terre) for (let i = 0; i < 5; i++) {
-          g.fillStyle = rnd() < 0.5 ? '#b08d57' : '#dcc08a';
+          g.fillStyle = rnd() < 0.5 ? sol.cailloux[0] : sol.cailloux[1];
           g.fillRect(x + Math.floor(rnd() * 18) * 2, y + Math.floor(rnd() * 18) * 2, 4, 2);
         }
       } else {
-        g.fillStyle = herbe || '#5c9e3f'; g.fillRect(x, y, T, T);
+        g.fillStyle = herbe || sol.fond; g.fillRect(x, y, T, T);
         if (!herbe) for (let i = 0; i < 6; i++) {
-          g.fillStyle = rnd() < 0.5 ? '#4f8f35' : '#6db34b';
+          g.fillStyle = rnd() < 0.5 ? sol.taches[0] : sol.taches[1];
           g.fillRect(x + Math.floor(rnd() * 10) * 4, y + Math.floor(rnd() * 10) * 4, 4, 4);
         }
       }
@@ -78,10 +100,11 @@ export class Vue {
     }
     this.fond = f;
     // Décor fixe : château, entrée, puis éléments placés par la logique.
-    const ch = carte.chateau, en = carte.entree, id = carte.def.id;
+    const ch = carte.chateau, id = carte.def.id;
+    const noms = carte.def.noms || { chateau: 'chateau', entrees: carte.entrees.map(() => 'entree') };
     this.fixes = [
-      { nom: id + '_entree', x: (en.c + en.l / 2) * T, y: (en.r + en.h / 2) * T, c: -1, r: -1, bloquant: true },
-      { nom: id + '_chateau', x: (ch.c + ch.l / 2) * T, y: (ch.r + ch.h / 2) * T, c: -1, r: -1, bloquant: true },
+      ...carte.entrees.map((en, k) => ({ nom: id + '_' + noms.entrees[k], x: (en.c + en.l / 2) * T, y: (en.r + en.h / 2) * T, c: -1, r: -1, bloquant: true })),
+      { nom: id + '_' + noms.chateau, x: (ch.c + ch.l / 2) * T, y: (ch.r + ch.h / 2) * T, c: -1, r: -1, bloquant: true },
       ...carte.decors,
     ];
   }

@@ -30,7 +30,8 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal') {
     abattus: 0, orGagne: 0,
     pouvoirs: { meteores: 0, renforts: 0 },   // secondes de recharge restantes
     meteores: [],             // météores en train de tomber : { x, y, t }
-    renforts: [],             // groupes de soldats : { id, x, y, d, pv, pvMax, t }
+    renforts: [],             // groupes de soldats : { id, x, y, ds: { route: distance }, pv, pvMax, t }
+    routeSuivante: 0,
     prochainId: 1,
     evenements: [],
   };
@@ -171,13 +172,18 @@ function lancer(s, dt) {
   }
 }
 
-function apparaitre(s, sorte, vague, distance = 0) {
+/** Trajet suivi par un ennemi (au sol ou en vol, sur la route qui lui a été donnée). */
+export const trajetDe = (s, e) => (e.vol ? s.carte.vols : s.carte.sols)[e.route || 0];
+
+function apparaitre(s, sorte, vague, distance = 0, route = null) {
   const d = ENNEMIS[sorte];
   const m = multPV(vague) * s.multPV;
-  const tr = d.vol ? s.carte.vol : s.carte.sol;
+  // Sur une carte à plusieurs entrées, les ennemis partent de chacune à tour de rôle.
+  if (route === null) { route = s.routeSuivante % s.carte.sols.length; s.routeSuivante++; }
+  const tr = (d.vol ? s.carte.vols : s.carte.sols)[route];
   const p = positionSur(tr, distance);
   const e = {
-    id: s.prochainId++, sorte, vague, pv: d.pv * m, pvMax: d.pv * m, mult: m,
+    id: s.prochainId++, sorte, vague, route, pv: d.pv * m, pvMax: d.pv * m, mult: m,
     d: distance, x: p.x, y: p.y, dx: p.dx, dy: p.dy, vol: !!d.vol,
     ralenti: 0, ralFacteur: 0, gel: 0, brule: null, soinT: d.soin ? d.soin.toutes : 0, pas: 0,
     invisible: false, invisT: d.invisible ? d.invisible.toutes - d.invisible.duree : 0,
@@ -200,15 +206,16 @@ function deplacer(s, dt) {
     // Renforts : un ennemi au sol s'arrête devant les soldats (sauf le boss, qui les écrase).
     e.bloque = null;
     if (!e.vol) for (const g of s.renforts) {
-      if (e.d > g.d || e.d + v * dt < g.d - 16) continue;
+      const gd = g.ds[e.route || 0];
+      if (gd === undefined || e.d > gd || e.d + v * dt < gd - 16) continue;
       if (d.boss) { g.pv = 0; ev(s, 'ecrases', { x: g.x, y: g.y }); continue; }
       e.bloque = g.id;
       break;
     }
-    const avance = e.bloque ? Math.max(0, Math.min(v * dt, s.renforts.find((g) => g.id === e.bloque).d - 16 - e.d)) : v * dt;
+    const avance = e.bloque ? Math.max(0, Math.min(v * dt, s.renforts.find((g) => g.id === e.bloque).ds[e.route || 0] - 16 - e.d)) : v * dt;
     e.d += avance;
     e.pas += avance;
-    const tr = e.vol ? s.carte.vol : s.carte.sol;
+    const tr = trajetDe(s, e);
     if (e.d >= tr.longueur) {
       s.ennemis.splice(i, 1);
       s.vivants[e.vague]--;
@@ -284,10 +291,16 @@ export function appelerRenforts(s, c, r) {
   if (!pouvoirPret(s, 'renforts')) return { ok: false, raison: 'recharge' };
   if (s.carte.etat(c, r) !== CHEMIN) return { ok: false, raison: 'place' };
   const p = POUVOIRS.renforts;
-  const d = distanceSurTrajet(s.carte.sol, centre(c), centre(r));
-  const pos = positionSur(s.carte.sol, d);
+  // Distance des soldats sur chaque route qui passe par cette case (deux routes sur un tronçon commun).
+  const ds = {};
+  let pos = null;
+  s.carte.sols.forEach((tr, k) => {
+    const { d, ecart } = distanceSurTrajet(tr, centre(c), centre(r));
+    if (ecart < 6) { ds[k] = d; pos = pos || positionSur(tr, d); }
+  });
+  if (!pos) return { ok: false, raison: 'place' };
   s.pouvoirs.renforts = p.recharge;
-  const g = { id: s.prochainId++, x: pos.x, y: pos.y, d, pv: p.pv * p.soldats, pvMax: p.pv * p.soldats, t: p.duree, coup: 0 };
+  const g = { id: s.prochainId++, x: pos.x, y: pos.y, ds, pv: p.pv * p.soldats, pvMax: p.pv * p.soldats, t: p.duree, coup: 0 };
   s.renforts.push(g);
   ev(s, 'renforts', { x: g.x, y: g.y });
   return { ok: true, groupe: g };
@@ -303,7 +316,7 @@ function distanceSurTrajet(tr, x, y) {
     const dd = Math.hypot(px - x, py - y);
     if (dd < dmin) { dmin = dd; best = sg.debut + t; }
   }
-  return best;
+  return { d: best, ecart: dmin };
 }
 
 function pouvoirsJoueur(s, dt) {
@@ -337,7 +350,7 @@ function pouvoirsJoueur(s, dt) {
 }
 
 /** Avancement d'un ennemi sur son trajet, de 0 à 1 (sert aux ciblages premier et dernier). */
-const avance = (s, e) => e.d / (e.vol ? s.carte.vol.longueur : s.carte.sol.longueur);
+const avance = (s, e) => e.d / trajetDe(s, e).longueur;
 
 export function choisirCible(s, t) {
   const n = statsTour(t);
@@ -534,7 +547,7 @@ export function blesser(s, e, degats, type, tour, perce = 0) {
   if (tour) tour.abattus++;
   ev(s, 'mort', { sorte: e.sorte, x: e.x, y: e.y, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
   const div = ENNEMIS[e.sorte].division;
-  if (div) for (let k = 0; k < div.nombre; k++) apparaitre(s, div.sorte, e.vague, Math.max(0, e.d + (k - (div.nombre - 1) / 2) * 14));
+  if (div) for (let k = 0; k < div.nombre; k++) apparaitre(s, div.sorte, e.vague, Math.max(0, e.d + (k - (div.nombre - 1) / 2) * 14), e.route);
 }
 
 function bilanVagues(s) {

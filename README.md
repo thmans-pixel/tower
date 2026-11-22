@@ -5,7 +5,7 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 3, lot 1** (difficultés, étoiles, sauvegarde) — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
+État : **étape 3, lot 2** (difficultés, étoiles, sauvegarde, carte du Désert) — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
 (slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Specs des étapes 2 et 3 : [004](docs/specs/004-etape-2.md), [005](docs/specs/005-etape-3.md).
 
 ## Lancer le jeu
@@ -178,6 +178,9 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | boss_ogre (`scripts/boss_ogre.py`), boss : actions « marche » (pas lourds) et « rugissement », pistes NLA du même nom | 1,60 | 1 101 | 9 |
 
 ## Rendre les packs pour le jeu
+
+Décor d'une autre carte : ajouter `-- decor carte=desert` (seuls les objets `desert_…` sont rendus).
+
 
 Une seule commande rend le décor (`assets/decors/prairie/`), les tours (`assets/tours/`, pièces mobiles en
 16 orientations) et les ennemis (`assets/ennemis/`, bandes de 8 images par action) — spec 003 :
