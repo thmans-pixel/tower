@@ -9,7 +9,7 @@ BLEND = os.path.join(DOSSIER, "decor.blend")
 PALETTE = {
     "pierre": "#8D9099", "pierre_claire": "#A9ACB4", "pierre_sombre": "#6E717A",
     "bois": "#9B6B3D", "bois_fonce": "#7A5230", "toits": "#C0392B", "or": "#F2C14E",
-    "bleu": "#3A6FC4",
+    "bleu": "#3A6FC4", "fer_noir": "#2A2D33", "bronze": "#B08D57",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
@@ -60,6 +60,19 @@ def boite(bm, x0, y0, z0, x1, y1, z1, mat):
     m = Matrix.Translation(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)) @ \
         Matrix.Diagonal((abs(x1 - x0), abs(y1 - y0), abs(z1 - z0), 1))
     _colorie(bmesh.ops.create_cube(bm, size=1.0, matrix=m), mat)
+
+
+def pave(bm, c, taille, rz, mat):
+    """Pavé centré en c, tourné de rz autour de Z."""
+    m = Matrix.Translation(c) @ Matrix.Rotation(rz, 4, "Z") @ Matrix.Diagonal((taille[0], taille[1], taille[2], 1))
+    _colorie(bmesh.ops.create_cube(bm, size=1.0, matrix=m), mat)
+
+
+def cylindre(bm, cx, cy, z0, z1, r0, r1, seg, mat, rot=0.0):
+    """Cylindre (ou tronc de cône) vertical ; rot tourne les facettes autour de Z."""
+    m = Matrix.Translation((cx, cy, (z0 + z1) / 2)) @ Matrix.Rotation(rot, 4, "Z")
+    _colorie(bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r0, radius2=r1,
+             depth=z1 - z0, matrix=m), mat)
 
 
 def carre(bm, cx, cy, z0, z1, demi0, demi1, mat):
