@@ -4,7 +4,7 @@ Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `doc
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
-`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -70,6 +70,8 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
   `etiquetteRang`). Pose en série dans `main.js` : Maj + clic ou `ui.verrou` (appui long sur le bouton).
 - Fiches (spec 008) : `src/ui/fiches.js` construit le HTML (fiche de boutique, pouvoirs, encadré « Au niveau 2 »,
   spécialisations comparées) à partir des `description` de `src/data/` ; `Interface.majFiche` affiche `#fiche`.
+- Polices (spec 009) : `--police` commence par « Chiffres » (chiffres 0-9 pris dans une police de l'appareil, car le
+  2 de Pixelify Sans ressemble à un 8), `--texte-police` (system-ui) pour les phrases ; pas de texte sous 13 px.
 - `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.

@@ -10,7 +10,7 @@ import { nomTour, nomEnnemi } from './modeles.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
-const POLICE = '"Pixelify Sans", ui-monospace, monospace';
+const POLICE = '"Chiffres", "Pixelify Sans", system-ui, sans-serif';   // chiffres lisibles (spec 009)
 
 /** Rectangle intérieur d'une image de sol : sans bords transparents, et sans le contour sombre d'un pixel. */
 function partiePleine(img) {

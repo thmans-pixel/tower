@@ -3,14 +3,21 @@ VOICE    : jeu de plateau médiéval, chaleureux, lisible d'un coup d'œil.
 IDEA     : une table de guerre en bois sombre ; la carte est posée au centre, les commandes gravées autour.
 PICTURE  : la carte en pixel-art, toujours la plus grande possible.
 COLOUR   : bois #2a1c12 / #4a3020, or #f2c14e en accent, parchemin clair pour le texte.
-TYPE     : Pixelify Sans, quatre tailles.
+TYPE     : Pixelify Sans pour les titres et boutons, chiffres et phrases dans la police de l’appareil (spec 009).
 */
+/* Chiffres lisibles (spec 009) : dans Pixelify Sans, le 2 ressemble à un 8 et le 5 à un S. Les chiffres
+   viennent donc d'une police de l'appareil, déjà installée, sans rien télécharger. */
+@font-face { font-family: "Chiffres"; font-weight: 400 500; unicode-range: U+0030-0039;
+  src: local("Segoe UI"), local("SegoeUI"), local("Noto Sans"), local("NotoSans-Regular"), local("DejaVu Sans"), local("Liberation Sans"), local("Arial"), local("Helvetica"); }
+@font-face { font-family: "Chiffres"; font-weight: 600 900; unicode-range: U+0030-0039;
+  src: local("Segoe UI Bold"), local("SegoeUI-Bold"), local("Noto Sans Bold"), local("NotoSans-Bold"), local("DejaVu Sans Bold"), local("DejaVuSans-Bold"), local("Liberation Sans Bold"), local("Arial Bold"), local("Arial-BoldMT"), local("Helvetica Bold"); }
 :root {
   color-scheme: dark;
   --bois: #2a1c12; --bois2: #4a3020; --bois3: #6b4a2b;
   --or: #f2c14e; --texte: #fdf6e3; --doux: #d9c7a3;
   --rouge: #e5533d; --vert: #5fd068; --nuit: #1a1420;
-  --police: "Pixelify Sans", ui-monospace, monospace;
+  --police: "Chiffres", "Pixelify Sans", system-ui, sans-serif;
+  --texte-police: system-ui, "Segoe UI", "Noto Sans", Roboto, sans-serif;   /* phrases et petits textes */
 }
 * { box-sizing: border-box; min-width: 0; }
 html, body { margin: 0; height: 100%; background: var(--nuit); color: var(--texte); font: 16px/1.4 var(--police); overflow: hidden; }
@@ -109,9 +116,9 @@ button.actif { background: var(--or); color: var(--nuit); }
 #fiche .alerte { margin: -2px 0 4px; color: var(--rouge); font-weight: 700; font-size: 13px; }
 #fiche .stats { margin-bottom: 6px; }
 #fiche .specs { margin: 0 0 6px; padding-left: 16px; font-size: 13px; line-height: 1.3; }
-#fiche .touches { color: var(--doux); font-size: 12px; }
+#fiche .touches { color: var(--doux); font-size: 13px; }
 .pastilles { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
-.pastille { padding: 0 6px; border-radius: 3px; font-size: 12px; font-weight: 700; border: 1px solid var(--nuit); }
+.pastille { padding: 0 6px; border-radius: 3px; font-size: 13px; font-weight: 700; border: 1px solid var(--nuit); }
 .pastille.physique { background: #8a6a43; }
 .pastille.magique { background: #5b3f9a; }
 .pastille.oui { background: #2f6b2a; }
@@ -130,10 +137,10 @@ button.actif { background: var(--or); color: var(--nuit); }
 .outil .nom { font-weight: 700; font-size: 16px; }
 .outil .prix { display: inline-flex; align-items: center; gap: 4px; color: var(--or); font-size: 15px; }
 .outil .prix .ico { width: 13px; height: 13px; }
-.outil kbd { position: absolute; top: 3px; right: 5px; font: 12px var(--police); color: var(--doux); }
+.outil kbd { position: absolute; top: 3px; right: 5px; font: 13px var(--texte-police); color: var(--doux); }
 .outil.trop-cher .prix { color: var(--rouge); }
 .outil .serie { display: none; position: absolute; bottom: 3px; right: 5px; padding: 0 4px; border-radius: 3px;
-  background: var(--or); color: var(--nuit); font-size: 11px; font-weight: 700; }
+  background: var(--or); color: var(--nuit); font-size: 13px; font-weight: 700; }
 .outil.verrou .serie { display: block; }
 
 #pouvoirs { display: flex; gap: 6px; }
@@ -143,7 +150,7 @@ button.actif { background: var(--or); color: var(--nuit); }
 .pouvoir:hover:not(:disabled) { background: #4d3c80; }
 .pouvoir b { font-size: 15px; }
 .pouvoir span { font-size: 13px; color: var(--doux); }
-.pouvoir kbd { position: absolute; top: 3px; right: 5px; font: 12px var(--police); color: var(--doux); }
+.pouvoir kbd { position: absolute; top: 3px; right: 5px; font: 13px var(--texte-police); color: var(--doux); }
 .pouvoir.actif { background: var(--or); color: var(--nuit); }
 .pouvoir.actif span { color: var(--nuit); }
 .pouvoir .charge { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--or); }
@@ -177,7 +184,7 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 .difficultes { display: flex; justify-content: center; gap: 6px; margin: -4px 0 14px; flex-wrap: wrap; }
 .difficultes button { min-height: 40px; padding: 4px 16px; border: 2px solid var(--nuit); border-radius: 4px; background: var(--bois3); font-size: 16px; }
 .difficultes button.actif { background: var(--or); color: var(--nuit); font-weight: 700; }
-.difficultes small { display: block; font-size: 12px; opacity: .8; }
+.difficultes small { display: block; font-size: 13px; opacity: .85; font-family: var(--texte-police); }
 .difficultes[hidden] { display: none; }
 .record { color: var(--or); font-weight: 700; font-size: 15px; }
 .alea { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; text-align: left; margin-bottom: 16px; }
@@ -186,7 +193,7 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 .alea-reglages .grand { width: 100%; margin-top: 4px; }
 .alea-numero { display: flex; gap: 6px; margin: 4px 0; }
 .alea-numero input { flex: 1; min-height: 40px; padding: 4px 10px; font: 18px var(--police); color: var(--texte); background: var(--nuit); border: 2px solid var(--bois3); border-radius: 4px; }
-.alea-note { margin: 4px 0 8px; font-size: 13px; color: var(--doux); }
+.alea-note { margin: 4px 0 8px; font-size: 14px; color: var(--doux); }
 @media (max-width: 700px) { .alea { grid-template-columns: 1fr; } }
 .etoiles { color: var(--or); letter-spacing: 2px; font-size: 18px; }
 .etoiles .eteinte { color: rgba(255,255,255,.25); }
@@ -223,3 +230,11 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
   #panneau .ciblage { grid-template-columns: repeat(4, 1fr); }
   h1 { font-size: 36px; }
 }
+
+/* Phrases et petits textes dans la police de l'appareil (spec 009), nette à toutes les tailles. */
+#fiche p, #fiche .specs, #fiche .touches, #fiche .alerte, .petit-texte, .encadre p, #panneau .desc,
+.action.specialite > span, .comparaison, .alea-note, .aide, .carte-choix span, #panneau h3 small,
+.outil .serie, .pastille, .pouvoir span, #apercu {
+  font-family: var(--texte-police);
+}
+.action.specialite > span, .encadre p, .petit-texte, .comparaison { font-size: 14px; }
