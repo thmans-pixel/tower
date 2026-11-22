@@ -251,6 +251,17 @@ function boucle(maintenant) {
   c.width = W; c.height = H;
   c.getContext('2d').drawImage(toile, 0, 0);
   vignettes.prairie = c;
+  // Vignettes des autres cartes jouables, dessinées sur une toile à part.
+  for (const def of Object.values(CARTES)) {
+    if (!def.ouverte || vignettes[def.id]) continue;
+    const t = document.createElement('canvas');
+    t.width = W; t.height = H;
+    const v = new Vue(t);
+    const etat = nouvellePartie(def.id);
+    v.preparer(etat.carte, await decorsDe(def.id));
+    v.dessiner(etat, { construction: null, selection: null }, 0);
+    vignettes[def.id] = t;
+  }
   const params = new URLSearchParams(location.search);
   if (params.has('jouer')) await commencer(params.get('jouer') || 'prairie');
   else montrer('titre');

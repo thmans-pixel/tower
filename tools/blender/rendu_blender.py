@@ -115,14 +115,14 @@ def points_monde(objs, avec_ombre):
     return pts
 
 
-def cadrer(sc, cam, pts, ppc, ancres):
+def cadrer(sc, cam, pts, ppc, ancres, marge=MARGE):
     """Règle résolution et décalage de la caméra pour contenir `pts` ; renvoie les ancres (pixels) des points donnés."""
     inv = cam.matrix_world.inverted()
     loc = [inv @ p for p in pts]
     xmin, xmax = min(p.x for p in loc), max(p.x for p in loc)
     ymin, ymax = min(p.y for p in loc), max(p.y for p in loc)
-    rx = math.ceil((xmax - xmin) * ppc) + 2 * MARGE
-    ry = math.ceil((ymax - ymin) * ppc) + 2 * MARGE
+    rx = math.ceil((xmax - xmin) * ppc) + 2 * marge
+    ry = math.ceil((ymax - ymin) * ppc) + 2 * marge
     sc.render.resolution_x, sc.render.resolution_y = rx, ry
     o = max(rx, ry) / ppc
     cam.data.ortho_scale = o
@@ -137,7 +137,7 @@ def cadrer(sc, cam, pts, ppc, ancres):
 
 # ------------------------------------------------------------------ images
 
-def post_pixel(chemin):
+def post_pixel(chemin, sol=False):
     im = bpy.data.images.load(chemin)
     w, h = im.size
     px = list(im.pixels)
@@ -150,7 +150,7 @@ def post_pixel(chemin):
             sortie[k:k + 4] = [0.0, 0.0, 0.0, 0.35]      # ombre portée : noir uni et léger
         else:
             sortie[k:k + 4] = [0.0, 0.0, 0.0, 0.0]
-    if CONTOUR:
+    if CONTOUR and not sol:
         base = sortie[:]
         def opaque(i, j):
             return 0 <= i < w and 0 <= j < h and base[(j * w + i) * 4 + 3] == 1.0
@@ -187,6 +187,7 @@ def assembler(chemins, sortie):
 
 
 def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=False):
+    marge = 0 if dessus else MARGE   # une texture de sol se répète : pas de marge
     """Rend `visibles` dans chaque état (fonction sans argument), avec un cadrage commun à tous les états.
     Renvoie { fichier, images, largeur, hauteur, ancres }."""
     sc, cam, outils, plan = ctx
@@ -198,7 +199,7 @@ def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=
         e()
         bpy.context.view_layer.update()
         pts += points_monde(visibles, ombre)
-    rx, ry, px_ancres = cadrer(sc, cam, pts, ppc, ancres)
+    rx, ry, px_ancres = cadrer(sc, cam, pts, ppc, ancres, marge)
     chemins = []
     for k, e in enumerate(etats):
         e()
@@ -206,7 +207,7 @@ def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=
         sc.render.filepath = c
         bpy.ops.render.render(write_still=True)
         if STYLE == "pixel":
-            post_pixel(c)
+            post_pixel(c, sol=dessus)
         chemins.append(c)
     fichier = nom + ".png"
     if len(chemins) == 1:
