@@ -33,3 +33,12 @@ Principled BSDF en couleur unie (rugosité 0,8), moins de 1 500 faces, propriét
 | prairie_cloture | 1 × 1 | 1 | 44 |
 | prairie_chateau | 3 × 5 | 1 | 652 |
 | prairie_entree | 1 × 3 | 1 | 521 |
+
+## Tours (collection « Tours », ligne Y = 8)
+
+Socle de pierre commun (0,9 × 0,9, hauteur 0,25) dans `scripts/commun_tours.py`. Trois niveaux par tour,
+hauteurs 1,3 / 1,5 / 1,7, face vers -Y, propriétés `type=tour`, `tour=<nom>`, `niveau`.
+
+| Tour | Niveau 1 | Niveau 2 | Niveau 3 |
+|---|---|---|---|
+| archers (`scripts/tours_archers.py`) | 280 faces | 286 faces | 367 faces |
