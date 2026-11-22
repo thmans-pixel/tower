@@ -105,6 +105,8 @@ export class Vue {
     this.fixes = [
       ...carte.entrees.map((en, k) => ({ nom: id + '_' + noms.entrees[k], x: (en.c + en.l / 2) * T, y: (en.r + en.h / 2) * T, c: -1, r: -1, bloquant: true })),
       { nom: id + '_' + noms.chateau, x: (ch.c + ch.l / 2) * T, y: (ch.r + ch.h / 2) * T, c: -1, r: -1, bloquant: true },
+      // Ponts : posés sur le chemin, dessinés sous les ennemis.
+      ...(carte.def.ponts || []).map(([c, r]) => ({ nom: id + '_pont', x: c * T + T / 2, y: r * T + T / 2, c: -1, r: -1, bloquant: true, sol: true })),
       ...carte.decors,
     ];
   }
@@ -216,7 +218,7 @@ export class Vue {
     const liste = [];
     for (const d of this.fixes) {
       if (!d.bloquant && occupees.has(d.c + ',' + d.r)) continue;
-      liste.push({ y: d.bloquant ? d.y : d.y - 30, f: () => this.element(d) });
+      liste.push({ y: d.sol ? -1e6 : d.bloquant ? d.y : d.y - 30, f: () => this.element(d) });
     }
     for (const t of s.tours) liste.push({ y: t.y + 1, f: () => this.tour(t, t.id === ui.selection) });
     for (const e of s.ennemis) if (!e.vol) liste.push({ y: e.y, f: () => this.ennemi(e) });

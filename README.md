@@ -5,7 +5,7 @@ chemin pour tenir le château jusqu'à la dernière vague.
 Cahier des charges validé : [docs/specs/001-tower-defense.md](docs/specs/001-tower-defense.md) ;
 décors Blender : [docs/specs/002-decors-blender.md](docs/specs/002-decors-blender.md).
 
-État : **étape 3, lot 2** (difficultés, étoiles, sauvegarde, carte du Désert) — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
+État : **cahier des charges terminé** — 3 cartes (Prairie, Désert, Montagne enneigée), mode infini, difficultés, étoiles, sauvegarde — la Prairie, 6 tours (2 niveaux puis une spécialisation au choix sur 2), 9 ennemis
 (slime, golem, spectre compris), l'Ogre chef de guerre aux vagues 10 et 20, 20 vagues, pluie de météores et renforts. Specs des étapes 2 et 3 : [004](docs/specs/004-etape-2.md), [005](docs/specs/005-etape-3.md).
 
 ## Lancer le jeu

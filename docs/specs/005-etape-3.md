@@ -7,7 +7,7 @@ sert de boss sur les trois cartes).
 
 1. **Lot 1 — progression** (sur la Prairie) : difficultés, étoiles, sauvegarde, déblocage des cartes. — *réalisé*
 2. **Lot 2 — le Désert**, avec son décor Blender. — *réalisé*
-3. **Lot 3 — la Montagne enneigée et le mode infini.**
+3. **Lot 3 — la Montagne enneigée et le mode infini.** — *réalisé*
 
 ## Difficultés (choisies sur l'écran des cartes, gardées d'une visite à l'autre)
 
@@ -47,6 +47,11 @@ quand les deux entrées poussent), Difficile perdu tôt (comme sur la Prairie).
 sont plus nombreux ; boss aux vagues 10, 20 et 30. Décor : sapins enneigés, rochers glacés, congères, lac gelé,
 fort de montagne.
 
+Réalisation : vagues construites par la même règle que le mode infini (`src/data/vagues.js`), 35 % plus
+fournies. Sur un chemin aussi long, les tours avaient tout le temps de tirer : les PV des ennemis y grandissent
+en plus de 1,7 % par vague (+50 % à la vague 30). Repère : le joueur automatique « posé » gagne en Normal avec
+2 vies s'il peut bâtir 30 tours (avec 20, il garde 7 000 or inutilisés et perd à la vague 27).
+
 ## Boss
 
 L'Ogre chef de guerre sur les trois cartes.
@@ -54,7 +59,8 @@ L'Ogre chef de guerre sur les trois cartes.
 ## Mode infini (lot 3)
 
 Sur toute carte gagnée, une fois la Montagne battue. Vagues tirées au hasard (même suite pour une carte
-donnée), de plus en plus fortes, boss toutes les 10 vagues. Score = vague atteinte ; meilleur score gardé par carte.
+donnée), de plus en plus fortes, boss toutes les 10 vagues (un de plus toutes les 30). Score = nombre de vagues
+entièrement repoussées ; meilleur score gardé par carte. Choix « Campagne / Mode infini » sur l'écran des cartes.
 
 ## Sauvegarde
 

@@ -52,6 +52,8 @@ const VAGUES_DESERT = [
   [['orc', 17, 0.74], ['golem', 6, 1.84], ['spectre', 7, 0.83], ['ogre', 1, 2], ['cham', 9, 0.83], ['bat', 17, 0.41]],  // boss
 ];
 
+import { VAGUES_MONTAGNE } from './vagues.js';
+
 export const CARTES = {
   prairie: {
     id: 'prairie', nom: 'La Prairie', resume: 'Un chemin sinueux à travers les prés.',
@@ -77,5 +79,17 @@ export const CARTES = {
     sol: { fond: '#e3c27a', taches: ['#d4b26a', '#ecd08c'], chemin: '#c9a35c', cailloux: ['#b08d57', '#e8d29a'] },
     decor: { cactus: 12, palmier: 5, rocher: 5, rocher_gros: 2, dune: 4, oasis: 1, petit_rocher: 6, touffe: 12 },
   },
-  montagne: { id: 'montagne', nom: 'La Montagne enneigée', resume: 'Bientôt.', ouverte: false },
+  montagne: {
+    id: 'montagne', nom: 'La Montagne enneigée', resume: 'Un long chemin en lacets ; la neige ralentit tout le monde.',
+    ouverte: true, orDepart: 300, graine: 23, vitesse: 0.9,
+    pvParVague: 0.017,   // chemin très long : ennemis de plus en plus solides (+50 % à la vague 30)
+    vagues: VAGUES_MONTAGNE,
+    chemin: [[-1, 2], [4, 2], [4, 13], [8, 13], [8, 2], [12, 2], [12, 13], [16, 13], [16, 2], [19, 2], [19, 7], [20, 7]],
+    chateau: { c: 21, r: 5, l: 3, h: 5 },
+    entree: { c: 0, r: 1, l: 1, h: 3 },
+    noms: { chateau: 'fort', entrees: ['entree'] },
+    ponts: [[8, 8]],
+    sol: { fond: '#eef3f8', taches: ['#dce6ef', '#f8fbfd'], chemin: '#b8c8d8', cailloux: ['#9aaabb', '#d4dee8'] },
+    decor: { sapin_neige: 16, rocher: 5, rocher_gros: 2, congere: 4, lac: 1, petit_rocher: 6, touffe: 10 },
+  },
 };

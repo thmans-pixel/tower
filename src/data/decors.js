@@ -18,4 +18,8 @@ export const SORTES = {
   dune:         { l: 2, h: 1, bloquant: true,  noms: ['dune'] },
   oasis:        { l: 2, h: 2, bloquant: true,  noms: ['oasis'] },
   touffe:       { l: 1, h: 1, bloquant: false, noms: ['touffe'] },
+  // Montagne
+  sapin_neige:  { l: 1, h: 1, bloquant: true,  noms: ['sapin_1', 'sapin_2', 'sapin_3'] },
+  congere:      { l: 2, h: 1, bloquant: true,  noms: ['congere'] },
+  lac:          { l: 2, h: 2, bloquant: true,  noms: ['lac'] },
 };

@@ -5,7 +5,8 @@ import { TOURS, ORDRE_TOURS } from './data/tours.js';
 import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret } from './sim/partie.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
 import { CHEMIN } from './sim/carte.js';
-import { etoilesPartie, enregistrerVictoire, progressionVide } from './sim/progression.js';
+import { etoilesPartie, enregistrerVictoire, enregistrerInfini, progressionVide } from './sim/progression.js';
+import { scoreInfini } from './sim/partie.js';
 import { charger, enregistrer, effacer } from './ui/sauvegarde.js';
 import { chargerDecors } from './render/decors.js';
 import { chargerModeles } from './render/modeles.js';
@@ -20,6 +21,7 @@ const decors = {};
 let partie = null;          // partie en cours
 let apercu = null;          // carte affichée derrière les écrans de menu
 let idCarte = 'prairie';
+let modeInfini = false;        // choix de l'écran des cartes : campagne ou mode infini
 let progression = charger();   // cartes débloquées, étoiles, difficulté choisie, son
 son.actif = progression.son;
 let ecran = 'titre';
@@ -35,8 +37,9 @@ const interfaceJeu = new Interface({
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
-  difficulte: (d) => { progression.difficulte = d; enregistrer(progression); interfaceJeu.listeCartes(CARTES, vignette, progression); son.jouer('clic'); },
-  effacer: () => { effacer(); progression = progressionVide(); son.actif = true; interfaceJeu.listeCartes(CARTES, vignette, progression); },
+  difficulte: (d) => { progression.difficulte = d; enregistrer(progression); interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini); son.jouer('clic'); },
+  mode: (infini) => { modeInfini = infini; interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini); son.jouer('clic'); },
+  effacer: () => { effacer(); progression = progressionVide(); modeInfini = false; son.actif = true; interfaceJeu.listeCartes(CARTES, vignette, progression); },
   deselectionner: () => { ui.selection = null; },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
   vendre: () => { if (partie && vendre(partie, ui.selection).ok) ui.selection = null; },
@@ -51,7 +54,7 @@ function montrer(nom) {
   ecran = nom;
   if (nom !== 'jeu') { partie = null; ui.selection = null; ui.construction = null; enPause = false; }
   interfaceJeu.montrerEcran(nom);
-  if (nom === 'cartes') interfaceJeu.listeCartes(CARTES, vignette, progression);
+  if (nom === 'cartes') interfaceJeu.listeCartes(CARTES, vignette, progression, modeInfini && progression.infiniOuvert);
 }
 
 let vignettes = {};
@@ -67,7 +70,7 @@ function vignette(id) {
 async function commencer(id) {
   idCarte = id;
   const d = await decorsDe(id);
-  partie = nouvellePartie(id, progression.difficulte);
+  partie = nouvellePartie(id, progression.difficulte, { infini: modeInfini && progression.infiniOuvert });
   vue.preparer(partie.carte, d);
   Object.assign(ui, { construction: null, fantome: null, selection: null, pouvoir: null, visee: null });
   vitesse = 1; enPause = false; reste = 0; finMontree = false;
@@ -104,8 +107,13 @@ function basculerSon() {
 
 /** Fin de partie : étoiles et déblocages enregistrés, puis l'écran de fin. */
 function bilanPartie(s) {
-  const bilan = { etoiles: etoilesPartie(s), nouvelles: [], infini: false };
-  if (s.fin === 'victoire') {
+  const bilan = { etoiles: etoilesPartie(s), nouvelles: [], infini: false, record: false };
+  if (s.infini) {
+    const r = enregistrerInfini(progression, idCarte, scoreInfini(s));
+    progression = r.progression;
+    enregistrer(progression);
+    bilan.record = r.record;
+  } else if (s.fin === 'victoire') {
     const r = enregistrerVictoire(progression, idCarte, s.difficulte, bilan.etoiles);
     progression = r.progression;
     enregistrer(progression);

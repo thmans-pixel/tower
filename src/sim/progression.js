@@ -33,6 +33,17 @@ export function enregistrerVictoire(p, carte, difficulte, etoiles) {
   return { progression: q, nouvelles, infini };
 }
 
+/** Garde le meilleur score du mode infini d'une carte ; renvoie { progression, record: vrai si battu }. */
+export function enregistrerInfini(p, carte, score) {
+  const q = structuredClone(p);
+  const record = score > (q.infini[carte] || 0);
+  if (record) q.infini[carte] = score;
+  return { progression: q, record };
+}
+
+/** Le mode infini se joue sur une carte gagnée au moins une fois, une fois la Montagne battue. */
+export const infiniJouable = (p, carte) => p.infiniOuvert && Object.values(p.etoiles[carte] || {}).some((n) => n > 0);
+
 /** Relit une progression enregistrée, en ignorant tout ce qui n'a pas la bonne forme. */
 export function relire(brut) {
   const p = progressionVide();
