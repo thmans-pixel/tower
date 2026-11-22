@@ -21,9 +21,11 @@ pas sans le faire valider d'abord.
 ## Vérifier
 
 - `npm test` doit passer avant toute PR.
-- `npm run simulate` : joueur automatique sur la Prairie. Repères actuels : « pressé » (appelle chaque vague
-  tôt) gagne avec 9 vies environ ; « posé » perd de peu à la vague 20 ; sans tour, défaite. Toute retouche des
-  chiffres de `src/data/` se contrôle avec lui.
+- `npm run simulate` : joueur automatique sur la Prairie. Repères actuels (étape 2, lot 2) : « posé » (laisse
+  le compte à rebours lancer les vagues, une tour sur deux en « Plus fort » dès la vague 8) gagne avec 3 vies
+  environ ; « pressé » (appelle chaque vague dès que possible) perd vers la vague 10 ; sans tour, défaite.
+  `journal` donne les vies au lancement de chaque vague. Toute retouche des chiffres de `src/data/` se
+  contrôle avec lui.
 - Rendu : `python3 tools/serveur.py` (port 8028, sans cache navigateur). `?jouer=prairie` démarre directement,
   `?test=1` expose `window.td` (partie, poser, appelerVague, avancer) pour les essais automatisés.
 
@@ -41,6 +43,10 @@ pas sans le faire valider d'abord.
   caractéristiques par `statsTour(t)`. `ameliorer(s, id, variante)` exige la variante au passage au niveau 3.
   Effets gérés dans `partie.js` : zone, porteeMin, ralenti, gel (`geler`, boss seulement ralenti), brulure,
   perce, rebond, transperce, salve, chaine (`eclair`, instantané), etourdit, aura (`auraTour`).
+- Ennemis de l'étape 2 : `division` (slime → 2 petits slimes, `apparaitre` avec une distance), `invisible`
+  (spectre ; seules les tours de `VOIENT_INVISIBLE` le visent), `boss` + `rugissement` (`pouvoirsEnnemis` :
+  `rage` accélère les voisins ; `geler` ne fait que ralentir un boss). Événement `boss` à son apparition ;
+  barre de vie dans `#barre-boss`.
 - `combattre(s, dt)` : tirs et projectiles sans déplacement, pour tester une tour sur des ennemis immobiles.
 - Décors : `src/render/decors.js` charge le pack de Blender et complète avec `decorsDeSecours` (sprites.js),
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.

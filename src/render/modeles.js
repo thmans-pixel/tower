@@ -4,7 +4,10 @@
 import { T } from '../sim/const.js';
 
 // Nom de l'ennemi dans le pack (propriété `ennemi` de l'armature, sans le préfixe « ennemi_ »).
-const NOMS_ENNEMIS = { gob: 'gobelin', loup: 'loup', orc: 'orc_blinde', bat: 'chauve_souris', cham: 'chaman' };
+const NOMS_ENNEMIS = {
+  gob: 'gobelin', loup: 'loup', orc: 'orc_blinde', bat: 'chauve_souris', cham: 'chaman',
+  slime: 'slime', slime_petit: 'slime_petit', golem: 'golem', spectre: 'spectre', ogre: 'boss_ogre',
+};
 const sansPrefixe = (nom) => String(nom).replace(/^ennemi_/, '');
 
 export const nomTour = (sorte, niveau, variante) => `tour_${sorte}_${niveau + 1}${niveau === 2 && variante ? variante : ''}`;

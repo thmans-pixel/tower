@@ -4,7 +4,7 @@
 import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES } from './const.js';
 import { CARTES } from '../data/cartes.js';
 import { TOURS, statsTour } from '../data/tours.js';
-import { ENNEMIS, multPV } from '../data/ennemis.js';
+import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { construireCarte, positionSur, centre, LIBRE } from './carte.js';
 
 export function nouvellePartie(idCarte = 'prairie') {
@@ -134,6 +134,7 @@ export function avancer(s, dt = DT) {
   deplacer(s, dt);
   if (s.fin) return;
   soigner(s, dt);
+  pouvoirsEnnemis(s, dt);
   combattre(s, dt);
   bilanVagues(s);
 }
@@ -161,17 +162,22 @@ function lancer(s, dt) {
   }
 }
 
-function apparaitre(s, sorte, vague) {
+function apparaitre(s, sorte, vague, distance = 0) {
   const d = ENNEMIS[sorte];
   const m = multPV(vague);
   const tr = d.vol ? s.carte.vol : s.carte.sol;
-  const p = positionSur(tr, 0);
-  s.ennemis.push({
+  const p = positionSur(tr, distance);
+  const e = {
     id: s.prochainId++, sorte, vague, pv: d.pv * m, pvMax: d.pv * m, mult: m,
-    d: 0, x: p.x, y: p.y, dx: p.dx, dy: p.dy, vol: !!d.vol,
+    d: distance, x: p.x, y: p.y, dx: p.dx, dy: p.dy, vol: !!d.vol,
     ralenti: 0, ralFacteur: 0, gel: 0, brule: null, soinT: d.soin ? d.soin.toutes : 0, pas: 0,
-  });
+    invisible: false, invisT: d.invisible ? d.invisible.toutes - d.invisible.duree : 0,
+    rage: 0, rageBonus: 0, rugitT: d.rugissement ? d.rugissement.toutes : 0, rugit: 0,
+  };
+  s.ennemis.push(e);
   s.vivants[vague]++;
+  if (d.boss) ev(s, 'boss', { sorte, nom: d.nom });
+  return e;
 }
 
 function deplacer(s, dt) {
@@ -180,7 +186,8 @@ function deplacer(s, dt) {
     const d = ENNEMIS[e.sorte];
     if (e.ralenti > 0) { e.ralenti -= dt; if (e.ralenti <= 0) e.ralFacteur = 0; }
     if (e.gel > 0) e.gel -= dt;
-    const v = e.gel > 0 ? 0 : d.vitesse * (1 - e.ralFacteur);
+    if (e.rage > 0) e.rage -= dt;
+    const v = e.gel > 0 ? 0 : d.vitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1);
     e.d += v * dt;
     e.pas += v * dt;
     const tr = e.vol ? s.carte.vol : s.carte.sol;
@@ -213,6 +220,31 @@ function soigner(s, dt) {
   }
 }
 
+/** Invisibilité des spectres et rugissement du boss. */
+function pouvoirsEnnemis(s, dt) {
+  for (const e of s.ennemis) {
+    const d = ENNEMIS[e.sorte];
+    if (d.invisible) {
+      e.invisT -= dt;
+      if (e.invisT <= 0) {
+        e.invisible = !e.invisible;
+        e.invisT = e.invisible ? d.invisible.duree : d.invisible.toutes - d.invisible.duree;
+      }
+    }
+    if (e.rugit > 0) e.rugit -= dt;
+    if (d.rugissement) {
+      e.rugitT -= dt;
+      if (e.rugitT <= 0) {
+        const r = d.rugissement;
+        e.rugitT = r.toutes;
+        e.rugit = 0.8;
+        for (const o of s.ennemis) if (o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= r.rayon) { o.rage = r.duree; o.rageBonus = r.bonus; }
+        ev(s, 'rugissement', { x: e.x, y: e.y, rayon: r.rayon });
+      }
+    }
+  }
+}
+
 /** Avancement d'un ennemi sur son trajet, de 0 à 1 (sert aux ciblages premier et dernier). */
 const avance = (s, e) => e.d / (e.vol ? s.carte.vol.longueur : s.carte.sol.longueur);
 
@@ -221,6 +253,7 @@ export function choisirCible(s, t) {
   let best = null, score = -Infinity;
   for (const e of s.ennemis) {
     if (e.vol && !n.volants) continue;
+    if (e.invisible && !VOIENT_INVISIBLE.includes(t.sorte)) continue;
     const dist = Math.hypot(e.x - t.x, e.y - t.y);
     if (dist > n.portee || dist < (n.porteeMin || 0)) continue;
     let v;
@@ -408,7 +441,9 @@ export function blesser(s, e, degats, type, tour, perce = 0) {
   s.or += gain; s.orGagne += gain;
   s.abattus++;
   if (tour) tour.abattus++;
-  ev(s, 'mort', { sorte: e.sorte, x: e.x, y: e.y, or: gain, vol: e.vol });
+  ev(s, 'mort', { sorte: e.sorte, x: e.x, y: e.y, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
+  const div = ENNEMIS[e.sorte].division;
+  if (div) for (let k = 0; k < div.nombre; k++) apparaitre(s, div.sorte, e.vague, Math.max(0, e.d + (k - (div.nombre - 1) / 2) * 14));
 }
 
 function bilanVagues(s) {
