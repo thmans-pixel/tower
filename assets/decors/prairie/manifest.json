@@ -1,0 +1,201 @@
+{
+ "version": 1,
+ "carte": "prairie",
+ "style": "pixel",
+ "pixels_par_case": 20,
+ "elevation": 50,
+ "elements": [
+  {
+   "nom": "prairie_chene_1",
+   "fichier": "prairie_chene_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    12.2,
+    29.6
+   ]
+  },
+  {
+   "nom": "prairie_chene_2",
+   "fichier": "prairie_chene_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    12.2,
+    27.3
+   ]
+  },
+  {
+   "nom": "prairie_chene_3",
+   "fichier": "prairie_chene_3.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    9.2,
+    29.9
+   ]
+  },
+  {
+   "nom": "prairie_sapin_1",
+   "fichier": "prairie_sapin_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.7,
+    31.8
+   ]
+  },
+  {
+   "nom": "prairie_sapin_2",
+   "fichier": "prairie_sapin_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.6,
+    37.0
+   ]
+  },
+  {
+   "nom": "prairie_souche",
+   "fichier": "prairie_souche.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.9,
+    13.0
+   ]
+  },
+  {
+   "nom": "prairie_buisson",
+   "fichier": "prairie_buisson.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    10.3,
+    14.9
+   ]
+  },
+  {
+   "nom": "prairie_fleurs_1",
+   "fichier": "prairie_fleurs_1.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    6.4,
+    8.4
+   ]
+  },
+  {
+   "nom": "prairie_fleurs_2",
+   "fichier": "prairie_fleurs_2.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    6.4,
+    8.4
+   ]
+  },
+  {
+   "nom": "prairie_herbes_hautes",
+   "fichier": "prairie_herbes_hautes.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    6.8,
+    11.1
+   ]
+  },
+  {
+   "nom": "prairie_rocher_petit",
+   "fichier": "prairie_rocher_petit.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 0,
+   "ancre": [
+    7.1,
+    9.4
+   ]
+  },
+  {
+   "nom": "prairie_rocher_moyen",
+   "fichier": "prairie_rocher_moyen.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    11.4,
+    15.5
+   ]
+  },
+  {
+   "nom": "prairie_rocher_gros",
+   "fichier": "prairie_rocher_gros.png",
+   "type": "decor",
+   "cases_l": 2,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    21.3,
+    19.4
+   ]
+  },
+  {
+   "nom": "prairie_cloture",
+   "fichier": "prairie_cloture.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 1,
+   "bloquant": 1,
+   "ancre": [
+    12.3,
+    11.9
+   ]
+  },
+  {
+   "nom": "prairie_chateau",
+   "fichier": "prairie_chateau.png",
+   "type": "decor",
+   "cases_l": 3,
+   "cases_h": 5,
+   "bloquant": 1,
+   "ancre": [
+    32.3,
+    78.9
+   ]
+  },
+  {
+   "nom": "prairie_entree",
+   "fichier": "prairie_entree.png",
+   "type": "decor",
+   "cases_l": 1,
+   "cases_h": 3,
+   "bloquant": 1,
+   "ancre": [
+    12.1,
+    45.0
+   ]
+  }
+ ]
+}
