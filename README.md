@@ -81,3 +81,4 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 |---|---|---|---|
 | ennemi_gobelin (`scripts/ennemis_gobelin.py`) | 0,55 | 275 | 6 |
 | ennemi_loup (`scripts/ennemis_loup.py`), galop, 0,82 de long | 0,45 | 474 | 7 |
+| ennemi_orc_blinde (`scripts/ennemis_orc_blinde.py`), marche lourde | 0,80 | 825 | 6 |
