@@ -22,9 +22,16 @@ Jouer depuis n'importe quel navigateur, sans lancer le serveur Python sur le PC.
 
 ## Cache et compression
 
-`tools/deploiement/cache.conf` (« no-cache » : le navigateur revérifie chaque fichier, pas de mélange de
-versions, images inchangées non retéléchargées) et `compression.conf` (code et données compressés à l'envoi),
-à ajouter au bloc `location /` de l'application dans Nginx.
+« no-cache » : le navigateur revérifie chaque fichier (pas de mélange de versions, images inchangées non
+retéléchargées). Installé dans un fichier à part au niveau du domaine,
+`/etc/nginx/conf.d/tower.izicraft.fr.d/tower-cache.conf` (voir `tools/deploiement/cache.conf`), pour survivre
+aux mises à jour de l'application. La compression gzip est déjà assurée par YunoHost pour ce domaine.
+
+## Installation faite le 22 novembre 2026
+
+Domaine déjà déclaré dans YunoHost (certificat Let's Encrypt) ; application `my_webapp__4` (« Les Tours du
+Royaume », public, sans PHP ni base de données ni SFTP), dossier `/var/www/my_webapp__4/www` ; première mise en
+ligne : version 21577cc.
 
 ## Version visible
 

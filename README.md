@@ -25,10 +25,11 @@ https://tower.izicraft.fr — site statique YunoHost sur thnas, copie de la bran
 Pour mettre à jour le site après avoir fusionné une demande, sur thnas :
 
 ```sh
-sudo bash ~/tower-mettre-a-jour.sh /var/www/my_webapp__N/www
+sudo bash ~/tower-mettre-a-jour.sh /var/www/my_webapp__4/www
 ```
 
-Le script (`tools/deploiement/mettre-a-jour.sh`) ne copie que le jeu. La version en ligne s'affiche sous le
+Le script (`tools/deploiement/mettre-a-jour.sh`, copié dans `~/tower-mettre-a-jour.sh`) ne copie que le jeu.
+Réglage du cache : `tools/deploiement/cache.conf`. La version en ligne s'affiche sous le
 bouton « Jouer » ; un simple rechargement de la page suffit à la voir. Spec : `docs/specs/006-mise-en-ligne.md`.
 
 ## Commandes
