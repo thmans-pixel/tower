@@ -1,0 +1,519 @@
+{
+ "version": 1,
+ "style": "pixel",
+ "pixels_par_case": 20,
+ "elevation": 50,
+ "orientations": 16,
+ "tours": [
+  {
+   "nom": "tour_archers_1",
+   "tour": "archers",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_archers_1.png",
+   "ancre": [
+    11.2,
+    20.6
+   ]
+  },
+  {
+   "nom": "tour_archers_2",
+   "tour": "archers",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_archers_2.png",
+   "ancre": [
+    11.4,
+    22.3
+   ]
+  },
+  {
+   "nom": "tour_archers_3",
+   "tour": "archers",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_archers_3.png",
+   "ancre": [
+    11.2,
+    24.3
+   ]
+  },
+  {
+   "nom": "tour_archers_3a",
+   "tour": "archers",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Tireurs d'élite",
+   "fichier": "tour_archers_3a.png",
+   "ancre": [
+    11.4,
+    25.9
+   ]
+  },
+  {
+   "nom": "tour_archers_3b",
+   "tour": "archers",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Arbalétriers",
+   "fichier": "tour_archers_3b.png",
+   "ancre": [
+    11.4,
+    29.0
+   ]
+  },
+  {
+   "nom": "tour_givre_1",
+   "tour": "givre",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_givre_1.png",
+   "ancre": [
+    11.4,
+    19.4
+   ]
+  },
+  {
+   "nom": "tour_givre_2",
+   "tour": "givre",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_givre_2.png",
+   "ancre": [
+    11.3,
+    21.1
+   ]
+  },
+  {
+   "nom": "tour_givre_3",
+   "tour": "givre",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_givre_3.png",
+   "ancre": [
+    11.4,
+    24.2
+   ]
+  },
+  {
+   "nom": "tour_givre_3a",
+   "tour": "givre",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Blizzard",
+   "fichier": "tour_givre_3a.png",
+   "ancre": [
+    11.4,
+    23.9
+   ]
+  },
+  {
+   "nom": "tour_givre_3b",
+   "tour": "givre",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Cristal éternel",
+   "fichier": "tour_givre_3b.png",
+   "ancre": [
+    11.4,
+    24.3
+   ]
+  },
+  {
+   "nom": "tour_baliste_1",
+   "tour": "baliste",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_baliste_1.png",
+   "ancre": [
+    11.4,
+    21.7
+   ],
+   "pivot": [
+    11.4,
+    8.8
+   ],
+   "piece": {
+    "role": "pivot_arme",
+    "fichier": "tour_baliste_1_arme.png",
+    "images": 16,
+    "largeur": 19,
+    "hauteur": 16,
+    "ancre": [
+     9.5,
+     10.8
+    ]
+   }
+  },
+  {
+   "nom": "tour_baliste_2",
+   "tour": "baliste",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_baliste_2.png",
+   "ancre": [
+    11.0,
+    24.5
+   ],
+   "pivot": [
+    11.0,
+    9.3
+   ],
+   "piece": {
+    "role": "pivot_arme",
+    "fichier": "tour_baliste_2_arme.png",
+    "images": 16,
+    "largeur": 20,
+    "hauteur": 17,
+    "ancre": [
+     10.0,
+     11.6
+    ]
+   }
+  },
+  {
+   "nom": "tour_baliste_3",
+   "tour": "baliste",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_baliste_3.png",
+   "ancre": [
+    11.5,
+    26.8
+   ],
+   "pivot": [
+    11.5,
+    9.4
+   ],
+   "piece": {
+    "role": "pivot_arme",
+    "fichier": "tour_baliste_3_arme.png",
+    "images": 16,
+    "largeur": 20,
+    "hauteur": 17,
+    "ancre": [
+     10.0,
+     11.6
+    ]
+   }
+  },
+  {
+   "nom": "tour_baliste_3a",
+   "tour": "baliste",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Baliste lourde",
+   "fichier": "tour_baliste_3a.png",
+   "ancre": [
+    11.0,
+    24.5
+   ],
+   "pivot": [
+    11.0,
+    9.3
+   ],
+   "piece": {
+    "role": "pivot_arme",
+    "fichier": "tour_baliste_3a_arme.png",
+    "images": 16,
+    "largeur": 23,
+    "hauteur": 19,
+    "ancre": [
+     11.5,
+     13.2
+    ]
+   }
+  },
+  {
+   "nom": "tour_baliste_3b",
+   "tour": "baliste",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Répétition",
+   "fichier": "tour_baliste_3b.png",
+   "ancre": [
+    11.0,
+    24.5
+   ],
+   "pivot": [
+    11.0,
+    9.3
+   ],
+   "piece": {
+    "role": "pivot_arme",
+    "fichier": "tour_baliste_3b_arme.png",
+    "images": 16,
+    "largeur": 20,
+    "hauteur": 17,
+    "ancre": [
+     10.0,
+     11.6
+    ]
+   }
+  },
+  {
+   "nom": "tour_tempete_1",
+   "tour": "tempete",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_tempete_1.png",
+   "ancre": [
+    11.2,
+    19.5
+   ]
+  },
+  {
+   "nom": "tour_tempete_2",
+   "tour": "tempete",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_tempete_2.png",
+   "ancre": [
+    11.4,
+    24.6
+   ]
+  },
+  {
+   "nom": "tour_tempete_3",
+   "tour": "tempete",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_tempete_3.png",
+   "ancre": [
+    11.0,
+    26.4
+   ]
+  },
+  {
+   "nom": "tour_tempete_3a",
+   "tour": "tempete",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Orage",
+   "fichier": "tour_tempete_3a.png",
+   "ancre": [
+    11.3,
+    27.9
+   ]
+  },
+  {
+   "nom": "tour_tempete_3b",
+   "tour": "tempete",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Paratonnerre",
+   "fichier": "tour_tempete_3b.png",
+   "ancre": [
+    11.3,
+    29.4
+   ]
+  },
+  {
+   "nom": "tour_mage_1",
+   "tour": "mage",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_mage_1.png",
+   "ancre": [
+    11.5,
+    19.6
+   ]
+  },
+  {
+   "nom": "tour_mage_2",
+   "tour": "mage",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_mage_2.png",
+   "ancre": [
+    11.1,
+    21.9
+   ]
+  },
+  {
+   "nom": "tour_mage_3",
+   "tour": "mage",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_mage_3.png",
+   "ancre": [
+    11.1,
+    26.0
+   ]
+  },
+  {
+   "nom": "tour_mage_3a",
+   "tour": "mage",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Arcanes",
+   "fichier": "tour_mage_3a.png",
+   "ancre": [
+    11.2,
+    26.7
+   ]
+  },
+  {
+   "nom": "tour_mage_3b",
+   "tour": "mage",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Pyromancien",
+   "fichier": "tour_mage_3b.png",
+   "ancre": [
+    11.3,
+    24.7
+   ]
+  },
+  {
+   "nom": "tour_canon_1",
+   "tour": "canon",
+   "niveau": 1,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_canon_1.png",
+   "ancre": [
+    11.1,
+    22.9
+   ],
+   "pivot": [
+    11.1,
+    9.8
+   ],
+   "piece": {
+    "role": "pivot_canon",
+    "fichier": "tour_canon_1_fut.png",
+    "images": 16,
+    "largeur": 14,
+    "hauteur": 14,
+    "ancre": [
+     7.0,
+     9.1
+    ]
+   }
+  },
+  {
+   "nom": "tour_canon_2",
+   "tour": "canon",
+   "niveau": 2,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_canon_2.png",
+   "ancre": [
+    11.0,
+    25.7
+   ],
+   "pivot": [
+    11.0,
+    10.2
+   ],
+   "piece": {
+    "role": "pivot_canon",
+    "fichier": "tour_canon_2_fut.png",
+    "images": 16,
+    "largeur": 18,
+    "hauteur": 16,
+    "ancre": [
+     9.0,
+     10.6
+    ]
+   }
+  },
+  {
+   "nom": "tour_canon_3",
+   "tour": "canon",
+   "niveau": 3,
+   "variante": null,
+   "version": null,
+   "fichier": "tour_canon_3.png",
+   "ancre": [
+    11.4,
+    30.0
+   ],
+   "pivot": [
+    11.4,
+    12.8
+   ],
+   "piece": {
+    "role": "pivot_canon",
+    "fichier": "tour_canon_3_fut.png",
+    "images": 16,
+    "largeur": 18,
+    "hauteur": 16,
+    "ancre": [
+     9.0,
+     10.6
+    ]
+   }
+  },
+  {
+   "nom": "tour_canon_3a",
+   "tour": "canon",
+   "niveau": 3,
+   "variante": "a",
+   "version": "Mortier",
+   "fichier": "tour_canon_3a.png",
+   "ancre": [
+    11.0,
+    25.7
+   ],
+   "pivot": [
+    11.0,
+    10.2
+   ],
+   "piece": {
+    "role": "pivot_canon",
+    "fichier": "tour_canon_3a_fut.png",
+    "images": 16,
+    "largeur": 14,
+    "hauteur": 15,
+    "ancre": [
+     7.0,
+     9.9
+    ]
+   }
+  },
+  {
+   "nom": "tour_canon_3b",
+   "tour": "canon",
+   "niveau": 3,
+   "variante": "b",
+   "version": "Lance-flammes",
+   "fichier": "tour_canon_3b.png",
+   "ancre": [
+    11.4,
+    27.5
+   ],
+   "pivot": [
+    11.4,
+    9.5
+   ],
+   "piece": {
+    "role": "pivot_canon",
+    "fichier": "tour_canon_3b_fut.png",
+    "images": 16,
+    "largeur": 22,
+    "hauteur": 18,
+    "ancre": [
+     11.0,
+     11.2
+    ]
+   }
+  }
+ ]
+}

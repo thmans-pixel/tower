@@ -1,0 +1,169 @@
+{
+ "version": 1,
+ "style": "pixel",
+ "pixels_par_case": 30.0,
+ "agrandissement": 1.5,
+ "elevation": 50,
+ "ennemis": [
+  {
+   "nom": "gobelin",
+   "actions": {
+    "marche": {
+     "fichier": "gobelin_marche.png",
+     "images": 8,
+     "largeur": 24,
+     "hauteur": 33,
+     "ancre": [
+      6.7,
+      18.0
+     ]
+    }
+   }
+  },
+  {
+   "nom": "loup",
+   "actions": {
+    "marche": {
+     "fichier": "loup_marche.png",
+     "images": 8,
+     "largeur": 36,
+     "hauteur": 23,
+     "ancre": [
+      14.7,
+      12.7
+     ]
+    }
+   }
+  },
+  {
+   "nom": "orc_blinde",
+   "actions": {
+    "marche": {
+     "fichier": "orc_blinde_marche.png",
+     "images": 8,
+     "largeur": 29,
+     "hauteur": 42,
+     "ancre": [
+      6.9,
+      22.9
+     ]
+    }
+   }
+  },
+  {
+   "nom": "chauve_souris",
+   "actions": {
+    "vol": {
+     "fichier": "chauve_souris_vol.png",
+     "images": 8,
+     "largeur": 13,
+     "hauteur": 19,
+     "ancre": [
+      5.9,
+      14.6
+     ]
+    }
+   }
+  },
+  {
+   "nom": "chaman",
+   "actions": {
+    "marche": {
+     "fichier": "chaman_marche.png",
+     "images": 8,
+     "largeur": 28,
+     "hauteur": 31,
+     "ancre": [
+      7.1,
+      16.0
+     ]
+    }
+   }
+  },
+  {
+   "nom": "slime",
+   "actions": {
+    "marche": {
+     "fichier": "slime_marche.png",
+     "images": 8,
+     "largeur": 28,
+     "hauteur": 23,
+     "ancre": [
+      11.7,
+      12.0
+     ]
+    }
+   }
+  },
+  {
+   "nom": "slime_petit",
+   "actions": {
+    "marche": {
+     "fichier": "slime_petit_marche.png",
+     "images": 8,
+     "largeur": 18,
+     "hauteur": 16,
+     "ancre": [
+      7.6,
+      8.3
+     ]
+    }
+   }
+  },
+  {
+   "nom": "golem",
+   "actions": {
+    "marche": {
+     "fichier": "golem_marche.png",
+     "images": 8,
+     "largeur": 37,
+     "hauteur": 60,
+     "ancre": [
+      8.6,
+      32.6
+     ]
+    }
+   }
+  },
+  {
+   "nom": "spectre",
+   "actions": {
+    "marche": {
+     "fichier": "spectre_marche.png",
+     "images": 8,
+     "largeur": 29,
+     "hauteur": 31,
+     "ancre": [
+      8.9,
+      16.4
+     ]
+    }
+   }
+  },
+  {
+   "nom": "boss_ogre",
+   "actions": {
+    "marche": {
+     "fichier": "boss_ogre_marche.png",
+     "images": 8,
+     "largeur": 58,
+     "hauteur": 71,
+     "ancre": [
+      17.3,
+      39.5
+     ]
+    },
+    "rugissement": {
+     "fichier": "boss_ogre_rugissement.png",
+     "images": 8,
+     "largeur": 58,
+     "hauteur": 71,
+     "ancre": [
+      17.3,
+      39.5
+     ]
+    }
+   }
+  }
+ ]
+}
