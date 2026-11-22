@@ -247,6 +247,16 @@ function boucle(maintenant) {
   requestAnimationFrame(boucle);
 }
 
+// Version en ligne (écrite par tools/deploiement/mettre-a-jour.sh) ; absente en local.
+fetch('version.json', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((v) => {
+    if (!v) return;
+    const [a, m, j] = String(v.date).split('-');
+    document.getElementById('version').textContent = `Version ${v.version} du ${j}/${m}/${a}`;
+  })
+  .catch(() => {});
+
 // Démarrage : la Prairie s'affiche derrière l'écran titre.
 (async () => {
   const [d, modeles] = await Promise.all([decorsDe('prairie'), chargerModeles()]);
