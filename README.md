@@ -87,3 +87,4 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | ennemi_slime / ennemi_slime_petit (`scripts/ennemis_slime.py`), rebonds avec écrasement et étirement (os animé en échelle) | 0,50 / 0,30 | 620 | 1 |
 | ennemi_golem (`scripts/ennemis_golem.py`), marche très lente | 1,06 | 656 | 6 |
 | ennemi_spectre (`scripts/ennemis_spectre.py`), flottement ondulant, matériaux opaques | 0,73 | 301 | 5 |
+| boss_ogre (`scripts/boss_ogre.py`), boss : actions « marche » (pas lourds) et « rugissement », pistes NLA du même nom | 1,60 | 1 101 | 9 |

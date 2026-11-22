@@ -135,7 +135,8 @@ def action_marche(arm, nom, poses, anim="marche"):
     act.frame_start, act.frame_end = 1, NB_IMAGES
     act.use_cyclic = True
     act["anim"] = anim
-    for tr in list(arm.animation_data.nla_tracks): arm.animation_data.nla_tracks.remove(tr)
+    for tr in list(arm.animation_data.nla_tracks):      # remplace seulement la piste du même nom
+        if tr.name == anim: arm.animation_data.nla_tracks.remove(tr)
     tr = arm.animation_data.nla_tracks.new(); tr.name = anim
     st = tr.strips.new(anim, 1, act)
     if hasattr(st, "action_slot") and act.slots: st.action_slot = act.slots[0]
@@ -162,6 +163,8 @@ def apercus(scene, arm, nom, cible_z=0.3, largeur=1.0, anim="marche"):
     scene.render.film_transparent = False
     taille = 320
     scene.render.resolution_x = scene.render.resolution_y = taille
+    pistes = list(arm.animation_data.nla_tracks) if arm.animation_data else []
+    for tr in pistes: tr.mute = (tr.name != anim)       # on ne joue que l'animation montrée
     tmp = os.path.join(ct.DOSSIER, ".rendu_tmp"); os.makedirs(tmp, exist_ok=True)
     chemins = []
     for f in range(1, NB_IMAGES + 1):
@@ -184,4 +187,5 @@ def apercus(scene, arm, nom, cible_z=0.3, largeur=1.0, anim="marche"):
     bpy.ops.render.render(write_still=True)
     for p in chemins: os.remove(p)
     os.rmdir(tmp)
+    for tr in pistes: tr.mute = False
     print("OK", nom)

@@ -25,6 +25,7 @@ PALETTE = {
     "slime": "#8BE04E", "slime_reflet": "#D8FFB0", "oeil_blanc": "#FFFFFF",
     "pierre_golem": "#7F8288", "mousse": "#5C9E3F", "rune_orange": "#FF9A3A",
     "drap_spectre": "#CFE3F0", "ombre_capuche": "#1C1A2A", "yeux_bleus": "#7FD8FF",
+    "peau_ogre": "#8A9A5B",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }
