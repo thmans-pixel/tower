@@ -31,3 +31,4 @@ Principled BSDF en couleur unie (rugosité 0,8), moins de 1 500 faces, propriét
 | prairie_rocher_moyen | 1 × 1 | 1 | 80 |
 | prairie_rocher_gros | 2 × 1 | 1 | 240 |
 | prairie_cloture | 1 × 1 | 1 | 44 |
+| prairie_chateau | 3 × 5 | 1 | 652 |
