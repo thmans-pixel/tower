@@ -81,6 +81,41 @@ button.actif { background: var(--or); color: var(--nuit); }
 .action.specialite b { font-size: 15px; }
 .action.specialite span { font-size: 13px; color: #e8f5d8; line-height: 1.25; }
 .choix { display: grid; gap: 4px; }
+#panneau { max-height: calc(100% - 16px); overflow-y: auto; width: 300px; }
+#panneau .desc { margin: 0 0 8px; color: var(--doux); font-size: 14px; line-height: 1.3; }
+.petit-texte { margin: 4px 0; color: var(--doux); font-size: 13px; line-height: 1.3; }
+.encadre { margin: 6px 0 0; padding: 6px 8px; border: 2px solid var(--nuit); border-radius: 4px; background: rgba(0,0,0,.22); }
+.encadre p { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+.comparaison { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 1px; font-size: 13px; }
+.comparaison li { display: flex; justify-content: space-between; gap: 8px; }
+.comparaison li span { color: var(--doux); }
+.comparaison li b { font-weight: 600; white-space: nowrap; }
+.comparaison .mieux b { color: var(--vert); }
+.comparaison .moins b { color: var(--rouge); }
+.comparaison .nouveau b { color: var(--or); }
+.action.specialite .comparaison { margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(0,0,0,.3); }
+.action.specialite .comparaison li span { color: #d8ecc8; }
+.action.specialite .comparaison .mieux b { color: #b6ffbc; }
+.action.specialite .comparaison .moins b { color: #ffb4a6; }
+.action.specialite .comparaison .nouveau b { color: #ffe08a; }
+
+#fiche { position: fixed; z-index: 20; width: 290px; padding: 10px 12px; pointer-events: none;
+  background: rgba(42,28,18,.97); border: 3px solid var(--nuit); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.55); font-size: 14px; }
+#fiche[hidden] { display: none; }
+#fiche h4 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 4px; font-size: 18px; color: var(--or); }
+#fiche h4 .prix { font-size: 15px; color: var(--or); }
+#fiche h4 .prix.manque { color: var(--rouge); }
+#fiche p { margin: 0 0 6px; line-height: 1.3; }
+#fiche .alerte { margin: -2px 0 4px; color: var(--rouge); font-weight: 700; font-size: 13px; }
+#fiche .stats { margin-bottom: 6px; }
+#fiche .specs { margin: 0 0 6px; padding-left: 16px; font-size: 13px; line-height: 1.3; }
+#fiche .touches { color: var(--doux); font-size: 12px; }
+.pastilles { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.pastille { padding: 0 6px; border-radius: 3px; font-size: 12px; font-weight: 700; border: 1px solid var(--nuit); }
+.pastille.physique { background: #8a6a43; }
+.pastille.magique { background: #5b3f9a; }
+.pastille.oui { background: #2f6b2a; }
+.pastille.non { background: #4a3a30; color: var(--doux); font-weight: 400; }
 .action.vendre { background: #7a3426; }
 .action.vendre:hover { background: #924030; }
 

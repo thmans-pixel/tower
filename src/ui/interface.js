@@ -7,6 +7,7 @@ import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente } f
 import { spriteTour } from '../render/sprites.js';
 import { etiquetteRang } from './clavier.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
+import { ficheTour, fichePouvoir, encadreNiveau2, ficheSpecialisation } from './fiches.js';
 import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
 import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_CARTES } from '../sim/progression.js';
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
@@ -22,6 +23,11 @@ export class Interface {
     this.a = actions;
     this.cache = {};
     this.signature = '';
+    // Fiche au survol (spec 008) : bouton survolé à la souris ; sur écran tactile, la tour choisie.
+    this.survol = null;
+    this.tactile = false;
+    this.sigFiche = '';
+    document.addEventListener('pointerdown', (e) => { this.tactile = e.pointerType !== 'mouse'; }, true);
     this.creerBoutique();
     this.creerPouvoirs();
     $('appel').onclick = () => actions.appel();
@@ -51,7 +57,7 @@ export class Interface {
     const zone = $('boutique');
     zone.innerHTML = ORDRE_TOURS.map((s, i) => {
       const d = TOURS[s];
-      return `<button class="outil" data-sorte="${s}" title="${d.nom} — ${d.resume} (touche ${etiquetteRang(i + 1)} ; Maj + clic pour en poser plusieurs ; appui long pour verrouiller)">
+      return `<button class="outil" data-sorte="${s}" aria-label="${d.nom}, ${d.prix} or, touche ${etiquetteRang(i + 1)}">
         <img alt="" src="${spriteTour(s, 0).toDataURL()}">
         <span class="nom">${d.nom}</span>
         <span class="prix"><i class="ico piece"></i>${d.prix}</span>
@@ -67,6 +73,7 @@ export class Interface {
     });
     for (const fin of ['pointerup', 'pointerleave', 'pointercancel']) zone.addEventListener(fin, () => clearTimeout(minuteur));
     zone.addEventListener('contextmenu', (e) => { if (e.target.closest('.outil')) e.preventDefault(); });
+    this.survolable('.outil', (b) => ({ cle: 't:' + b.dataset.sorte, b }));
     zone.addEventListener('click', (e) => {
       const b = e.target.closest('.outil');
       if (!b) return;
@@ -80,13 +87,47 @@ export class Interface {
     zone.innerHTML = ORDRE_POUVOIRS.map((n, k) => {
       const p = POUVOIRS[n];
       const touches = `${etiquetteRang(7 + k)} ${p.touche.toUpperCase()}`;
-      return `<button class="pouvoir" data-pouvoir="${n}" title="${p.nom} — ${p.resume} (touches ${touches})">
+      return `<button class="pouvoir" data-pouvoir="${n}" aria-label="${p.nom}, touches ${touches}">
         <b>${p.nom}</b><span class="etat">Prêt</span><kbd>${touches}</kbd><i class="charge"></i></button>`;
     }).join('');
+    this.survolable('.pouvoir', (b) => ({ cle: 'p:' + b.dataset.pouvoir, b }));
     zone.addEventListener('click', (e) => {
       const b = e.target.closest('.pouvoir');
       if (b) this.a.pouvoir(b.dataset.pouvoir);
     });
+  }
+
+  /** Survol à la souris d'un bouton du bas : retient lequel, la fiche suit à la prochaine image. */
+  survolable(selecteur, quoi) {
+    for (const b of document.querySelectorAll(selecteur)) {
+      b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.survol = quoi(b); });
+      b.addEventListener('pointerleave', () => { if (this.survol?.b === b) this.survol = null; });
+    }
+  }
+
+  /** Fiche au-dessus du bouton survolé (ou de la tour choisie au toucher), redessinée seulement si elle change. */
+  majFiche(s, ui) {
+    const f = $('fiche');
+    let v = this.survol;
+    if (!v && this.tactile && ui.construction) v = { cle: 't:' + ui.construction, b: document.querySelector(`.outil[data-sorte="${ui.construction}"]`) };
+    if (!v || !v.b) { if (!f.hidden) { f.hidden = true; this.sigFiche = ''; } return; }
+    const [genre, nom] = v.cle.split(':');
+    const manque = genre === 't' && s ? Math.max(0, TOURS[nom].prix - s.or) : 0;
+    const sig = v.cle + '|' + manque;
+    if (sig !== this.sigFiche) {
+      this.sigFiche = sig;
+      if (genre === 't') f.innerHTML = ficheTour(nom, etiquetteRang(ORDRE_TOURS.indexOf(nom) + 1), s ? s.or : null);
+      else {
+        const k = ORDRE_POUVOIRS.indexOf(nom);
+        f.innerHTML = fichePouvoir(nom, `${etiquetteRang(7 + k)} ou ${POUVOIRS[nom].touche.toUpperCase()}`);
+      }
+      f.hidden = false;
+      // Au-dessus du bouton, sans sortir de l'écran.
+      const r = v.b.getBoundingClientRect();
+      const l = f.offsetWidth;
+      f.style.left = Math.round(Math.max(8, Math.min(window.innerWidth - l - 8, r.left + r.width / 2 - l / 2))) + 'px';
+      f.style.bottom = Math.round(window.innerHeight - r.top + 8) + 'px';
+    }
   }
 
   /** Icônes de la boutique : modèles de Blender (niveau 1) quand le pack est chargé. */
@@ -267,6 +308,7 @@ export class Interface {
       b.classList.toggle('trop-cher', s.or < TOURS[sorte].prix);
     }
     this.majPanneau(s, ui);
+    this.majFiche(s, ui);
   }
 
   majPanneau(s, ui) {
@@ -300,16 +342,18 @@ export class Interface {
     lignes.push(['Vise', n.volants ? 'sol et air' : 'sol seulement']);
     lignes.push(['Dégâts totaux', nb(t.degats)], ['Abattus', nb(t.abattus)]);
     const titre = t.niveau === 2 ? `${d.specialisations[t.variante].nom}<small>Niveau 3 — ${d.nom}</small>` : `${d.nom}<small>Niveau ${t.niveau + 1} sur 3</small>`;
+    const rappel = t.niveau === 2 ? `<p class="desc">${d.specialisations[t.variante].description}</p>` : '';
     const bloque = (prix !== null && s.or < prix) || s.fin ? 'disabled' : '';
     let amelioration;
     if (prix === null) amelioration = '<button class="action" disabled>Niveau maximum</button>';
     else if (t.niveau === 1) {
       amelioration = '<div class="etiquette">Niveau 3 : choisissez une spécialisation</div><div class="choix">' +
-        ['a', 'b'].map((v) => { const sp = d.specialisations[v]; return `<button class="action ameliorer specialite" data-act="ameliorer" data-variante="${v}" ${bloque}>
-          <b>${sp.nom} · ${prix} or</b><span>${sp.resume}</span></button>`; }).join('') + '</div>';
-    } else amelioration = `<button class="action ameliorer" data-act="ameliorer" ${bloque}>Améliorer · ${prix} or</button>`;
+        ['a', 'b'].map((v) => `<button class="action ameliorer specialite" data-act="ameliorer" data-variante="${v}" ${bloque}>
+          ${ficheSpecialisation(t.sorte, v, prix)}</button>`).join('') + '</div><p class="petit-texte">Choix définitif.</p>';
+    } else amelioration = `${encadreNiveau2(t.sorte)}<button class="action ameliorer" data-act="ameliorer" ${bloque}>Améliorer · ${prix} or</button>`;
     p.innerHTML = `<button class="fermer" data-act="fermer" aria-label="Fermer">×</button>
       <h3>${titre}</h3>
+      ${rappel}
       <dl class="stats">${lignes.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
       ${n.aura || n.chaine ? '' : `<div class="etiquette">Ciblage</div>
       <div class="ciblage">${Object.entries(CIBLAGES).map(([m, l]) =>

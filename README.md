@@ -42,6 +42,7 @@ bouton « Jouer » ; un simple rechargement de la page suffit à la voir. Spec :
 | Améliorer, spécialiser, vendre, ciblage | clic sur la tour | toucher la tour |
 | Annuler | Échap ou clic droit | toucher le bouton de la tour |
 | Pouvoirs | 7 ou `è` / M (météores), 8 ou `_` / R (renforts), puis clic sur la carte | bouton, toucher une fois (zone), une seconde fois (lancer) |
+| Fiche d'une tour ou d'un pouvoir | survol du bouton en bas | affichée tant que la tour est choisie |
 | Pause / vitesse | Espace / F | boutons en haut |
 
 ## Cartes aléatoires
