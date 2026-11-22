@@ -122,6 +122,16 @@ palmes #4E8A3C, tronc de palmier #8A6A43, eau #3FA7C9 (et #1F1B18 pour le fond d
 | desert_sol_sable (sable ondulé, `scripts/desert_sols.py`) | plan 2 × 2 raccordable, `type=sol` | 0 | 900 |
 | desert_sol_chemin (terre tassée, petits cailloux) | plan 2 × 2 raccordable, `type=sol` | 0 | 384 |
 
+## Montagne (collection « Decor », ligne Y = -24)
+
+Outils partagés dans `scripts/commun_montagne.py`. Un script par famille : `scripts/montagne_<famille>.py`,
+aperçu `apercu_montagne_<famille>.png`. Palette : neige #F2F6FA / #DCE6EF, ombre bleutée #B8C8D8,
+glace #9FD3EA / #6FB3D6, roche #7A8290 / #5E6673, sapin #2F6B4A / #3F8560, bois #7A5230, toits #9B3B2E.
+
+| Objet | Cases | Bloquant | Faces |
+|---|---|---|---|
+| montagne_sapin_1 / 2 / 3 (hauteurs 1,6 / 2,0 / 1,2 ; 4 / 5 / 3 étages enneigés) | 1 × 1 | 1 | 237 / 289 / 185 |
+
 ## Tours (collection « Tours », une ligne par tour : archers Y = 8, canon Y = 12, givre Y = 16, mage Y = 20, baliste Y = 24, tempête Y = 28)
 
 Socle de pierre commun (0,9 × 0,9, hauteur 0,25) dans `scripts/commun_tours.py`. Trois niveaux par tour,
