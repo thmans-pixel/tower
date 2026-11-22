@@ -107,7 +107,7 @@ def loc_monde(arm, os_nom, dv):
 
 
 def action_marche(arm, nom, poses, anim="marche"):
-    """poses(f, t) -> {os: (quaternion local, translation locale ou None)} pour f = 1..8, t = phase 0..2pi.
+    """poses(f, t) -> {os: (quaternion local, translation locale ou None[, échelle locale])} pour f = 1..8.
     Crée l'action <nom>_<anim> et la range dans une piste NLA nommée <anim> (« marche » par défaut)."""
     old = bpy.data.actions.get(f"{nom}_{anim}")
     if old: bpy.data.actions.remove(old)
@@ -116,13 +116,18 @@ def action_marche(arm, nom, poses, anim="marche"):
     for pb in arm.pose.bones: pb.rotation_mode = "QUATERNION"
     for f in range(1, NB_IMAGES + 1):
         t = 2 * math.pi * (f - 1) / NB_IMAGES
-        for os_nom, (q, loc) in poses(f, t).items():
+        for os_nom, val in poses(f, t).items():
+            q, loc = val[0], val[1]
+            ech = val[2] if len(val) > 2 else None
             pb = arm.pose.bones[os_nom]
             pb.rotation_quaternion = q
             pb.keyframe_insert("rotation_quaternion", frame=f)
             if loc is not None:
                 pb.location = loc
                 pb.keyframe_insert("location", frame=f)
+            if ech is not None:          # échelle dans le repère local de l'os (Y = long de l'os)
+                pb.scale = ech
+                pb.keyframe_insert("scale", frame=f)
     act = arm.animation_data.action
     act.name = f"{nom}_{anim}"
     act.use_fake_user = True
@@ -136,7 +141,7 @@ def action_marche(arm, nom, poses, anim="marche"):
     if hasattr(st, "action_slot") and act.slots: st.action_slot = act.slots[0]
     arm.animation_data.action = None
     for pb in arm.pose.bones:
-        pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0)
+        pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0); pb.scale = (1, 1, 1)
     return act
 
 

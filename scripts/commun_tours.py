@@ -22,6 +22,7 @@ PALETTE = {
     "peau_orc": "#6B8F3A", "armure": "#9AA3AD", "defense": "#F2EEDC",
     "chauve_souris": "#4B3A5C", "aile_membrane": "#6D5585", "yeux_rouges": "#FF4D6D",
     "masque_os": "#E8E2C8", "robe_chaman": "#7B3FA0", "cristal_vert": "#5DFF9A",
+    "slime": "#8BE04E", "slime_reflet": "#D8FFB0", "oeil_blanc": "#FFFFFF",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }

@@ -84,3 +84,4 @@ Aperçus : `apercu_<nom>.png` et la planche des 8 images `apercu_<nom>_marche.pn
 | ennemi_orc_blinde (`scripts/ennemis_orc_blinde.py`), marche lourde | 0,80 | 825 | 6 |
 | ennemi_chauve_souris (`scripts/ennemis_chauve_souris.py`), volant, action **vol** (piste NLA « vol »), envergure 0,71 | 0,34 | 355 | 6 |
 | ennemi_chaman (`scripts/ennemis_chaman.py`), marche courbée sur bâton | 0,65 | 542 | 6 |
+| ennemi_slime / ennemi_slime_petit (`scripts/ennemis_slime.py`), rebonds avec écrasement et étirement (os animé en échelle) | 0,50 / 0,30 | 620 | 1 |
