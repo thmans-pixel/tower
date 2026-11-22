@@ -13,6 +13,7 @@ PALETTE = {
     "neige": "#E8F6FF", "glace": "#8FD6FF", "eclat": "#5CB8F0",
     "pierre_violette": "#5B4A8A", "fenetre": "#FFD36B", "toit_mage": "#3D2E66",
     "toit_mage_fonce": "#2A1F4D", "orbe": "#C77DFF",
+    "corde": "#C8A165",
     # hors palette des tours (personnages) : verts du décor + peau
     "tunique": "#4CAF50", "capuche": "#2F7D32", "peau": "#F0C8A0",
 }

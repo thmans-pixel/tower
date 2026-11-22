@@ -34,7 +34,7 @@ Principled BSDF en couleur unie (rugosité 0,8), moins de 1 500 faces, propriét
 | prairie_chateau | 3 × 5 | 1 | 652 |
 | prairie_entree | 1 × 3 | 1 | 521 |
 
-## Tours (collection « Tours », une ligne par tour : archers Y = 8, canon Y = 12, givre Y = 16, mage Y = 20)
+## Tours (collection « Tours », une ligne par tour : archers Y = 8, canon Y = 12, givre Y = 16, mage Y = 20, baliste Y = 24)
 
 Socle de pierre commun (0,9 × 0,9, hauteur 0,25) dans `scripts/commun_tours.py`. Trois niveaux par tour,
 hauteurs 1,3 / 1,5 / 1,7, face vers -Y, propriétés `type=tour`, `tour=<nom>`, `niveau`.
@@ -45,8 +45,10 @@ hauteurs 1,3 / 1,5 / 1,7, face vers -Y, propriétés `type=tour`, `tour=<nom>`, 
 | canon (`scripts/tours_canon.py`) | 160 + fût 62 | 196 + fût 74 | 214 + fût 130 |
 | givre (`scripts/tours_givre.py`) | 199 faces | 293 faces | 359 faces |
 | mage (`scripts/tours_mage.py`) | 179 faces | 439 faces | 645 faces |
+| baliste (`scripts/tours_baliste.py`) | 210 + arme 167 | 214 + arme 179 | 228 + arme 269 |
 
 Tour canon : le fût `tour_canon_N_fut` est un objet séparé, pointé vers +X, origine au pivot.
 L'empty `pivot_canon_N` (enfant de la tour, propriété `role=pivot_canon`) marque où le poser.
+Même principe pour la baliste : `tour_baliste_N_arme` et `pivot_arme_N` (`role=pivot_arme`).
 
 Matériaux émissifs : `glace` (#8FD6FF, 0,3), `fenetre` (#FFD36B, 1), `orbe` (#C77DFF, 2).
