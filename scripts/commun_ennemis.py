@@ -41,6 +41,20 @@ def teinte_dos_ventre(corps, mat, dos, ventre, seuil_dos=0.55, seuil_ventre=-0.4
         elif f.normal.z < seuil_ventre: f.material_index = ct.M[ventre]
 
 
+def plaque_xy(corps, pts, z, ep, mat):
+    """Membrane plate (plan XY) de contour pts [(x, y)...], épaisseur ep, triangulée (contour concave possible)."""
+    bm = corps.bm
+    bas = [bm.verts.new((x, y, z - ep / 2)) for x, y in pts]
+    haut = [bm.verts.new((x, y, z + ep / 2)) for x, y in pts]
+    faces = [bm.faces.new(list(reversed(bas))), bm.faces.new(haut)]
+    n = len(pts)
+    for i in range(n):
+        j = (i + 1) % n
+        faces.append(bm.faces.new((bas[i], bas[j], haut[j], haut[i])))
+    for f in faces: f.material_index = ct.M[mat]
+    bmesh.ops.triangulate(bm, faces=faces[:2])
+
+
 def _supprime(nom):
     o = bpy.data.objects.get(nom)
     if o: bpy.data.objects.remove(o, do_unlink=True)
@@ -92,10 +106,10 @@ def loc_monde(arm, os_nom, dv):
     return arm.data.bones[os_nom].matrix_local.to_3x3().inverted() @ Vector(dv)
 
 
-def action_marche(arm, nom, poses):
+def action_marche(arm, nom, poses, anim="marche"):
     """poses(f, t) -> {os: (quaternion local, translation locale ou None)} pour f = 1..8, t = phase 0..2pi.
-    Crée l'action <nom>_marche et la range dans une piste NLA nommée « marche »."""
-    old = bpy.data.actions.get(nom + "_marche")
+    Crée l'action <nom>_<anim> et la range dans une piste NLA nommée <anim> (« marche » par défaut)."""
+    old = bpy.data.actions.get(f"{nom}_{anim}")
     if old: bpy.data.actions.remove(old)
     arm.animation_data_create()
     arm.animation_data.action = None
@@ -110,15 +124,15 @@ def action_marche(arm, nom, poses):
                 pb.location = loc
                 pb.keyframe_insert("location", frame=f)
     act = arm.animation_data.action
-    act.name = nom + "_marche"
+    act.name = f"{nom}_{anim}"
     act.use_fake_user = True
     act.use_frame_range = True
     act.frame_start, act.frame_end = 1, NB_IMAGES
     act.use_cyclic = True
-    act["anim"] = "marche"
+    act["anim"] = anim
     for tr in list(arm.animation_data.nla_tracks): arm.animation_data.nla_tracks.remove(tr)
-    tr = arm.animation_data.nla_tracks.new(); tr.name = "marche"
-    st = tr.strips.new("marche", 1, act)
+    tr = arm.animation_data.nla_tracks.new(); tr.name = anim
+    st = tr.strips.new(anim, 1, act)
     if hasattr(st, "action_slot") and act.slots: st.action_slot = act.slots[0]
     arm.animation_data.action = None
     for pb in arm.pose.bones:
@@ -126,7 +140,7 @@ def action_marche(arm, nom, poses):
     return act
 
 
-def apercus(scene, arm, nom, cible_z=0.3, largeur=1.0):
+def apercus(scene, arm, nom, cible_z=0.3, largeur=1.0, anim="marche"):
     """Enregistre le fichier, puis rend une vue de jeu et la planche des 8 images de la marche."""
     import numpy as np
     bpy.ops.wm.save_as_mainfile(filepath=ct.BLEND)
@@ -157,7 +171,7 @@ def apercus(scene, arm, nom, cible_z=0.3, largeur=1.0):
         planche[:, i * w:(i + 1) * w] = np.array(im.pixels[:], dtype=np.float32).reshape(h, w, 4)
     out = bpy.data.images.new("planche", w * NB_IMAGES, h, alpha=True)
     out.pixels = planche.ravel()
-    out.filepath_raw = os.path.join(ct.DOSSIER, f"apercu_{nom}_marche.png"); out.file_format = "PNG"; out.save()
+    out.filepath_raw = os.path.join(ct.DOSSIER, f"apercu_{nom}_{anim}.png"); out.file_format = "PNG"; out.save()
     # vue seule (image 1) en plus grand
     scene.frame_set(1)
     scene.render.resolution_x = scene.render.resolution_y = 600
