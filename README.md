@@ -19,6 +19,18 @@ python3 tools/serveur.py
 Puis ouvrir http://localhost:8028 dans Firefox ou Chrome (ouvrir `index.html` depuis le disque ne marche pas :
 les modules JavaScript demandent un serveur). `?jouer=prairie` démarre directement une partie.
 
+## En ligne
+
+https://tower.izicraft.fr — site statique YunoHost sur thnas, copie de la branche `main`, public.
+Pour mettre à jour le site après avoir fusionné une demande, sur thnas :
+
+```sh
+sudo bash ~/tower-mettre-a-jour.sh /var/www/my_webapp__N/www
+```
+
+Le script (`tools/deploiement/mettre-a-jour.sh`) ne copie que le jeu. La version en ligne s'affiche sous le
+bouton « Jouer » ; un simple rechargement de la page suffit à la voir. Spec : `docs/specs/006-mise-en-ligne.md`.
+
 ## Commandes
 
 | Action | Souris / clavier | Tactile |
