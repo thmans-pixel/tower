@@ -259,3 +259,12 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
   55% { transform: translateX(-2px); }
   75% { transform: translateX(1px); }
 }
+
+/* Spec 013 : fenêtre plus haute que large, la boutique suit la carte ; le reste de la hauteur reste en bas. */
+#app.etroit #scene { flex: 0 0 auto; padding: 6px 0; }
+#app.etroit #bas { flex: 0 0 auto; }
+#app.etroit::after { content: ''; flex: 1; background: var(--nuit); }
+#haut { padding-top: 4px; padding-bottom: 4px; }
+#haut .petit { min-height: 34px; }
+.outil, .pouvoir { min-height: 56px; }
+#bas { padding: 6px 10px; }
