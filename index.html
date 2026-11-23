@@ -18,7 +18,14 @@
       <span class="compteur" title="Vague"><span class="etiquette">Vague</span><b id="vague">0/20</b></span>
     </div>
     <nav class="commandes">
-      <button id="b-son" class="petit" title="Couper le son">Son</button>
+      <span class="reglage-son">
+        <button id="b-son" class="petit" title="Réglages du son" aria-expanded="false">Son</button>
+        <div id="reglages-son" hidden>
+          <label>Musique <input id="vol-musique" type="range" min="0" max="100" step="5"></label>
+          <label>Effets sonores <input id="vol-effets" type="range" min="0" max="100" step="5"></label>
+          <button id="b-muet" class="petit">Tout couper</button>
+        </div>
+      </span>
       <button id="b-effets" class="petit" title="Effets complets ou réduits (tablettes lentes)">Effets</button>
       <button id="b-pause" class="petit" title="Pause (Espace)">Pause</button>
       <button id="b-vitesse" class="petit" title="Vitesse (F)">×1</button>

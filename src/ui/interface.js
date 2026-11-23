@@ -46,7 +46,22 @@ export class Interface {
     $('appel').onclick = () => actions.appel();
     $('b-pause').onclick = () => actions.pause();
     $('b-vitesse').onclick = () => actions.vitesse();
-    $('b-son').onclick = () => actions.son();
+    // Réglages du son (spec 014) : deux curseurs et une coupure générale.
+    const boite = $('reglages-son');
+    $('b-son').onclick = (e) => {
+      e.stopPropagation();
+      boite.hidden = !boite.hidden;
+      $('b-son').setAttribute('aria-expanded', String(!boite.hidden));
+      const v = actions.volumes();
+      $('vol-musique').value = Math.round(v.musique * 100);
+      $('vol-effets').value = Math.round(v.effets * 100);
+    };
+    boite.onclick = (e) => e.stopPropagation();
+    document.addEventListener('click', () => { boite.hidden = true; $('b-son').setAttribute('aria-expanded', 'false'); });
+    $('vol-musique').oninput = (e) => actions.volume('musique', e.target.value / 100);
+    $('vol-effets').oninput = (e) => actions.volume('effets', e.target.value / 100);
+    $('vol-effets').onchange = () => actions.essaiSon();
+    $('b-muet').onclick = () => actions.son();
     $('b-effets').onclick = () => actions.effets();
     $('b-recommencer').onclick = () => actions.recommencer();
     $('b-menu').onclick = () => actions.menu();
@@ -314,6 +329,7 @@ export class Interface {
     this.majChamp('b-vitesse', '×' + opts.vitesse);
     this.majChamp('b-pause', opts.pause ? 'Reprendre' : 'Pause');
     this.majChamp('b-son', opts.son ? 'Son' : 'Muet');
+    this.majChamp('b-muet', opts.son ? 'Tout couper' : 'Remettre le son');
     this.majChamp('b-effets', opts.reduits ? 'Effets −' : 'Effets');
     $('pause').hidden = !opts.pause;
 

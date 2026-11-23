@@ -26,6 +26,7 @@ vue.cibleOr = () => {
   return { x: (o.left + o.width / 2 - r.left) * k, y: (o.top + o.height / 2 - r.top) * k };
 };
 vue.surPiece = () => {
+  son.jouer('piece');
   const c = document.getElementById('or').parentElement;
   c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse');
 };
@@ -38,6 +39,8 @@ let mode = 'campagne';         // choix de l'écran des cartes : campagne, carte
 const alea = { theme: 'prairie', longueur: 25, graine: numeroAuHasard(), vignette: null };
 let progression = charger();   // cartes débloquées, étoiles, difficulté choisie, son
 son.actif = progression.son;
+son.volMusique = progression.volMusique;
+son.volEffets = progression.volEffets;
 vue.reduits = progression.effetsReduits;
 let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
@@ -50,6 +53,9 @@ const ui = {
 
 const interfaceJeu = new Interface({
   construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon, effets: basculerEffets,
+  volumes: () => ({ musique: son.volMusique, effets: son.volEffets }),
+  volume: (voie, v) => { if (voie === 'musique') son.volMusique = progression.volMusique = v; else son.volEffets = progression.volEffets = v; son.appliquer(); enregistrer(progression); },
+  essaiSon: () => son.jouer('piece'),
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
@@ -160,6 +166,7 @@ function basculerEffets() {
 function basculerSon() {
   son.actif = !son.actif;
   progression.son = son.actif;
+  son.appliquer();
   enregistrer(progression);
 }
 
