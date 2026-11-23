@@ -76,6 +76,7 @@ export class Son {
         case 'eclair': if (this.libre('eclair', 90)) { this.souffle(0.12, 0.09, 6000); this.ton('sawtooth', 1800, 300, 0.12, 0.04); } break;
         case 'explosion': if (this.libre('boum', 80)) this.souffle(0.3, 0.16, 600); break;
         case 'mort': if (this.libre('mort', 50)) this.ton('square', 320, 70, 0.12, 0.05); break;
+        case 'blesse': if (e.armure && this.libre('tink', 120)) this.ton('triangle', 2400, 1800, 0.05, 0.025); break;
         case 'fuite': this.ton('sawtooth', 220, 90, 0.35, 0.09); break;
         case 'pose': this.ton('square', 300, 300, 0.06, 0.06); this.ton('square', 450, 450, 0.08, 0.06, 0.07); break;
         case 'amelioration': [523, 659, 784].forEach((f, i) => this.ton('square', f, f, 0.08, 0.05, i * 0.07)); break;

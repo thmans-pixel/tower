@@ -2,7 +2,8 @@
 # Rend les collections de decor.blend en images pour le jeu (docs/specs/002 et 003) :
 #   Decor   -> assets/decors/<carte>/  une image par élément
 #   Tours   -> assets/tours/           une image par tour et niveau ; pièce mobile (fût, arme) en 16 orientations
-#   Ennemis -> assets/ennemis/         une bande de 8 images par action (marche, vol, rugissement)
+#   Ennemis -> assets/ennemis/         par action (marche, vol, rugissement, mort) : 8 images en colonnes,
+#                                      8 directions en lignes (spec 011)
 # Chaque dossier reçoit son manifest.json. Le fichier .blend n'est pas modifié.
 #
 # Depuis la racine du dépôt (chemins complets obligatoires avec Flatpak) :
@@ -22,6 +23,7 @@ ECHANTILLONS = 48          # qualité Cycles
 CONTOUR = True             # contour sombre d'un pixel (style pixel)
 AGRANDISSEMENT_ENNEMIS = 1.5   # ennemis rendus plus grands que nature pour rester lisibles (spec 003)
 ORIENTATIONS = 16          # orientations des pièces mobiles des tours
+DIRECTIONS = 8             # directions des ennemis : ligne k = tourné de k × 45° depuis +X (vers +Y = haut de l'écran)
 # ---------------------------------------------------------------------------
 
 PPC = 20 if STYLE == "pixel" else 80
@@ -166,18 +168,21 @@ def post_pixel(chemin, sol=False):
     bpy.data.images.remove(im)
 
 
-def assembler(chemins, sortie):
-    """Met les images côte à côte, de gauche à droite."""
+def assembler(chemins, sortie, colonnes=None):
+    """Met les images côte à côte, de gauche à droite ; avec `colonnes`, en grille ligne par ligne, la première
+    ligne en haut de l'image (les pixels de Blender partent du bas)."""
     ims = [bpy.data.images.load(c) for c in chemins]
     w, h = ims[0].size
-    n = len(ims)
-    buf = [0.0] * (n * w * h * 4)
+    n = colonnes or len(ims)
+    lignes = math.ceil(len(ims) / n)
+    buf = [0.0] * (n * w * lignes * h * 4)
     for k, im in enumerate(ims):
         px = im.pixels[:]
+        col, lig = k % n, lignes - 1 - k // n
         for y in range(h):
-            d = (y * n * w + k * w) * 4
+            d = ((lig * h + y) * n * w + col * w) * 4
             buf[d:d + w * 4] = px[y * w * 4:(y + 1) * w * 4]
-    out = bpy.data.images.new("td_bande", n * w, h, alpha=True)
+    out = bpy.data.images.new("td_bande", n * w, lignes * h, alpha=True)
     out.pixels = buf
     out.filepath_raw = sortie
     out.file_format = "PNG"
@@ -186,7 +191,7 @@ def assembler(chemins, sortie):
         bpy.data.images.remove(im)
 
 
-def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=False):
+def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=False, colonnes=None):
     marge = 0 if dessus else MARGE   # une texture de sol se répète : pas de marge
     """Rend `visibles` dans chaque état (fonction sans argument), avec un cadrage commun à tous les états.
     Renvoie { fichier, images, largeur, hauteur, ancres }."""
@@ -213,7 +218,7 @@ def rendre_serie(ctx, visibles, etats, dossier, nom, ppc, ombre, ancres, dessus=
     if len(chemins) == 1:
         shutil.copyfile(chemins[0], os.path.join(dossier, fichier))
     else:
-        assembler(chemins, os.path.join(dossier, fichier))
+        assembler(chemins, os.path.join(dossier, fichier), colonnes)
     print("rendu :", fichier, f"({len(chemins)} image{'s' if len(chemins) > 1 else ''})")
     return {"fichier": fichier, "images": len(chemins), "largeur": rx, "hauteur": ry, "ancres": px_ancres}
 
@@ -304,6 +309,9 @@ def rendre_ennemis(ctx, racine):
             continue
         nom = str(arm.get("ennemi") or arm.name.replace("_armature", ""))
         remettre = a_l_origine(arm)
+        mode0 = arm.rotation_mode
+        arm.rotation_mode = "XYZ"          # la rotation se fait autour de Z, quel que soit le mode d'origine
+        rot0 = arm.rotation_euler.z
         etat_pistes = {tr.name: tr.mute for tr in ad.nla_tracks}
         action_avant = ad.action
         ad.action = None
@@ -316,18 +324,27 @@ def rendre_ennemis(ctx, racine):
                 a = tr.strips[0].action
                 debut, fin = int(a.frame_range[0]), int(a.frame_range[1])
             images = list(range(debut, fin + 1))
-            etats = [(lambda f=f: bpy.context.scene.frame_set(f)) for f in images]
-            r = rendre_serie(ctx, maillages, etats, d, f"{nom}_{tr.name}", ppc, tr.name != "vol", [Vector((0, 0, 0))])
-            actions[tr.name] = {"fichier": r["fichier"], "images": r["images"], "largeur": r["largeur"],
-                                "hauteur": r["hauteur"], "ancre": r["ancres"][0]}
+            # Toutes les directions avec un cadrage commun : l'ancre (les pieds) reste au même pixel partout.
+            def etat(k, f):
+                def appliquer():
+                    arm.rotation_euler.z = rot0 + k * 2 * math.pi / DIRECTIONS
+                    bpy.context.scene.frame_set(f)
+                return appliquer
+            etats = [etat(k, f) for k in range(DIRECTIONS) for f in images]
+            r = rendre_serie(ctx, maillages, etats, d, f"{nom}_{tr.name}", ppc, tr.name != "vol", [Vector((0, 0, 0))],
+                             colonnes=len(images))
+            arm.rotation_euler.z = rot0
+            actions[tr.name] = {"fichier": r["fichier"], "images": len(images), "directions": DIRECTIONS,
+                                "largeur": r["largeur"], "hauteur": r["hauteur"], "ancre": r["ancres"][0]}
         for tr in ad.nla_tracks:
             tr.mute = etat_pistes.get(tr.name, False)
         ad.action = action_avant
         bpy.context.scene.frame_set(1)
+        arm.rotation_mode = mode0
         remettre()
         ennemis.append({"nom": nom, "actions": actions})
     ecrire_manifest(d, {"pixels_par_case": ppc, "agrandissement": AGRANDISSEMENT_ENNEMIS, "elevation": ELEVATION,
-                        "ennemis": ennemis})
+                        "directions": DIRECTIONS, "ennemis": ennemis})
     return len(ennemis)
 
 

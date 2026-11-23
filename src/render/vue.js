@@ -8,6 +8,7 @@ import { hasard } from '../sim/hasard.js';
 import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
 import { nomTour, nomEnnemi } from './modeles.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
+import { silhouette, suivre, poseMort, genreMort } from './monstres.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Chiffres", "Pixelify Sans", system-ui, sans-serif';   // chiffres lisibles (spec 009)
@@ -45,6 +46,14 @@ export class Vue {
     this.secousse = 0;
     this.horloge = 0;
     this.modeles = { tours: {}, ennemis: {} };   // remplis par main.js quand les packs Blender sont chargés
+    // Spec 011 et 012 (lot A) : suivi des monstres à l'écran, corps qui tombent, nuages, pièces d'or.
+    this.suivi = new Map();
+    this.morts = [];
+    this.bouffees = [];
+    this.pieces = [];
+    this.dtImage = 0;
+    this.cibleOr = null;    // () => { x, y } : compteur d'or en coordonnées de la toile (main.js)
+    this.surPiece = null;   // appelé quand une pièce arrive au compteur
   }
 
   /** Prépare le fond et le décor d'une carte construite par la logique. */
@@ -114,15 +123,13 @@ export class Vue {
   evenements(liste) {
     for (const e of liste) {
       switch (e.type) {
-        case 'mort':
-          if (e.boss) {
-            this.eclater(e.x, e.y - 20, '#f2c14e', 40); this.eclater(e.x, e.y - 20, COULEUR_ENN[e.sorte], 30);
-            this.secousse = 0.5;
-            this.bandeau = { texte: 'L’Ogre chef de guerre est vaincu !', sous: '+' + e.or + ' or', t: 0, vie: 2.4 };
-          }
-          this.eclater(e.x, e.y - (e.vol ? 18 : 6), COULEUR_ENN[e.sorte], 10);
-          this.texte(e.x, e.y - 20, '+' + e.or, '#f2c14e');
+        case 'mort': this.mourir(e); break;
+        case 'blesse': {
+          const st = this.suivi.get(e.id);
+          if (st) st.flash = 0.09;
+          if (e.armure) for (let i = 0; i < 3; i++) this.eclats.push({ x: e.x + (Math.random() - 0.5) * 8, y: e.y - (e.vol ? 22 : 12), vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 50, vie: 0.25, t: 0, col: i ? '#e8eef2' : '#9aa3ad', s: 2 });
           break;
+        }
         case 'explosion':
           if (e.feu && e.sorte === 'canon') { this.eclater(e.x, e.y - 4, '#ff8a2b', 4); this.eclater(e.x, e.y - 4, '#ffd23f', 2); break; }
           this.anneaux.push({ x: e.x, y: e.y, r: 4, max: e.rayon, vie: 0.35, t: 0, col: e.feu ? '255,110,40' : '255,170,60' });
@@ -162,6 +169,43 @@ export class Vue {
     }
   }
 
+  /** Mort d'un monstre : son corps tombe et s'efface, un nuage, une pièce qui file au compteur d'or. */
+  mourir(e) {
+    const st = this.suivi.get(e.id);
+    this.suivi.delete(e.id);
+    const actions = this.modeles.ennemis[nomEnnemi(e.sorte)];
+    const genre = genreMort(e.sorte, e.vol);
+    const vx = st ? st.vx : e.dx || 1;
+    this.morts.push({ sorte: e.sorte, x: e.x, y: e.y, t: 0, boss: e.boss, genre, cote: vx < 0 ? -1 : 1,
+      dernier: st && st.dernier, mort: actions && actions.mort, dir: st ? Math.max(0, st.dir) : 0 });
+    const col = COULEUR_ENN[e.sorte];
+    if (genre === 'slime') {
+      for (let i = 0; i < 10; i++) this.eclats.push({ x: e.x, y: e.y - 6, vx: (Math.random() - 0.5) * 120, vy: -60 - Math.random() * 60, vie: 0.5, t: 0, col: i % 3 ? col : '#d8ffb0', s: 2 + (i % 2) * 2 });
+      this.bouffees.push({ x: e.x, y: e.y + 6, r: 4, max: 14, vie: 1.6, t: 0, col: '139,224,78', plat: true, a: 0.45 });
+    } else if (genre === 'spectre') {
+      for (let i = 0; i < 6; i++) this.bouffees.push({ x: e.x + (Math.random() - 0.5) * 16, y: e.y - 10 - Math.random() * 14, r: 3, max: 9 + Math.random() * 5, vie: 0.9, t: 0, col: '207,227,240', monte: 22, a: 0.5 });
+    } else if (!e.vol) {
+      this.poussiere(e.x, e.y + 6, e.boss ? 10 : 4);
+    }
+    if (e.boss) {
+      this.eclater(e.x, e.y - 20, '#f2c14e', 40); this.eclater(e.x, e.y - 20, col, 30);
+      for (let i = 0; i < 14; i++) this.eclats.push({ x: e.x, y: e.y - 24, vx: (Math.random() - 0.5) * 260, vy: -120 - Math.random() * 160, vie: 0.9 + Math.random() * 0.4, t: 0, col: i % 2 ? '#5b4a3a' : col, s: 4 + (i % 3) * 2 });
+      this.anneaux.push({ x: e.x, y: e.y, r: 8, max: 110, vie: 0.6, t: 0, col: '255,190,80' });
+      this.secousse = 0.8;
+      this.bandeau = { texte: 'L’Ogre chef de guerre est vaincu !', sous: '+' + e.or + ' or', t: 0, vie: 2.4 };
+    } else this.eclater(e.x, e.y - (e.vol ? 18 : 8), col, 5);
+    // Pièce d'or vers le compteur (au plus 25 à la fois ; sinon le compteur pulse directement).
+    if (this.pieces.length < 25 && this.cibleOr) this.pieces.push({ x0: e.x, y0: e.y - 16, t: 0, vie: 0.55 + Math.random() * 0.15 });
+    else this.surPiece?.();
+  }
+
+  /** Nuage de poussière (ronds doux qui gonflent, montent un peu et s'effacent). */
+  poussiere(x, y, n, col = '201,170,120') {
+    for (let i = 0; i < n; i++) {
+      this.bouffees.push({ x: x + (Math.random() - 0.5) * 18, y: y + (Math.random() - 0.5) * 6, r: 2, max: 6 + Math.random() * 6, vie: 0.5 + Math.random() * 0.3, t: 0, col, monte: 10, a: 0.45 });
+    }
+  }
+
   eclater(x, y, col, n) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 90;
@@ -175,6 +219,7 @@ export class Vue {
   dessiner(s, ui, dt) {
     const g = this.g;
     this.horloge += dt;
+    this.dtImage = dt;
     g.setTransform(1, 0, 0, 1, 0, 0);
     if (this.secousse > 0) { this.secousse -= dt; g.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6); }
     g.imageSmoothingEnabled = false;
@@ -222,10 +267,16 @@ export class Vue {
     }
     for (const t of s.tours) liste.push({ y: t.y + 1, f: () => this.tour(t, t.id === ui.selection) });
     for (const e of s.ennemis) if (!e.vol) liste.push({ y: e.y, f: () => this.ennemi(e) });
+    this.morts = this.morts.filter((m) => (m.t += dt) < (m.boss ? 1.5 : 0.8));
+    for (const m of this.morts) liste.push({ y: m.y - 1, f: () => this.corps(m) });
     for (const gr of s.renforts || []) liste.push({ y: gr.y, f: () => this.soldats(gr) });
     liste.sort((a, b) => a.y - b.y);
     for (const o of liste) o.f();
     for (const e of s.ennemis) if (e.vol) this.ennemi(e);
+    if (this.suivi.size > s.ennemis.length) {   // monstres partis (tués ou passés) : on oublie leur suivi
+      const ici = new Set(s.ennemis.map((e) => e.id));
+      for (const id of this.suivi.keys()) if (!ici.has(id)) this.suivi.delete(id);
+    }
 
     for (const p of s.projectiles) this.projectile(p);
     for (const m of s.meteores || []) this.meteore(m);
@@ -356,28 +407,34 @@ export class Vue {
     const actions = this.modeles.ennemis[nomEnnemi(e.sorte)];
     const rugit = e.rugit > 0 && actions && actions.rugissement;
     const a = actions && (rugit ? actions.rugissement : actions.marche || actions.vol || Object.values(actions)[0]);
+    const st = suivre(this.suivi.get(e.id), e, this.dtImage, a ? a.dirs : 1);
+    this.suivi.set(e.id, st);
     let src;
     if (a) {
       const i = rugit ? Math.min(a.n - 1, Math.floor((1 - e.rugit / 0.8) * a.n))
         : e.vol ? Math.floor(this.horloge * 12 + e.id) % a.n : Math.floor(e.pas / 5) % a.n;
-      src = { img: a.img, sx: i * a.l, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse };
+      const ligne = a.dirs > 1 ? st.dir : 0;
+      src = { img: a.img, sx: i * a.l, sy: ligne * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse, dirs: a.dirs };
     } else {
       const sp = spriteEnnemi(e.sorte, Math.floor(e.pas / 14) % 2);
-      src = { img: sp, sx: 0, sw: sp.width, sh: sp.height, ax: sp.width / 2, ay: sp.height - 1, k: ECHELLE, lisse: false };
+      src = { img: sp, sx: 0, sy: 0, sw: sp.width, sh: sp.height, ax: sp.width / 2, ay: sp.height - 1, k: ECHELLE, lisse: false, dirs: 1 };
     }
+    src.flip = src.dirs === 1 && st.vx < -0.1;
+    st.dernier = src;
     if (!a || e.vol) {
       g.fillStyle = 'rgba(0,0,0,.25)';
       g.beginPath(); g.ellipse(e.x, e.y + 8, e.vol ? 9 : 12, 4, 0, 0, Math.PI * 2); g.fill();
     }
     const l = src.sw * src.k, h = src.sh * src.k;
     const x = Math.round(e.x - src.ax * src.k), y = Math.round(e.y + 9 - haut - src.ay * src.k);
-    g.imageSmoothingEnabled = src.lisse;
-    if (e.sorte === 'spectre') g.globalAlpha = e.invisible ? 0.18 : 0.75;
-    if (e.dx < -0.1) {
-      const xm = Math.round(e.x - (src.sw - src.ax) * src.k);
-      g.save(); g.translate(xm + l, y); g.scale(-1, 1); g.drawImage(src.img, src.sx, 0, src.sw, src.sh, 0, 0, l, h); g.restore();
-    } else g.drawImage(src.img, src.sx, 0, src.sw, src.sh, x, y, l, h);
-    g.imageSmoothingEnabled = false;
+    let alpha = Math.min(1, st.age / 0.35);   // apparition en fondu
+    if (e.sorte === 'spectre') alpha *= e.invisible ? 0.18 : 0.75;
+    g.globalAlpha = alpha;
+    this.image(src, e.x, e.y + 9 - haut, 0, 1, 1);
+    if (st.flash > 0) {
+      g.globalAlpha = alpha * Math.min(1, st.flash / 0.06) * 0.85;
+      this.image({ ...src, img: silhouette(src.img, src.sx, src.sy, src.sw, src.sh), sx: 0, sy: 0 }, e.x, e.y + 9 - haut, 0, 1, 1);
+    }
     g.globalAlpha = 1;
     if (e.rage > 0) { g.fillStyle = '#ff5a4a'; g.fillRect(x + l / 2 - 1 + ((Math.floor(this.horloge * 10) % 3) - 1) * 6, y - 2, 3, 3); }
     if (e.gel > 0) {
@@ -401,6 +458,41 @@ export class Vue {
     const d = ENNEMIS[e.sorte];
     if (d.armure) { g.fillStyle = '#1a1420'; g.fillRect(bx - 9, by - 3, 8, 9); g.fillStyle = '#c5ccd4'; g.fillRect(bx - 8, by - 2, 6, 5); g.fillRect(bx - 7, by + 3, 4, 2); }
     if (d.soin) { g.fillStyle = '#1a1420'; g.fillRect(bx - 9, by - 3, 8, 8); g.fillStyle = '#5dff9a'; g.fillRect(bx - 6, by - 2, 2, 6); g.fillRect(bx - 8, by, 6, 2); }
+  }
+
+  /** Dessine une image d'ennemi posée sur ses pieds en (px, py), tournée de `rot` et étirée (sx, sy). */
+  image(src, px, py, rot, ex, ey) {
+    const g = this.g, k = src.k;
+    const l = src.sw * k, h = src.sh * k;
+    const ax = (src.flip ? src.sw - src.ax : src.ax) * k, ay = src.ay * k;
+    g.imageSmoothingEnabled = src.lisse;
+    if (!rot && ex === 1 && ey === 1 && !src.flip) {
+      g.drawImage(src.img, src.sx, src.sy, src.sw, src.sh, Math.round(px - ax), Math.round(py - ay), l, h);
+    } else {
+      g.save();
+      g.translate(Math.round(px), Math.round(py));
+      if (rot) g.rotate(rot);
+      g.scale(src.flip ? -ex : ex, ey);
+      g.drawImage(src.img, src.sx, src.sy, src.sw, src.sh, src.flip ? -(l - ax) : -ax, -ay, l, h);
+      g.restore();
+    }
+    g.imageSmoothingEnabled = false;
+  }
+
+  /** Corps d'un monstre mort (spec 012, lot A). */
+  corps(m) {
+    const p = poseMort(m, m.t);
+    if (p.alpha <= 0) return;
+    let src = m.dernier;
+    if (p.action) {
+      const a = p.action;
+      src = { img: a.img, sx: p.image * a.l, sy: (a.dirs > 1 ? m.dir : 0) * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse, flip: a.dirs === 1 && m.cote < 0 };
+    }
+    if (!src) return;
+    const g = this.g;
+    g.globalAlpha = p.alpha * (m.sorte === 'spectre' ? 0.75 : 1);
+    this.image(src, m.x, m.y + 9 + p.dy, p.rot, p.sx, p.sy);
+    g.globalAlpha = 1;
   }
 
   projectile(p) {
@@ -437,6 +529,33 @@ export class Vue {
 
   effets(dt) {
     const g = this.g;
+    this.bouffees = this.bouffees.filter((b) => (b.t += dt) < b.vie);
+    for (const b of this.bouffees) {
+      const k = b.t / b.vie, r = b.r + (b.max - b.r) * (1 - (1 - k) * (1 - k));
+      g.fillStyle = `rgba(${b.col},${(b.a || 0.4) * (1 - k)})`;
+      g.beginPath();
+      if (b.plat) g.ellipse(b.x, b.y, r * 1.6, r * 0.5, 0, 0, Math.PI * 2);
+      else g.arc(b.x, b.y - (b.monte || 0) * k, r, 0, Math.PI * 2);
+      g.fill();
+    }
+    if (this.pieces.length) {
+      const c = this.cibleOr ? this.cibleOr() : { x: W - 40, y: -20 };
+      this.pieces = this.pieces.filter((p) => {
+        p.t += dt;
+        if (p.t >= p.vie) { this.surPiece?.(); return false; }
+        return true;
+      });
+      for (const p of this.pieces) {
+        const k = p.t / p.vie;
+        const sautY = -36 * Math.sin(Math.min(1, k * 2.2) * Math.PI);   // petit saut, puis vol vers le compteur
+        const v = k < 0.35 ? 0 : (k - 0.35) / 0.65, e = v * v;
+        const x = p.x0 + (c.x - p.x0) * e, y = p.y0 + (k < 0.35 ? sautY : (c.y - p.y0) * e);
+        const larg = 2 + Math.round(Math.abs(Math.cos(this.horloge * 14 + p.x0)) * 2);
+        g.fillStyle = '#1a1420'; g.fillRect(Math.round(x) - larg - 1, Math.round(y) - 4, larg * 2 + 2, 8);
+        g.fillStyle = '#f2c14e'; g.fillRect(Math.round(x) - larg, Math.round(y) - 3, larg * 2, 6);
+        g.fillStyle = '#fff3b0'; g.fillRect(Math.round(x) - larg, Math.round(y) - 3, Math.max(1, larg - 1), 2);
+      }
+    }
     this.eclats = this.eclats.filter((p) => (p.t += dt) < p.vie);
     for (const p of this.eclats) {
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;

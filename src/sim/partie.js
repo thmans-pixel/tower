@@ -354,7 +354,7 @@ function pouvoirsJoueur(s, dt) {
     const bloques = s.ennemis.filter((e) => e.bloque === g.id);
     g.pv -= bloques.length * pr.coupEnnemi * dt;
     const soldats = Math.ceil(g.pv / pr.pv);
-    if (bloques.length && soldats > 0) { g.coup = 0.2; blesser(s, bloques[0], pr.dps * soldats * dt, 'physique', null); }
+    if (bloques.length && soldats > 0) { g.coup = 0.2; blesser(s, bloques[0], pr.dps * soldats * dt, 'physique', null, 0, true); }
     else if (g.coup > 0) g.coup -= dt;
     if (g.t <= 0 || g.pv <= 0) {
       s.renforts.splice(i, 1);
@@ -476,7 +476,7 @@ function bruler(s, dt) {
     const tour = s.tours.find((t) => t.id === e.brule.tour);
     const dps = e.brule.dps;
     if (e.brule.t <= 0) e.brule = null;
-    blesser(s, e, dps * dt, 'magique', tour);
+    blesser(s, e, dps * dt, 'magique', tour, 0, true);
   }
 }
 
@@ -546,9 +546,12 @@ function impact(s, p, cible, parId) {
 }
 
 /** `perce` : part de l'armure ignorée (Arbalétriers). */
-export function blesser(s, e, degats, type, tour, perce = 0) {
+/** `continu` : dégâts par seconde (brûlure, soldats), sans événement « blesse » à chaque pas. */
+export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
   if (e.pv <= 0) return;
-  const reel = type === 'physique' ? degats * (1 - ENNEMIS[e.sorte].armure * (1 - perce)) : degats;
+  const armure = type === 'physique' ? ENNEMIS[e.sorte].armure * (1 - perce) : 0;
+  const reel = degats * (1 - armure);
+  if (!continu) ev(s, 'blesse', { id: e.id, x: e.x, y: e.y, vol: e.vol, armure: armure >= 0.2 });
   const avant = e.pv;
   e.pv -= reel;
   if (tour) tour.degats += Math.min(reel, avant);
@@ -560,7 +563,7 @@ export function blesser(s, e, degats, type, tour, perce = 0) {
   s.or += gain; s.orGagne += gain;
   s.abattus++;
   if (tour) tour.abattus++;
-  ev(s, 'mort', { sorte: e.sorte, x: e.x, y: e.y, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
+  ev(s, 'mort', { id: e.id, sorte: e.sorte, x: e.x, y: e.y, dx: e.dx, dy: e.dy, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
   const div = ENNEMIS[e.sorte].division;
   if (div) for (let k = 0; k < div.nombre; k++) apparaitre(s, div.sorte, e.vague, Math.max(0, e.d + (k - (div.nombre - 1) / 2) * 14), e.route);
 }
