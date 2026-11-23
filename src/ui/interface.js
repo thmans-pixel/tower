@@ -47,6 +47,7 @@ export class Interface {
     $('b-pause').onclick = () => actions.pause();
     $('b-vitesse').onclick = () => actions.vitesse();
     $('b-son').onclick = () => actions.son();
+    $('b-effets').onclick = () => actions.effets();
     $('b-recommencer').onclick = () => actions.recommencer();
     $('b-menu').onclick = () => actions.menu();
     $('b-jouer').onclick = () => actions.ecran('cartes');
@@ -303,11 +304,17 @@ export class Interface {
   maj(s, ui, opts) {
     if (!s) return;
     this.majChamp('vies', String(s.vies));
-    this.majChamp('or', nb(s.or));
+    // L'or défile jusqu'à sa nouvelle valeur au lieu de sauter (spec 012, lot C).
+    if (this.orAffiche === undefined || Math.abs(s.or - this.orAffiche) > 5000 || opts.nouvelle) this.orAffiche = s.or;
+    const ecart = s.or - this.orAffiche;
+    if (ecart) this.orAffiche += Math.sign(ecart) * Math.max(1, Math.ceil(Math.abs(ecart) * 0.18));
+    if (Math.sign(s.or - this.orAffiche) !== Math.sign(ecart)) this.orAffiche = s.or;
+    this.majChamp('or', nb(this.orAffiche));
     this.majChamp('vague', s.infini ? `${s.vague} · sans fin` : `${s.vague}/${s.nbVagues}`);
     this.majChamp('b-vitesse', '×' + opts.vitesse);
     this.majChamp('b-pause', opts.pause ? 'Reprendre' : 'Pause');
     this.majChamp('b-son', opts.son ? 'Son' : 'Muet');
+    this.majChamp('b-effets', opts.reduits ? 'Effets −' : 'Effets');
     $('pause').hidden = !opts.pause;
 
     const appel = $('appel');

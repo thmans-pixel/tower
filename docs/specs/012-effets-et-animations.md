@@ -1,6 +1,6 @@
 # 012 — Effets et animations
 
-Statut : **validé** (« ok vas y ») — lots A et B **réalisés** ; lot C à faire.
+Statut : **validé** (« ok vas y ») — lots A, B et C **réalisés**.
 
 Tout se passe dans l'affichage (`src/render/`) ; règles, équilibrage et joueur automatique inchangés. Seuls
 ajouts côté logique : événement `blesse` (id, armure) à chaque coup (pas pour la brûlure ni les soldats), `id`,
@@ -31,7 +31,13 @@ ajouts côté logique : événement `blesse` (id, armure) à chaque coup (pas po
   explosion avec lueur, poussière et cratère qui reste 4 s au sol.
 - Tour choisie : halo pulsé à sa base au lieu du carré.
 
-## Lot C — Vie du décor et interface (à faire)
+## Lot C — Vie du décor et interface (réalisé)
 
-Feuilles et papillons (Prairie), sable et chaleur (Désert), neige (Montagne) ; drapeaux et eau animés ; cœur qui
-tremble, or qui défile, bandeaux qui glissent ; option « Effets réduits ».
+- `src/render/ambiance.js` : feuilles qui volettent et papillons (Prairie), grains de sable et ondulations de
+  chaleur (Désert), neige qui tombe (Montagne) ; une carte aléatoire prend l'ambiance de son décor. Reflets qui
+  scintillent sur l'oasis et le lac, fanion qui flotte sur le château.
+- Interface : l'or défile jusqu'à sa nouvelle valeur, le cœur tremble et rougit quand une vie est perdue, les
+  bandeaux de vague glissent depuis le haut avec deux filets de couleur.
+- Bouton « Effets » dans la barre du haut (« Effets − » quand réduits), retenu dans la progression
+  (`effetsReduits`) : coupe l'ambiance, divise les éclats et la poussière par deux, plafonne les particules.
+- Au passage : les points noirs en grille sur le sable du Désert (coins de la texture de sol) sont rognés.
