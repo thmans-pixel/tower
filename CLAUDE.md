@@ -95,4 +95,5 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé, voies `effets`
   et `musique`, `son.appliquer()` après un changement de réglage ; `volMusique`, `volEffets` dans la progression).
   Musique : `src/audio/musique.js` (`AIRS` : prairie et désert originaux, montagne = Korobeiniki du domaine public,
-  boss, menu), pilotée par `majMusique` (main.js). Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).
+  boss, menu, sorcier = L'Apprenti sorcier de Dukas, domaine public), pilotée par `majMusique` (main.js) ; l'air d'une
+  partie est tiré au hasard dans `AIRS_DE_PARTIE`. Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).
