@@ -12,6 +12,8 @@ import { silhouette, suivre, poseMort, genreMort } from './monstres.js';
 import { poseTour, boutArme, DUREES } from './tours-effets.js';
 import { Ambiance } from './ambiance.js';
 
+const TAILLE_MONSTRES = 1.25;   // spec 013 : monstres affichés plus gros (la logique ne change pas)
+
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Chiffres", "Pixelify Sans", system-ui, sans-serif';   // chiffres lisibles (spec 009)
 
@@ -113,15 +115,37 @@ export class Vue {
         }
       }
     }
-    // Bords du chemin.
+    // Spec 013 : grandes taches douces, claires et sombres, pour casser la répétition de la texture du sol.
+    for (let i = 0; i < 46; i++) {
+      const x = rnd() * W, y = rnd() * H, r = 50 + rnd() * 120, clair = rnd() < 0.5;
+      const d = g.createRadialGradient(x, y, 0, x, y, r);
+      d.addColorStop(0, clair ? 'rgba(255,250,230,.07)' : 'rgba(60,40,20,.07)'); d.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = d; g.fillRect(x - r, y - r, 2 * r, 2 * r);
+    }
+    // Chemin plus contrasté selon le décor, bords doux au lieu d'un trait sombre, traces de pas.
+    const theme = (carte.def.aleatoire && carte.def.aleatoire.theme) || carte.def.id;
+    const teinte = { desert: '150,95,40', montagne: '90,120,170', prairie: '110,70,30' }[theme] || '110,70,30';
+    g.fillStyle = `rgba(${teinte},${theme === 'montagne' ? 0.1 : 0.16})`;
+    for (const [c, r] of carte.cheminCases) g.fillRect(c * T, r * T, T, T);
     const estChemin = (c, r) => carte.etat(c, r) === CHEMIN || (c < 0 && carte.etat(0, r) === CHEMIN);
-    g.fillStyle = 'rgba(70,45,20,.45)';
+    // Dégradé de 7 px depuis le bord (ex, ey) vers l'intérieur du chemin (direction vx, vy).
+    const bord = (ex, ey, vx, vy, rx, ry, l, h) => {
+      const d = g.createLinearGradient(ex, ey, ex + vx * 7, ey + vy * 7);
+      d.addColorStop(0, `rgba(${teinte},.42)`); d.addColorStop(1, `rgba(${teinte},0)`);
+      g.fillStyle = d; g.fillRect(rx, ry, l, h);
+    };
     for (const [c, r] of carte.cheminCases) {
       const x = c * T, y = r * T;
-      if (!estChemin(c, r - 1)) g.fillRect(x, y, T, 4);
-      if (!estChemin(c, r + 1)) g.fillRect(x, y + T - 4, T, 4);
-      if (!estChemin(c - 1, r)) g.fillRect(x, y, 4, T);
-      if (!estChemin(c + 1, r) && !(c + 1 === carte.chateau.c)) g.fillRect(x + T - 4, y, 4, T);
+      if (!estChemin(c, r - 1)) bord(x, y, 0, 1, x, y, T, 7);
+      if (!estChemin(c, r + 1)) bord(x, y + T, 0, -1, x, y + T - 7, T, 7);
+      if (!estChemin(c - 1, r)) bord(x, y, 1, 0, x, y, 7, T);
+      if (!estChemin(c + 1, r) && !(c + 1 === carte.chateau.c)) bord(x + T, y, -1, 0, x + T - 7, y, 7, T);
+    }
+    for (const [c, r] of carte.cheminCases) {
+      if (rnd() < 0.55) continue;
+      const x = c * T + 8 + rnd() * 20, y = r * T + 8 + rnd() * 20;
+      g.fillStyle = `rgba(${teinte},.22)`;
+      g.fillRect(Math.round(x), Math.round(y), 3, 2); g.fillRect(Math.round(x) + 5, Math.round(y) + 4, 3, 2);
     }
     this.fond = f;
     // Décor fixe : château, entrée, puis éléments placés par la logique.
@@ -510,21 +534,26 @@ export class Vue {
       const i = rugit ? Math.min(a.n - 1, Math.floor((1 - e.rugit / 0.8) * a.n))
         : e.vol ? Math.floor(this.horloge * 12 + e.id) % a.n : Math.floor(e.pas / 5) % a.n;
       const ligne = a.dirs > 1 ? st.dir : 0;
-      src = { img: a.img, sx: i * a.l, sy: ligne * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse, dirs: a.dirs };
+      src = { img: a.img, sx: i * a.l, sy: ligne * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k * TAILLE_MONSTRES, lisse: a.lisse, dirs: a.dirs };
     } else {
       const sp = spriteEnnemi(e.sorte, Math.floor(e.pas / 14) % 2);
-      src = { img: sp, sx: 0, sy: 0, sw: sp.width, sh: sp.height, ax: sp.width / 2, ay: sp.height - 1, k: ECHELLE, lisse: false, dirs: 1 };
+      src = { img: sp, sx: 0, sy: 0, sw: sp.width, sh: sp.height, ax: sp.width / 2, ay: sp.height - 1, k: ECHELLE * TAILLE_MONSTRES, lisse: false, dirs: 1 };
     }
     src.flip = src.dirs === 1 && st.vx < -0.1;
     st.dernier = src;
-    if (!a || e.vol) {
-      g.fillStyle = 'rgba(0,0,0,.25)';
-      g.beginPath(); g.ellipse(e.x, e.y + 8, e.vol ? 9 : 12, 4, 0, 0, Math.PI * 2); g.fill();
-    }
+    // Ombre de contact nette sous chaque monstre (spec 013), plus petite pour un volant.
+    g.fillStyle = 'rgba(0,0,0,.28)';
+    g.beginPath(); g.ellipse(e.x, e.y + 8, e.vol ? 8 : 11 * TAILLE_MONSTRES, 3.5, 0, 0, Math.PI * 2); g.fill();
     const l = src.sw * src.k, h = src.sh * src.k;
     const x = Math.round(e.x - src.ax * src.k), y = Math.round(e.y + 9 - haut - src.ay * src.k);
     let alpha = Math.min(1, st.age / 0.35);   // apparition en fondu
     if (e.sorte === 'spectre') alpha *= e.invisible ? 0.18 : 0.75;
+    // Liseré clair d'un pixel pour détacher le monstre du sol (spec 013).
+    if (!this.reduits) {
+      const lis = { ...src, img: silhouette(src.img, src.sx, src.sy, src.sw, src.sh, '#fff6dc'), sx: 0, sy: 0 };
+      g.globalAlpha = alpha * 0.45;
+      for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) this.image(lis, e.x + ox, e.y + 9 - haut + oy, 0, 1, 1);
+    }
     g.globalAlpha = alpha;
     this.image(src, e.x, e.y + 9 - haut, 0, 1, 1);
     if (st.flash > 0) {
@@ -582,7 +611,7 @@ export class Vue {
     let src = m.dernier;
     if (p.action) {
       const a = p.action;
-      src = { img: a.img, sx: p.image * a.l, sy: (a.dirs > 1 ? m.dir : 0) * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k, lisse: a.lisse, flip: a.dirs === 1 && m.cote < 0 };
+      src = { img: a.img, sx: p.image * a.l, sy: (a.dirs > 1 ? m.dir : 0) * a.h, sw: a.l, sh: a.h, ax: a.ancre[0], ay: a.ancre[1], k: a.k * TAILLE_MONSTRES, lisse: a.lisse, flip: a.dirs === 1 && m.cote < 0 };
     }
     if (!src) return;
     const g = this.g;

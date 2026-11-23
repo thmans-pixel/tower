@@ -4,10 +4,10 @@
 
 /** Silhouette blanche d'une image (morceau sx, sy, sw, sh), gardée en cache. */
 const caches = new WeakMap();
-export function silhouette(img, sx, sy, sw, sh) {
+export function silhouette(img, sx, sy, sw, sh, couleur = '#ffffff') {
   let c = caches.get(img);
   if (!c) { c = new Map(); caches.set(img, c); }
-  const cle = sx + ',' + sy;
+  const cle = sx + ',' + sy + couleur;
   let t = c.get(cle);
   if (!t) {
     t = document.createElement('canvas');
@@ -15,7 +15,7 @@ export function silhouette(img, sx, sy, sw, sh) {
     const g = t.getContext('2d');
     g.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
     g.globalCompositeOperation = 'source-atop';
-    g.fillStyle = '#ffffff';
+    g.fillStyle = couleur;
     g.fillRect(0, 0, sw, sh);
     c.set(cle, t);
   }

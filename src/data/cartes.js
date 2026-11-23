@@ -77,7 +77,7 @@ export const CARTES = {
     entrees: [{ c: 0, r: 1, l: 1, h: 3 }, { c: 0, r: 12, l: 1, h: 3 }],
     noms: { chateau: 'forteresse', entrees: ['entree_nord', 'entree_sud'] },
     sol: { fond: '#e3c27a', taches: ['#d4b26a', '#ecd08c'], chemin: '#c9a35c', cailloux: ['#b08d57', '#e8d29a'] },
-    decor: { cactus: 12, palmier: 5, rocher: 5, rocher_gros: 2, dune: 4, oasis: 1, petit_rocher: 6, touffe: 12 },
+    decor: { cactus: 12, palmier: 5, rocher: 5, rocher_gros: 2, oasis: 1, petit_rocher: 4, touffe: 4 },   // spec 013 : sans dunes, moins d'ossements
   },
   montagne: {
     id: 'montagne', nom: 'La Montagne enneigée', resume: 'Un long chemin en lacets ; la neige ralentit tout le monde.',
@@ -90,6 +90,6 @@ export const CARTES = {
     noms: { chateau: 'fort', entrees: ['entree'] },
     ponts: [[8, 8]],
     sol: { fond: '#eef3f8', taches: ['#dce6ef', '#f8fbfd'], chemin: '#b8c8d8', cailloux: ['#9aaabb', '#d4dee8'] },
-    decor: { sapin_neige: 16, rocher: 5, rocher_gros: 2, congere: 4, lac: 1, petit_rocher: 6, touffe: 10 },
+    decor: { sapin_neige: 16, rocher: 5, rocher_gros: 2, congere: 4, lac: 1, petit_rocher: 4, touffe: 4 },
   },
 };

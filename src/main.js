@@ -285,14 +285,19 @@ document.addEventListener('visibilitychange', () => {
 // ---------------------------------------------------------------- taille de la carte à l'écran
 
 const scene = document.getElementById('scene'), cadre = document.getElementById('cadre');
+// Spec 013 : la carte prend toute la place possible ; si c'est la largeur qui manque (fenêtre haute), la boutique
+// remonte juste sous la carte au lieu de laisser deux bandes vides.
+const app = document.getElementById('app');
 const ajuster = () => {
-  const l = scene.clientWidth - 24, h = scene.clientHeight - 24;
+  app.classList.remove('etroit');
+  const l = scene.clientWidth - 12, h = scene.clientHeight - 12;
   const k = Math.max(0.2, Math.min(l / W, h / H));
   cadre.style.width = Math.floor(W * k) + 'px';
   cadre.style.height = Math.floor(H * k) + 'px';
+  app.classList.toggle('etroit', l / W < h / H - 0.02);
 };
 const observateur = new ResizeObserver(ajuster);
-observateur.observe(scene);
+observateur.observe(app);
 
 // ---------------------------------------------------------------- boucle
 
