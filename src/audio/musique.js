@@ -37,10 +37,17 @@ export const AIRS = {
                    -:1 D5:2 F5 A5:2 G5 F5   E5:3 C5 E5:2 D5 C5     B4:2 B4 C5 D5:2 E5:2   C5:2 A4:2 A4:2 -:2`),
     accords: ['E', 'Am', 'E', 'Am', 'Dm', 'C', 'E', 'Am'],
   },
+  // Boss : thème original dans un style d'épopée médiévale sombre (demande : « dans le style de Game of Thrones »,
+  // dont le thème est protégé et n'est pas repris) : ut mineur à trois temps, violoncelle en ostinato, cordes
+  // graves, tambours de guerre.
   boss: {
-    tempo: 152, onde: 'sawtooth', basseOnde: 'sawtooth', batterie: 'lourde', basseOstinato: true,
-    melodie: lire(`-:4 E5:2 G5:2   F#5:4 -:4   -:4 E5:2 Bb5:2   B5:4 -:4   -:4 G5:2 F#5:2   E5:4 D5:2 F#5:2   E5:8   -:8`),
-    accords: ['Em', 'Em', 'Em', 'Em', 'C', 'B', 'Em', 'B'],
+    tempo: 168, mesure: 6, onde: 'sawtooth', coupure: 1600, attaque: 0.05, basseOnde: 'sawtooth', batterie: 'guerre',
+    ostinato: [1, 2, 1.498, 1, 2, 1.498], octaveBasse: 1 / 2,
+    melodie: lire(`C5:3 D5 Eb5:2   G4:4 Ab4 Bb4   C5:2 Bb4 Ab4 G4:2   F4:6
+                   Eb5:3 F5 G5:2   Ab5:4 G5 F5    Eb5:2 D5 C5 D5:2    C5:6
+                   G5:3 F5 Eb5:2   D5:4 Eb5 F5    Eb5:2 D5 C5 Bb4:2   C5:6
+                   Ab5:3 G5 F5:2   G5:4 F5 Eb5    D5:2 C5 B4 D5:2     C5:6`),
+    accords: ['Cm', 'Eb', 'Ab', 'Fm', 'Cm', 'Ab', 'G', 'Cm', 'Cm', 'G', 'Ab', 'Cm', 'Fm', 'Cm', 'G', 'Cm'],
   },
 };
 AIRS.menu = { ...AIRS.prairie, tempo: 112 };
@@ -86,7 +93,8 @@ export class Musique {
 
   croche(a, t, croche) {
     const fort = this.intensite >= 1;
-    const mesure = Math.floor(this.pas / 8) % a.accords.length, temps = this.pas % 8;
+    const parMesure = a.mesure || 8;
+    const mesure = Math.floor(this.pas / parMesure) % a.accords.length, temps = this.pas % parMesure;
     const accord = a.accords[mesure];
     // Mélodie : une note commence quand la précédente est finie.
     if (this.resteNote <= 0) {
@@ -94,14 +102,14 @@ export class Musique {
       this.note++;
       this.resteNote = d;
       const f = frequence(n);
-      if (f) this.voix(a.onde, f, t, d * croche * 0.9, fort ? 0.07 : 0.05, 2400);
+      if (f) this.voix(a.onde, f, t, d * croche * 0.9, fort ? 0.07 : 0.05, a.coupure || 2400, a.attaque);
+      if (f && a.mesure === 6) this.voix(a.onde, f / 2, t, d * croche * 0.9, 0.035, 900, a.attaque);   // cordes doublées à l'octave grave
     }
     this.resteNote--;
     // Basse : fondamentale (et quinte) sur les temps, ou ostinato pour le boss.
     const fb = FONDAMENTALE(accord) / 4;
-    if (a.basseOstinato) {
-      const motif = [1, 1, 2, 1, 1.189, 1, 1.414, 1.498][temps];
-      this.voix(a.basseOnde, fb * motif, t, croche * 0.8, 0.07, 700);
+    if (a.ostinato) {   // violoncelle qui martèle son motif, notes détachées
+      this.voix(a.basseOnde, fb * (a.octaveBasse || 1) * 2 * a.ostinato[temps], t, croche * 0.7, temps === 0 ? 0.1 : 0.075, 1100, 0.01);
     } else if (fort ? temps % 2 === 0 : temps % 4 === 0) {
       const f = temps === 4 || temps === 6 ? fb * 1.498 : fb;
       this.voix(a.basseOnde, f, t, croche * (fort ? 1.6 : 3.5), fort ? 0.11 : 0.07, 900);
@@ -109,7 +117,7 @@ export class Musique {
     // Accord tenu très doux, en début de mesure.
     if (temps === 0) {
       const f0 = FONDAMENTALE(accord) / 2;
-      for (const m of [1, 2 ** (TIERCE(accord) / 12), 1.498]) this.voix('triangle', f0 * m, t, croche * 7.5, 0.016, 1500, 0.08);
+      for (const m of [1, 2 ** (TIERCE(accord) / 12), 1.498]) this.voix('triangle', f0 * m, t, croche * (parMesure - 0.5), 0.016, 1500, 0.08);
     }
     if (fort) this.batterie(a.batterie, temps, t);
   }
@@ -142,6 +150,12 @@ export class Musique {
   }
 
   batterie(style, temps, t) {
+    if (style === 'guerre') {   // tambours de guerre : grosse frappe sur le 1, deux coups sur le 3, roulement en fin de mesure
+      if (temps === 0) { this.coup(t, 95, 40, 0.5, 0.32); this.frappe(t, 600, 0.3, 0.06, 'lowpass'); }
+      if (temps === 4 || temps === 5) this.coup(t, 130, 60, 0.22, 0.18);
+      if (temps === 3) this.frappe(t, 2200, 0.1, 0.05, 'bandpass');
+      return;
+    }
     if (style === 'doum') {   // doum-tek du désert
       if (temps === 0 || temps === 3) this.coup(t, 110, 55, 0.25, 0.22);
       if (temps === 2 || temps === 6) this.frappe(t, 2500, 0.08, 0.05, 'bandpass');
