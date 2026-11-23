@@ -14,6 +14,8 @@ import { chargerDecors } from './render/decors.js';
 import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
 import { Son } from './audio/son.js';
+import { Musique } from './audio/musique.js';
+import { ENNEMIS } from './data/ennemis.js';
 import { Interface } from './ui/interface.js';
 import { rangDeTouche } from './ui/clavier.js';
 
@@ -31,6 +33,7 @@ vue.surPiece = () => {
   c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse');
 };
 const son = new Son();
+const musique = new Musique(son);
 const decors = {};
 let partie = null;          // partie en cours
 let apercu = null;          // carte affichée derrière les écrans de menu
@@ -308,7 +311,27 @@ observateur.observe(app);
 
 // ---------------------------------------------------------------- boucle
 
+/** Air et intensité selon l'écran et la partie (spec 014, partie 2). */
+function majMusique() {
+  let air = null, intensite = 0;
+  if (!document.hidden && son.ac && son.volMusique > 0) {
+    if (ecran !== 'jeu' || !partie) air = 'menu';
+    else if (!partie.fin) {
+      const def = partie.carte.def;
+      air = (def.aleatoire && def.aleatoire.theme) || def.id;
+      if (!['prairie', 'desert', 'montagne'].includes(air)) air = 'prairie';
+      if (partie.ennemis.some((e) => ENNEMIS[e.sorte].boss)) air = 'boss';
+      const enVague = partie.lancement || partie.ennemis.length > 0;
+      intensite = enVague ? (Number.isFinite(partie.nbVagues) && partie.vague >= partie.nbVagues * 0.75 ? 2 : 1) : 0;
+    }
+  }
+  if (air && son.ac && !musique.minuterie) musique.nom = null;   // le son vient d'être réveillé : on relance
+  musique.jouer(air);
+  musique.intensite = intensite;
+}
+
 function boucle(maintenant) {
+  majMusique();
   const dtReel = Math.min(0.05, (maintenant - avant) / 1000);
   avant = maintenant;
   let dtJeu = 0;
@@ -375,6 +398,6 @@ fetch('version.json', { cache: 'no-store' })
   const params = new URLSearchParams(location.search);
   if (params.has('jouer')) await commencer(params.get('jouer') || 'prairie');
   else montrer('titre');
-  if (params.has('test')) window.td = { partie: () => partie, ui, vue, poser, appelerVague, avancer, commencer };
+  if (params.has('test')) window.td = { musique,  partie: () => partie, ui, vue, poser, appelerVague, avancer, commencer };
   requestAnimationFrame(boucle);
 })();

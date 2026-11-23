@@ -1,6 +1,6 @@
 # 014 — Musique et sons
 
-Statut : **validé** (« ok continue ») — partie 1 (sons et réglages) **réalisée** ; partie 2 (musique) à faire.
+Statut : **validé** (« ok continue ») — parties 1 et 2 **réalisées**.
 
 Tout est synthétisé en code (Web Audio), sans fichier ni droit d'auteur. Règles, équilibrage et images inchangés.
 
@@ -17,8 +17,17 @@ Tout est synthétisé en code (Web Audio), sans fichier ni droit d'auteur. Règl
 - Bouton « Son » : petite fenêtre avec deux curseurs **Musique** et **Effets sonores** (0 à 100 %) et
   « Tout couper ». Retenus dans la progression (`volMusique`, `volEffets`, `son`).
 
-## Partie 2 — Musique (à faire)
+## Partie 2 — Musique (réalisée)
 
-Un air par carte en boucle (Prairie champêtre, Désert oriental, Montagne froide) ; batterie et basse pendant les
-vagues, tempo un peu plus vif aux dernières ; thème du boss ; thème du menu, fanfare de victoire, descente de
-défaite ; coupure quand l'onglet est caché.
+Demande de Thibault : la musique d'Arkanoid pour la Prairie et celle de Tetris pour la Montagne.
+
+- **Montagne** : « Korobeiniki », l'air populaire russe du XIXe siècle repris par Tetris, dans le domaine public ;
+  arrangement 8 bits original.
+- **Prairie** : la musique d'Arkanoid est protégée, elle n'est pas reprise ; air original entraînant dans un
+  esprit arcade des années 80.
+- **Désert** : air original en mode oriental, percussions doum-tek. **Boss** : ostinato grave original, tant que
+  l'Ogre est en vie. **Menu** : l'air de la Prairie plus lent. Victoire et défaite : les fanfares de la partie 1.
+- Intensité : entre les vagues, mélodie, basse douce et accords ; pendant une vague, batterie et basse pleine ;
+  au dernier quart des vagues, tempo +8 %. Coupée quand l'onglet est caché ou le curseur Musique à 0.
+- `src/audio/musique.js` : séquenceur à programmation anticipée (`AIRS`, `Musique.jouer`, `intensite`) sur la voie
+  `musique` du `Son` ; piloté par `majMusique` dans main.js.
