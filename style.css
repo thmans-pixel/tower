@@ -277,3 +277,81 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 #reglages-son[hidden] { display: none; }
 #reglages-son label { display: grid; gap: 2px; }
 #reglages-son input[type=range] { width: 100%; accent-color: var(--or); }
+
+/* ================================================================ Mode mobile (spec 015) ================= */
+#b-plus, #b-serie, #confirmer, #tourner { display: none; }
+body.mobile kbd { display: none; }
+body.mobile button { min-height: 44px; }
+body.mobile #cadre { overflow: hidden; border-width: 2px; box-shadow: 0 0 0 2px var(--bois3); touch-action: none; }
+body.mobile #toile { touch-action: none; }
+
+/* Barre du haut : une ligne fine, les commandes dans le menu ☰. */
+body.mobile #haut { flex-wrap: nowrap; padding: 2px 6px; gap: 6px; position: relative; }
+body.mobile .compteurs { flex: 1 1 auto; gap: 12px; justify-content: flex-start; }
+body.mobile .compteur { font-size: 17px; }
+body.mobile #b-plus { display: block; min-width: 48px; font-size: 20px; }
+body.mobile .commandes { display: none; position: absolute; top: 100%; right: 6px; z-index: 40; flex-direction: column; gap: 6px; padding: 8px;
+  background: var(--bois); border: 3px solid var(--nuit); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+body.mobile .commandes.ouvert { display: flex; }
+body.mobile .commandes .petit { min-width: 170px; font-size: 16px; }
+body.mobile #reglages-son { right: calc(100% + 8px); top: 0; }
+
+/* Boutique compacte : icône et prix. */
+body.mobile .outil { display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr auto; justify-items: center; padding: 2px; min-height: 52px; }
+body.mobile .outil img { grid-row: auto; width: 32px; height: 36px; }
+body.mobile .outil .nom { display: none; }
+body.mobile .outil .prix { font-size: 13px; }
+body.mobile .outil .serie { display: none !important; }
+body.mobile #b-serie:not([hidden]) { display: block; font-weight: 700; font-size: 16px; }
+body.mobile #b-serie.actif { background: var(--or); color: var(--nuit); }
+body.mobile .pouvoir { min-width: 0; min-height: 48px; padding: 2px 4px; }
+body.mobile .pouvoir b { font-size: 13px; }
+body.mobile .pouvoir span { font-size: 12px; }
+body.mobile #apercu { display: none; }
+body.mobile .appel { min-height: 44px; font-size: 15px; padding: 2px 6px; }
+
+/* Paysage : la carte prend toute la hauteur, la boutique en colonne à droite. */
+body.mobile.paysage #app { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; }
+body.mobile.paysage #haut { grid-column: 1 / 3; }
+body.mobile.paysage #scene { grid-column: 1; grid-row: 2; min-height: 0; }
+body.mobile.paysage #bas { grid-column: 2; grid-row: 2; width: 132px; padding: 4px; display: flex; flex-direction: column; flex-wrap: nowrap; gap: 4px; overflow-y: auto; }
+body.mobile.paysage #boutique { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 0 0 auto; }
+body.mobile.paysage #b-serie:not([hidden]) { grid-column: 1 / 3; }
+body.mobile.paysage #pouvoirs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 0 0 auto; }
+body.mobile.paysage #bloc-vague { min-width: 0; flex: 0 0 auto; }
+
+/* Portrait : une rangée d'icônes qui défile sous la carte. */
+body.mobile.portrait #bas { flex-wrap: wrap; padding: 4px; gap: 4px; }
+body.mobile.portrait #boutique { flex: 1 1 100%; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; }
+body.mobile.portrait .outil { flex: 0 0 62px; }
+body.mobile.portrait #b-serie:not([hidden]) { flex: 0 0 52px; }
+body.mobile.portrait #pouvoirs { flex: 0 0 auto; }
+body.mobile.portrait .pouvoir { width: 84px; }
+body.mobile.portrait #bloc-vague { flex: 1 1 0; min-width: 0; }
+body.mobile.portrait #tourner { display: flex; align-items: center; gap: 8px; position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 30;
+  padding: 6px 6px 6px 12px; background: var(--nuit); border: 2px solid var(--or); border-radius: 6px; font-family: var(--texte-police); font-size: 14px; }
+body.mobile.portrait #tourner span { flex: 1; }
+body.sans-bandeau #tourner { display: none !important; }
+
+/* Confirmer une pose ou un pouvoir. */
+body.mobile #confirmer:not([hidden]) { display: flex; gap: 6px; position: fixed; z-index: 25; }
+#confirmer button { min-height: 44px; padding: 0 14px; font-size: 16px; font-weight: 700; border: 3px solid var(--nuit); border-radius: 6px; }
+#confirmer .oui { background: #3f7f2a; color: #fff; }
+#confirmer .oui:disabled { background: #7a2a22; opacity: 1; }
+#confirmer .non { background: var(--bois); }
+
+/* Panneau d'une tour et fiche : feuilles au bas de l'écran. */
+body.mobile #panneau { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 50dvh; overflow: auto;
+  border-radius: 10px 10px 0 0; z-index: 20; }
+body.mobile #panneau .action { min-height: 48px; font-size: 16px; }
+#fiche.feuille { position: fixed; left: 0 !important; right: 0; bottom: 0 !important; top: auto; width: auto; max-height: 34dvh; overflow: auto;
+  border-radius: 10px 10px 0 0; pointer-events: auto; z-index: 35; }
+#fiche.feuille .fermer { position: absolute; top: 4px; right: 4px; width: 40px; min-height: 40px; border: 0; background: none; font-size: 20px; color: var(--doux); }
+.outil.actif .prix { color: var(--nuit); }
+.outil.actif .prix .ico { filter: brightness(.6); }
+body.mobile.paysage .outil { min-height: 46px; }
+body.mobile.paysage .outil img { width: 26px; height: 28px; }
+body.mobile.paysage .pouvoir { min-height: 44px; }
+body.mobile.paysage #b-serie:not([hidden]) { min-height: 36px; }
+#fiche.feuille h4 { padding-right: 44px; }
+body.mobile.paysage .pouvoir b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

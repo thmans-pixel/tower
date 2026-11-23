@@ -45,6 +45,11 @@ export class Interface {
     this.creerPouvoirs();
     $('appel').onclick = () => actions.appel();
     $('b-pause').onclick = () => actions.pause();
+    // Menu ☰ du téléphone (spec 015) : les commandes du haut dans une liste déroulante.
+    const nav = document.querySelector('.commandes');
+    $('b-plus').onclick = (e) => { e.stopPropagation(); nav.classList.toggle('ouvert'); $('b-plus').setAttribute('aria-expanded', String(nav.classList.contains('ouvert'))); };
+    nav.addEventListener('click', (e) => { if (e.target.closest('button') && e.target.id !== 'b-son') nav.classList.remove('ouvert'); });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.commandes')) nav.classList.remove('ouvert'); });
     $('b-vitesse').onclick = () => actions.vitesse();
     // Réglages du son (spec 014) : deux curseurs et une coupure générale.
     const boite = $('reglages-son');
@@ -92,14 +97,20 @@ export class Interface {
         <span class="nom">${d.nom}</span>
         <span class="prix"><i class="ico piece"></i>${d.prix}</span>
         <kbd>${etiquetteRang(i + 1)}</kbd><span class="serie">en série</span></button>`;
-    }).join('');
+    }).join('') + '<button id="b-serie" class="serie-mobile" hidden aria-label="Poser plusieurs fois la même tour">×n</button>';
+    $('b-serie').onclick = (e) => { e.stopPropagation(); if (this.choisie) this.a.verrouiller(this.choisie); };
     // Appui long (tablette) : verrouille la tour pour en poser plusieurs à la suite ; un nouvel appui long la libère.
     let minuteur = null, appuiLong = false;
     zone.addEventListener('pointerdown', (e) => {
       const b = e.target.closest('.outil');
       if (!b) return;
       appuiLong = false;
-      minuteur = setTimeout(() => { appuiLong = true; this.a.verrouiller(b.dataset.sorte); }, 500);
+      // Sur téléphone (spec 015), l'appui long ouvre la fiche de la tour ; ailleurs, il verrouille la pose en série.
+      minuteur = setTimeout(() => {
+        appuiLong = true;
+        if (document.body.classList.contains('mobile')) this.ouvrirFiche(b.dataset.sorte);
+        else this.a.verrouiller(b.dataset.sorte);
+      }, 500);
     });
     for (const fin of ['pointerup', 'pointerleave', 'pointercancel']) zone.addEventListener(fin, () => clearTimeout(minuteur));
     zone.addEventListener('contextmenu', (e) => { if (e.target.closest('.outil')) e.preventDefault(); });
@@ -135,9 +146,33 @@ export class Interface {
     }
   }
 
+  /** Fiche d'une tour en feuille au bas de l'écran (téléphone, appui long sur son icône). */
+  ouvrirFiche(sorte) {
+    const f = $('fiche');
+    this.ficheOuverte = true;
+    f.innerHTML = '<button class="fermer" aria-label="Fermer">✖</button>' + ficheTour(sorte, '', this.or ?? null).replace(/<div class="touches">.*?<\/div>/s, '');
+    f.classList.add('feuille');
+    f.style.left = ''; f.style.bottom = '';
+    f.hidden = false;
+    f.querySelector('.fermer').onclick = () => this.fermerFiche();
+  }
+
+  fermerFiche() {
+    const f = $('fiche');
+    this.ficheOuverte = false;
+    f.classList.remove('feuille');
+    f.hidden = true;
+    this.sigFiche = '';
+  }
+
   /** Fiche au-dessus du bouton survolé (ou de la tour choisie au toucher), redessinée seulement si elle change. */
   majFiche(s, ui) {
     const f = $('fiche');
+    this.or = s ? s.or : null;
+    this.choisie = ui.construction;
+    const bs = $('b-serie');   // bouton ×n du téléphone : visible quand une tour est choisie
+    if (bs) { bs.hidden = !ui.construction; bs.classList.toggle('actif', !!ui.construction && ui.verrou === ui.construction); }
+    if (this.ficheOuverte) return;
     let v = this.survol;
     // Sur écran tactile, pas de fiche au choix d'une tour : sur un téléphone elle couvrait la carte et empêchait de bâtir.
     if (!v || !v.b) { if (!f.hidden) { f.hidden = true; this.sigFiche = ''; } return; }
