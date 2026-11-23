@@ -25,8 +25,9 @@ Demande de Thibault : la musique d'Arkanoid pour la Prairie et celle de Tetris p
   arrangement 8 bits original.
 - **Prairie** : la musique d'Arkanoid est protégée, elle n'est pas reprise ; air original entraînant dans un
   esprit arcade des années 80.
-- **Désert** : air original en mode oriental, percussions doum-tek. **Boss** : ostinato grave original, tant que
-  l'Ogre est en vie. **Menu** : l'air de la Prairie plus lent. Victoire et défaite : les fanfares de la partie 1.
+- **Désert** : air original en mode oriental, percussions doum-tek. **Boss** (tant que l'Ogre est en vie) :
+  demande « dans le style de Game of Thrones » ; ce thème est protégé et n'est pas repris : thème original en ut
+  mineur à trois temps, violoncelle en ostinato, cordes graves doublées à l'octave, tambours de guerre. **Menu** : l'air de la Prairie plus lent. Victoire et défaite : les fanfares de la partie 1.
 - Intensité : entre les vagues, mélodie, basse douce et accords ; pendant une vague, batterie et basse pleine ;
   au dernier quart des vagues, tempo +8 %. Coupée quand l'onglet est caché ou le curseur Musique à 0.
 - `src/audio/musique.js` : séquenceur à programmation anticipée (`AIRS`, `Musique.jouer`, `intensite`) sur la voie

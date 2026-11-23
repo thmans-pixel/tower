@@ -95,4 +95,4 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé, voies `effets`
   et `musique`, `son.appliquer()` après un changement de réglage ; `volMusique`, `volEffets` dans la progression).
   Musique : `src/audio/musique.js` (`AIRS` : prairie et désert originaux, montagne = Korobeiniki du domaine public,
-  boss, menu), pilotée par `majMusique` (main.js). Ne pas reprendre de musique protégée (Arkanoid refusé).
+  boss, menu), pilotée par `majMusique` (main.js). Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).
