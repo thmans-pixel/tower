@@ -9,6 +9,7 @@ import { spriteEnnemi, spriteTour, ECHELLE } from './sprites.js';
 import { nomTour, nomEnnemi } from './modeles.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 import { silhouette, suivre, poseMort, genreMort } from './monstres.js';
+import { poseTour, boutArme, DUREES } from './tours-effets.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Chiffres", "Pixelify Sans", system-ui, sans-serif';   // chiffres lisibles (spec 009)
@@ -54,6 +55,14 @@ export class Vue {
     this.dtImage = 0;
     this.cibleOr = null;    // () => { x, y } : compteur d'or en coordonnées de la toile (main.js)
     this.surPiece = null;   // appelé quand une pièce arrive au compteur
+    // Spec 012 (lot B) : animations des tours, tours vendues, lueurs additives, cratères au sol.
+    this.animTours = new Map();   // id de tour → { genre, t }
+    this.derniereTour = new Map();   // "x,y" → dernière apparence dessinée (pour la vente)
+    this.vendues = [];
+    this.colonnes = [];
+    this.lueurs = [];
+    this.crateres = [];
+    this.etat = null;
   }
 
   /** Prépare le fond et le décor d'une carte construite par la logique. */
@@ -133,14 +142,25 @@ export class Vue {
         case 'explosion':
           if (e.feu && e.sorte === 'canon') { this.eclater(e.x, e.y - 4, '#ff8a2b', 4); this.eclater(e.x, e.y - 4, '#ffd23f', 2); break; }
           this.anneaux.push({ x: e.x, y: e.y, r: 4, max: e.rayon, vie: 0.35, t: 0, col: e.feu ? '255,110,40' : '255,170,60' });
+          this.lueurs.push({ x: e.x, y: e.y - 4, r: Math.min(40, e.rayon * 0.7), t: 0, vie: 0.14, col: '255,200,120' });
           this.eclater(e.x, e.y, e.feu ? '#ff6a2b' : '#f29a3a', e.rayon > 60 ? 16 : 8);
+          this.poussiere(e.x, e.y, e.rayon > 60 ? 7 : 4, e.feu ? '120,80,60' : '110,100,90');
+          this.crateres.push({ x: e.x, y: e.y, r: Math.min(26, e.rayon * 0.45), t: 0, vie: 4 });
           break;
-        case 'eclair': this.eclairs.push({ points: e.points, t: 0, vie: 0.22, col: e.sorte === 'mage' ? '#d29bff' : '#bff0ff' }); break;
+        case 'eclair':
+          this.eclairs.push({ points: e.points, t: 0, vie: 0.22, col: e.sorte === 'mage' ? '#d29bff' : '#bff0ff' });
+          for (const pt of e.points.slice(1)) this.lueurs.push({ x: pt.x, y: pt.y, r: 14, t: 0, vie: 0.12, col: e.sorte === 'mage' ? '210,155,255' : '190,240,255' });
+          break;
         case 'aura': if (Math.random() < 0.5) this.eclater(e.x + (Math.random() - 0.5) * e.rayon * 1.4, e.y + (Math.random() - 0.5) * e.rayon * 1.2, '#e8f8ff', 1); break;
         case 'transperce': this.eclairs.push({ points: [{ x: e.x, y: e.y - 8 }, { x: e.x2, y: e.y2 - 8 }], t: 0, vie: 0.15, col: '#f5e6c8', droit: true }); break;
         case 'touche':
-          if (e.sorte === 'givre') this.eclater(e.x, e.y - 6, '#bfe9ff', e.gel ? 10 : 4);
-          if (e.sorte === 'mage') this.eclater(e.x, e.y - 6, '#d29bff', 5);
+          if (e.sorte === 'givre') {
+            for (let i = 0; i < (e.gel ? 10 : 5); i++) this.eclats.push({ x: e.x, y: e.y - 8, vx: (Math.random() - 0.5) * 110, vy: -50 - Math.random() * 60, vie: 0.45, t: 0, col: i % 2 ? '#e8f8ff' : '#7fd0ff', s: 2 + (i % 3 === 0 ? 1 : 0), losange: true });
+          }
+          if (e.sorte === 'mage') { this.eclater(e.x, e.y - 6, '#d29bff', 5); this.lueurs.push({ x: e.x, y: e.y - 8, r: 10, t: 0, vie: 0.1, col: '210,155,255' }); }
+          if (e.sorte === 'archers' || e.sorte === 'baliste') {
+            for (let i = 0; i < (e.sorte === 'baliste' ? 6 : 3); i++) this.eclats.push({ x: e.x, y: e.y - 8, vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 50, vie: 0.35, t: 0, col: i % 2 ? '#9b6b3d' : '#d9b58a', s: 2 });
+          }
           break;
         case 'soin':
           if (e.soignes) this.anneaux.push({ x: e.x, y: e.y, r: 6, max: e.rayon, vie: 0.6, t: 0, col: '93,255,154' });
@@ -157,9 +177,23 @@ export class Vue {
         case 'renforts': this.eclater(e.x, e.y + 6, '#c9a46a', 12); this.texte(e.x, e.y - 34, 'Renforts !', '#8fc0ff'); break;
         case 'ecrases': this.eclater(e.x, e.y, '#3a6fc4', 12); this.texte(e.x, e.y - 30, 'Écrasés !', '#ff8a7a'); break;
         case 'finRenforts': if (!e.tombes) this.eclater(e.x, e.y, '#8fc0ff', 6); break;
-        case 'pose': this.eclater(e.x, e.y + 12, '#c9a46a', 10); break;
-        case 'amelioration': this.eclater(e.x, e.y - 20, '#f2c14e', 16); this.texte(e.x, e.y - 44, 'Niveau ' + (e.niveau + 1), '#f2c14e'); break;
-        case 'vente': this.eclater(e.x, e.y, '#c9a46a', 12); this.texte(e.x, e.y - 20, '+' + e.or, '#f2c14e'); break;
+        case 'pose': this.animTours.set(e.tour, { genre: 'pose', t: 0 }); break;
+        case 'amelioration':
+          this.animTours.set(e.tour, { genre: 'amel', t: 0 });
+          this.colonnes.push({ x: e.x, y: e.y + 19, t: 0, vie: DUREES.colonne });
+          for (let i = 0; i < 18; i++) this.eclats.push({ x: e.x + (Math.random() - 0.5) * 30, y: e.y - 40 - Math.random() * 30, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 30, vie: 0.7 + Math.random() * 0.4, t: 0, col: i % 3 ? '#f2c14e' : '#fff3b0', s: 2, g: 0.35 });
+          this.texte(e.x, e.y - 50, 'Niveau ' + (e.niveau + 1), '#f2c14e');
+          break;
+        case 'vente': {
+          const d = this.derniereTour.get(e.x + ',' + e.y);
+          if (d) this.vendues.push({ tour: d, t: 0 });
+          this.poussiere(e.x, e.y + 16, 6);
+          for (let i = 0; i < 10; i++) this.eclats.push({ x: e.x, y: e.y - 10, vx: (Math.random() - 0.5) * 120, vy: -120 - Math.random() * 80, vie: 0.7, t: 0, col: i % 2 ? '#f2c14e' : '#fff3b0', s: 3 });
+          for (let i = 0; i < 3 && this.pieces.length < 25 && this.cibleOr; i++) this.pieces.push({ x0: e.x + (i - 1) * 8, y0: e.y - 10, t: -i * 0.06, vie: 0.6 });
+          this.texte(e.x, e.y - 24, '+' + e.or, '#f2c14e');
+          break;
+        }
+        case 'tir': this.tirer(e); break;
         case 'fuite': this.secousse = 0.25; this.texte((this.carte.chateau.c + 0.5) * T, this.carte.chateau.r * T + 20, '−' + e.vies + ' ♥', '#ff6b5a'); break;
         case 'vague': this.bandeau = { texte: 'Vague ' + e.vague, sous: '', t: 0, vie: 2 }; break;
         case 'finVague': this.bandeau = { texte: 'Vague ' + e.vague + ' terminée', sous: '+' + e.or + ' or', t: 0, vie: 1.8 }; break;
@@ -206,6 +240,27 @@ export class Vue {
     }
   }
 
+  /** Lueur, fumée ou jet de flammes au bout de l'arme qui vient de tirer (spec 012, lot B). */
+  tirer(e) {
+    const t = this.etat && this.etat.tours.find((x) => x.x === e.x && x.y === e.y);
+    if (!t) return;
+    const b = boutArme(t), a = t.angle || 0;
+    const coul = { archers: '255,233,168', canon: '255,190,90', givre: '190,235,255', mage: '215,160,255', baliste: '255,233,168', tempete: '190,240,255' }[t.sorte];
+    if (t.sorte === 'canon' && t.variante === 'b') {   // Lance-flammes : un vrai cône de feu
+      for (let i = 0; i < 16; i++) {
+        const da = (Math.random() - 0.5) * 0.6, v = 140 + Math.random() * 110;
+        this.eclats.push({ x: b.x, y: b.y, vx: Math.cos(a + da) * v, vy: Math.sin(a + da) * v * 0.8, vie: 0.22 + Math.random() * 0.14, t: 0,
+          col: ['#ffd23f', '#ff8a2b', '#ff5a2b', '#fff3b0'][i % 4], s: 3 + (i % 3), g: -0.4, flamme: true });
+      }
+      this.lueurs.push({ x: b.x, y: b.y, r: 16, t: 0, vie: 0.1, col: '255,150,60' });
+      return;
+    }
+    this.lueurs.push({ x: b.x, y: b.y, r: t.sorte === 'canon' ? 14 : 9, t: 0, vie: 0.09, col: coul });
+    if (t.sorte === 'canon') {
+      for (let i = 0; i < 3; i++) this.bouffees.push({ x: b.x + Math.cos(a) * 4, y: b.y, r: 2, max: 6 + i * 2, vie: 0.6 + i * 0.15, t: 0, col: '170,165,160', monte: 14, a: 0.5 });
+    }
+  }
+
   eclater(x, y, col, n) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 90;
@@ -225,6 +280,15 @@ export class Vue {
     g.imageSmoothingEnabled = false;
     if (this.fond) g.drawImage(this.fond, 0, 0);
     if (!s) return;
+    this.etat = s;
+    // Cratères laissés par les explosions, sous tout le reste.
+    this.crateres = this.crateres.filter((c) => (c.t += dt) < c.vie);
+    for (const c of this.crateres) {
+      const a = 0.35 * Math.min(1, (c.vie - c.t) / 1.2);
+      g.fillStyle = `rgba(40,28,20,${a})`; g.beginPath(); g.ellipse(c.x, c.y + 4, c.r, c.r * 0.45, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = `rgba(20,14,10,${a})`; g.beginPath(); g.ellipse(c.x, c.y + 4, c.r * 0.55, c.r * 0.25, 0, 0, Math.PI * 2); g.fill();
+    }
+    for (const [id, a] of this.animTours) { a.tPrec = a.t; a.t += dt; if (a.t > 1) this.animTours.delete(id); }
 
     // Cases constructibles.
     if (ui.construction) {
@@ -266,6 +330,8 @@ export class Vue {
       liste.push({ y: d.sol ? -1e6 : d.bloquant ? d.y : d.y - 30, f: () => this.element(d) });
     }
     for (const t of s.tours) liste.push({ y: t.y + 1, f: () => this.tour(t, t.id === ui.selection) });
+    this.vendues = this.vendues.filter((v) => (v.t += dt) < DUREES.vente);
+    for (const v of this.vendues) liste.push({ y: v.tour.y + 1, f: () => this.tour(v.tour, false, { genre: 'vente', t: v.t }) });
     for (const e of s.ennemis) if (!e.vol) liste.push({ y: e.y, f: () => this.ennemi(e) });
     this.morts = this.morts.filter((m) => (m.t += dt) < (m.boss ? 1.5 : 0.8));
     for (const m of this.morts) liste.push({ y: m.y - 1, f: () => this.corps(m) });
@@ -338,14 +404,32 @@ export class Vue {
     g.imageSmoothingEnabled = false;
   }
 
-  tour(t, choisie) {
+  tour(t, choisie, animForcee) {
     const g = this.g;
     const m = this.modeles.tours[nomTour(t.sorte, t.niveau, t.variante)];
     const bas = t.y + 19;
+    if (t.id !== undefined && !animForcee) this.derniereTour.set(t.x + ',' + t.y, { sorte: t.sorte, niveau: t.niveau, variante: t.variante, x: t.x, y: t.y, angle: t.angle, tir: 0 });
+    if (choisie) {   // halo pulsé à la base de la tour choisie
+      const p = 0.55 + 0.35 * Math.sin(this.horloge * 5);
+      g.strokeStyle = `rgba(242,193,78,${p})`; g.lineWidth = 3;
+      g.beginPath(); g.ellipse(t.x, bas - 3, 21 + p * 2, 8 + p, 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = `rgba(242,193,78,${p * 0.18})`; g.fill();
+    }
+    const anim = animForcee || (t.id !== undefined && this.animTours.get(t.id));
+    let pose = null;
+    if (anim) {
+      pose = poseTour(anim, anim.t, anim.tPrec ?? anim.t);
+      if (pose.impact) { this.poussiere(t.x, bas - 2, 7); this.secousse = Math.max(this.secousse, 0.08); }
+      g.save();
+      if (anim.genre === 'vente') { g.beginPath(); g.rect(t.x - 40, t.y - 120, 80, bas - t.y + 122); g.clip(); }
+      g.translate(t.x + (pose.tremble ? (Math.random() - 0.5) * pose.tremble * 2 : 0), bas + pose.dy);
+      g.scale(pose.sx, pose.sy);
+      g.translate(-t.x, -bas);
+    }
     if (m) this.tourModele(t, m);
     else this.tourCode(t, bas);
-    for (let i = 0; i <= t.niveau; i++) { g.fillStyle = '#1a1420'; g.fillRect(t.x - 10 + i * 8, bas + 1, 6, 4); g.fillStyle = '#f2c14e'; g.fillRect(t.x - 9 + i * 8, bas + 2, 4, 2); }
-    if (choisie) { g.strokeStyle = '#f2c14e'; g.lineWidth = 2; g.strokeRect(t.x - T / 2 + 1, t.y - T / 2 + 1, T - 2, T - 2); }
+    if (anim) g.restore();
+    if (!anim || anim.genre !== 'vente') for (let i = 0; i <= t.niveau; i++) { g.fillStyle = '#1a1420'; g.fillRect(t.x - 10 + i * 8, bas + 1, 6, 4); g.fillStyle = '#f2c14e'; g.fillRect(t.x - 9 + i * 8, bas + 2, 4, 2); }
   }
 
   /** Tour de Blender : le corps ancré au centre de la case, la pièce mobile dans l'orientation la plus proche. */
@@ -358,7 +442,7 @@ export class Vue {
       // À l'écran y descend ; dans Blender l'angle tourne vers +Y (le haut de l'écran) : d'où le signe moins.
       const pas = (2 * Math.PI) / p.n;
       const i = ((Math.round(-t.angle / pas) % p.n) + p.n) % p.n;
-      const recul = t.tir > 0 ? -3 : 0;
+      const recul = t.tir > 0 ? -(t.sorte === 'canon' || t.sorte === 'baliste' ? 5 : 3) * Math.min(1, t.tir / 0.15) : 0;
       const px = t.x + (p.pivot[0] - m.ancre[0]) * k + Math.cos(t.angle) * recul;
       const py = t.y + (p.pivot[1] - m.ancre[1]) * k + Math.sin(t.angle) * recul;
       g.drawImage(p.img, i * p.l, 0, p.l, p.h, Math.round(px - p.ancre[0] * k), Math.round(py - p.ancre[1] * k), p.l * k, p.h * k);
@@ -498,32 +582,57 @@ export class Vue {
   projectile(p) {
     const g = this.g;
     const dx = p.tx - p.x, dy = p.ty - p.y, n = Math.hypot(dx, dy) || 1;
-    if (p.sorte === 'archers') {
-      g.strokeStyle = '#6b4423'; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(p.x - (dx / n) * 10, p.y - (dy / n) * 10); g.lineTo(p.x, p.y); g.stroke();
-      g.fillStyle = '#e8e8e8'; g.fillRect(p.x - 1, p.y - 1, 3, 3);
-    } else if (p.sorte === 'baliste') {
-      g.strokeStyle = '#1a1420'; g.lineWidth = 4;
-      g.beginPath(); g.moveTo(p.x - (dx / n) * 16, p.y - (dy / n) * 16); g.lineTo(p.x, p.y); g.stroke();
-      g.strokeStyle = '#9b6b3d'; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(p.x - (dx / n) * 15, p.y - (dy / n) * 15); g.lineTo(p.x, p.y); g.stroke();
-      g.fillStyle = '#cfd8dc'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
+    const k = Math.min(1, p.parcours / p.total);
+    if (p.sorte === 'archers' || p.sorte === 'baliste') {
+      // Flèche ou carreau en arc, avec une traînée qui s'efface (spec 012, lot B).
+      const lourd = p.sorte === 'baliste';
+      const hauteur = Math.min(lourd ? 10 : 22, p.total * (lourd ? 0.05 : 0.12));
+      // Le projectile suit sa cible (logique) ; l'arc n'est qu'une hauteur ajoutée à l'affichage.
+      const ux = dx / n, uy = dy / n;
+      const pos = (q) => { const recul = (k - q) * p.total; return { x: p.x - ux * recul, y: p.y - uy * recul - Math.sin(Math.PI * q) * hauteur }; };
+      const a = pos(k);
+      const ang = Math.atan2(uy - Math.cos(Math.PI * k) * Math.PI * hauteur / p.total, ux);
+      g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(Math.round(p.x) - 1, Math.round(p.y) + 6, 3, 2);
+      for (let i = 1; i <= 3; i++) {   // traînée
+        const q = pos(Math.max(0, k - i * 0.05));
+        g.fillStyle = `rgba(255,245,220,${0.35 - i * 0.1})`; g.fillRect(Math.round(q.x), Math.round(q.y), 2, 2);
+      }
+      const L = lourd ? 16 : 11;
+      g.save(); g.translate(a.x, a.y); g.rotate(ang);
+      g.fillStyle = '#1a1420'; g.fillRect(-L - 1, lourd ? -2 : -1.5, L + 2, lourd ? 4 : 3);
+      g.fillStyle = lourd ? '#9b6b3d' : '#7a5230'; g.fillRect(-L, -1, L, 2);
+      g.fillStyle = '#e8eef2'; g.fillRect(-1, -2, 3, 4);                       // pointe
+      g.fillStyle = lourd ? '#cfd8dc' : '#f2f2f2'; g.fillRect(-L, -2, 3, 1); g.fillRect(-L, 1, 3, 1);   // empennage
+      g.restore();
+    } else if (p.brulure && p.sorte === 'canon') {
+      // Lance-flammes : le cône de feu est dessiné au tir ; le projectile n'est qu'une braise.
+      g.fillStyle = 'rgba(255,140,50,.5)'; g.beginPath(); g.arc(p.x, p.y, 4, 0, Math.PI * 2); g.fill();
+      if (Math.random() < 0.7) this.eclats.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 30, vy: -10, vie: 0.25, t: 0, col: Math.random() < 0.5 ? '#ff8a2b' : '#ffd23f', s: 3, g: -0.4, flamme: true });
     } else if (p.brulure) {
-      g.fillStyle = 'rgba(255,120,40,.45)'; g.beginPath(); g.arc(p.x, p.y, p.zone > 42 ? 6 : 8, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#ffd23f'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
-      if (Math.random() < 0.6) this.eclats.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 20, vy: -20, vie: 0.3, t: 0, col: '#ff8a2b', s: 2 });
+      const r = 6 + Math.sin(this.horloge * 30) * 1.5;
+      g.fillStyle = 'rgba(255,120,40,.4)'; g.beginPath(); g.arc(p.x, p.y, r + 3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff8a2b'; g.beginPath(); g.arc(p.x, p.y, r - 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff3b0'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
+      if (Math.random() < 0.8) this.eclats.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 20, vy: -20, vie: 0.3, t: 0, col: Math.random() < 0.5 ? '#ff8a2b' : '#ffd23f', s: 2, g: -0.3 });
     } else if (p.sorte === 'canon') {
-      const h = Math.sin(Math.PI * Math.min(1, p.parcours / p.total)) * (p.zone > 60 ? 70 : 28);
-      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(p.x, p.y, 5, 2, 0, 0, Math.PI * 2); g.fill();
+      const h = Math.sin(Math.PI * k) * (p.zone > 60 ? 70 : 28);
+      const ombre = 3 + 3 * (1 - h / 70);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(p.x, p.y, ombre + 1, ombre / 2, 0, 0, Math.PI * 2); g.fill();
+      if (Math.random() < 0.5) this.bouffees.push({ x: p.x, y: p.y - h, r: 1.5, max: 4 + Math.random() * 2, vie: 0.5, t: 0, col: '160,155,150', monte: 6, a: 0.45 });
       g.fillStyle = '#1a1420'; g.fillRect(p.x - 4, p.y - h - 4, 8, 8);
-      g.fillStyle = '#4a4d55'; g.fillRect(p.x - 3, p.y - h - 3, 4, 3);
+      g.fillStyle = '#4a4d55'; g.fillRect(p.x - 3, p.y - h - 3, 6, 6);
+      g.fillStyle = '#8a8f99'; g.fillRect(p.x - 2, p.y - h - 2, 2, 2);
     } else if (p.sorte === 'givre') {
-      g.fillStyle = '#d8f3ff'; g.save(); g.translate(p.x, p.y); g.rotate(Math.PI / 4); g.fillRect(-3, -3, 6, 6); g.restore();
+      g.fillStyle = 'rgba(160,220,255,.35)'; g.beginPath(); g.arc(p.x, p.y, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#d8f3ff'; g.save(); g.translate(p.x, p.y); g.rotate(this.horloge * 10); g.fillRect(-3, -3, 6, 6); g.restore();
       g.fillStyle = '#5cb8f0'; g.fillRect(p.x - 1, p.y - 1, 2, 2);
+      if (Math.random() < 0.4) this.eclats.push({ x: p.x, y: p.y, vx: 0, vy: 0, vie: 0.3, t: 0, col: '#e8f8ff', s: 1, g: 0.1 });
     } else {
-      g.fillStyle = 'rgba(199,125,255,.4)'; g.beginPath(); g.arc(p.x, p.y, 7, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#f0dcff'; g.fillRect(p.x - 2, p.y - 2, 4, 4);
-      if (Math.random() < 0.5) this.eclats.push({ x: p.x, y: p.y, vx: 0, vy: -10, vie: 0.3, t: 0, col: '#c77dff', s: 2 });
+      const r = 7 + Math.sin(this.horloge * 24) * 2;   // boule magique qui pulse
+      g.fillStyle = 'rgba(199,125,255,.35)'; g.beginPath(); g.arc(p.x, p.y, r + 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(230,200,255,.7)'; g.beginPath(); g.arc(p.x, p.y, r * 0.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffffff'; g.fillRect(p.x - 1, p.y - 1, 3, 3);
+      for (let i = 0; i < 2; i++) this.eclats.push({ x: p.x - (dx / n) * 4, y: p.y - (dy / n) * 4, vx: -(dx / n) * 20 + (Math.random() - 0.5) * 20, vy: -(dy / n) * 20 + (Math.random() - 0.5) * 20, vie: 0.35, t: 0, col: i ? '#c77dff' : '#f0dcff', s: 2, g: 0 });
     }
   }
 
@@ -558,8 +667,13 @@ export class Vue {
     }
     this.eclats = this.eclats.filter((p) => (p.t += dt) < p.vie);
     for (const p of this.eclats) {
-      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;
-      g.globalAlpha = 1 - p.t / p.vie; g.fillStyle = p.col; g.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * (p.g ?? 1) * dt;
+      if (p.flamme) { p.vx *= 1 - 3 * dt; p.vy *= 1 - 3 * dt; }
+      const k = p.t / p.vie;
+      g.globalAlpha = 1 - k; g.fillStyle = p.col;
+      const sz = p.flamme ? Math.max(1, Math.round(p.s * (1 - k * 0.6))) : p.s;
+      if (p.losange) { g.fillRect(Math.round(p.x), Math.round(p.y) - 1, sz, sz + 2); g.fillRect(Math.round(p.x) - 1, Math.round(p.y), sz + 2, sz); }
+      else g.fillRect(Math.round(p.x), Math.round(p.y), sz, sz);
     }
     this.anneaux = this.anneaux.filter((a) => (a.t += dt) < a.vie);
     for (const a of this.anneaux) {
@@ -585,6 +699,24 @@ export class Vue {
       }
     }
     g.globalAlpha = 1;
+    // Colonnes de lumière (amélioration) et lueurs, en mode additif.
+    g.globalCompositeOperation = 'lighter';
+    this.colonnes = this.colonnes.filter((c) => (c.t += dt) < c.vie);
+    for (const c of this.colonnes) {
+      const k = c.t / c.vie, a = Math.sin(Math.min(1, k * 1.6) * Math.PI) * 0.55, l = 26 * (1 - k * 0.4);
+      const d = g.createLinearGradient(0, c.y - 120, 0, c.y);
+      d.addColorStop(0, 'rgba(255,220,120,0)'); d.addColorStop(1, `rgba(255,220,120,${a})`);
+      g.fillStyle = d; g.fillRect(c.x - l / 2, c.y - 120, l, 120);
+      g.fillStyle = `rgba(255,240,180,${a * 0.6})`; g.fillRect(c.x - l / 6, c.y - 120, l / 3, 120);
+    }
+    this.lueurs = this.lueurs.filter((l) => (l.t += dt) < l.vie);
+    for (const l of this.lueurs) {
+      const k = l.t / l.vie;
+      const d = g.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
+      d.addColorStop(0, `rgba(${l.col},${0.9 * (1 - k)})`); d.addColorStop(1, `rgba(${l.col},0)`);
+      g.fillStyle = d; g.beginPath(); g.arc(l.x, l.y, l.r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
     this.textes = this.textes.filter((t) => (t.t += dt) < t.vie);
     g.font = `600 14px ${POLICE}`; g.textAlign = 'center';
     for (const t of this.textes) {
