@@ -4,6 +4,7 @@
  "pixels_par_case": 30.0,
  "agrandissement": 1.5,
  "elevation": 50,
+ "directions": 8,
  "ennemis": [
   {
    "nom": "gobelin",
@@ -11,11 +12,23 @@
     "marche": {
      "fichier": "gobelin_marche.png",
      "images": 8,
-     "largeur": 24,
-     "hauteur": 33,
+     "directions": 8,
+     "largeur": 31,
+     "hauteur": 36,
      "ancre": [
-      6.7,
-      18.0
+      10.1,
+      19.4
+     ]
+    },
+    "mort": {
+     "fichier": "gobelin_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 46,
+     "hauteur": 42,
+     "ancre": [
+      20.5,
+      22.1
      ]
     }
    }
@@ -26,11 +39,23 @@
     "marche": {
      "fichier": "loup_marche.png",
      "images": 8,
+     "directions": 8,
      "largeur": 36,
-     "hauteur": 23,
+     "hauteur": 36,
      "ancre": [
       14.7,
-      12.7
+      18.9
+     ]
+    },
+    "mort": {
+     "fichier": "loup_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 40,
+     "hauteur": 37,
+     "ancre": [
+      18.4,
+      19.6
      ]
     }
    }
@@ -41,11 +66,23 @@
     "marche": {
      "fichier": "orc_blinde_marche.png",
      "images": 8,
-     "largeur": 29,
-     "hauteur": 42,
+     "directions": 8,
+     "largeur": 39,
+     "hauteur": 44,
      "ancre": [
-      6.9,
-      22.9
+      13.4,
+      23.9
+     ]
+    },
+    "mort": {
+     "fichier": "orc_blinde_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 63,
+     "hauteur": 61,
+     "ancre": [
+      26.3,
+      32.4
      ]
     }
    }
@@ -56,11 +93,23 @@
     "vol": {
      "fichier": "chauve_souris_vol.png",
      "images": 8,
-     "largeur": 13,
-     "hauteur": 19,
+     "directions": 8,
+     "largeur": 23,
+     "hauteur": 25,
      "ancre": [
-      5.9,
-      14.6
+      11.5,
+      16.3
+     ]
+    },
+    "mort": {
+     "fichier": "chauve_souris_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 28,
+     "hauteur": 29,
+     "ancre": [
+      11.4,
+      15.8
      ]
     }
    }
@@ -71,11 +120,23 @@
     "marche": {
      "fichier": "chaman_marche.png",
      "images": 8,
-     "largeur": 28,
-     "hauteur": 31,
+     "directions": 8,
+     "largeur": 36,
+     "hauteur": 40,
      "ancre": [
-      7.1,
-      16.0
+      13.0,
+      21.5
+     ]
+    },
+    "mort": {
+     "fichier": "chaman_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 56,
+     "hauteur": 57,
+     "ancre": [
+      21.7,
+      30.2
      ]
     }
    }
@@ -86,11 +147,23 @@
     "marche": {
      "fichier": "slime_marche.png",
      "images": 8,
-     "largeur": 28,
-     "hauteur": 23,
+     "directions": 8,
+     "largeur": 31,
+     "hauteur": 32,
      "ancre": [
-      11.7,
-      12.0
+      12.2,
+      17.1
+     ]
+    },
+    "mort": {
+     "fichier": "slime_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 38,
+     "hauteur": 35,
+     "ancre": [
+      18.1,
+      19.1
      ]
     }
    }
@@ -101,11 +174,23 @@
     "marche": {
      "fichier": "slime_petit_marche.png",
      "images": 8,
-     "largeur": 18,
-     "hauteur": 16,
+     "directions": 8,
+     "largeur": 21,
+     "hauteur": 21,
      "ancre": [
-      7.6,
-      8.3
+      8.6,
+      11.1
+     ]
+    },
+    "mort": {
+     "fichier": "slime_petit_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 25,
+     "hauteur": 23,
+     "ancre": [
+      12.0,
+      12.4
      ]
     }
    }
@@ -116,11 +201,23 @@
     "marche": {
      "fichier": "golem_marche.png",
      "images": 8,
-     "largeur": 37,
-     "hauteur": 60,
+     "directions": 8,
+     "largeur": 59,
+     "hauteur": 62,
      "ancre": [
-      8.6,
-      32.6
+      22.6,
+      33.4
+     ]
+    },
+    "mort": {
+     "fichier": "golem_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 82,
+     "hauteur": 71,
+     "ancre": [
+      37.9,
+      36.6
      ]
     }
    }
@@ -131,11 +228,23 @@
     "marche": {
      "fichier": "spectre_marche.png",
      "images": 8,
-     "largeur": 29,
-     "hauteur": 31,
+     "directions": 8,
+     "largeur": 36,
+     "hauteur": 39,
      "ancre": [
-      8.9,
-      16.4
+      13.4,
+      21.2
+     ]
+    },
+    "mort": {
+     "fichier": "spectre_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 36,
+     "hauteur": 43,
+     "ancre": [
+      11.4,
+      23.4
      ]
     }
    }
@@ -146,21 +255,34 @@
     "marche": {
      "fichier": "boss_ogre_marche.png",
      "images": 8,
-     "largeur": 58,
-     "hauteur": 71,
+     "directions": 8,
+     "largeur": 77,
+     "hauteur": 79,
      "ancre": [
-      17.3,
-      39.5
+      29.2,
+      42.0
      ]
     },
     "rugissement": {
      "fichier": "boss_ogre_rugissement.png",
      "images": 8,
-     "largeur": 58,
-     "hauteur": 71,
+     "directions": 8,
+     "largeur": 88,
+     "hauteur": 95,
      "ancre": [
-      17.3,
-      39.5
+      31.8,
+      51.6
+     ]
+    },
+    "mort": {
+     "fichier": "boss_ogre_mort.png",
+     "images": 8,
+     "directions": 8,
+     "largeur": 101,
+     "hauteur": 92,
+     "ancre": [
+      43.9,
+      47.8
      ]
     }
    }
