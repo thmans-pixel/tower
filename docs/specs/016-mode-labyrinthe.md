@@ -2,7 +2,7 @@
 numero: 016
 titre: Mode labyrinthe
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: en cours
 date: 2026-11-23
 ---
 
@@ -70,34 +70,34 @@ chaque monstre qui atteint la sortie **en coûte**.
 
 ## Critères d'acceptation
 Logique (`npm test`) :
-1. [ ] `nouvellePartie('labyrinthe', diff, { graine })` produit toujours la même carte pour une même graine : entrée,
+1. [x] `nouvellePartie('labyrinthe', diff, { graine })` produit toujours la même carte pour une même graine : entrée,
    sortie, 3 à 5 checkpoints, 1 ou 2 paires de TP et des zones, jamais deux sur la même case. — *Vérification :* test
    sur 50 graines (même résultat deux fois, aucune case en double, un chemin existe sur la carte vide).
-2. [ ] Sur une carte vide, le trajet calculé passe par les checkpoints dans l'ordre puis finit à la sortie, en pas
+2. [x] Sur une carte vide, le trajet calculé passe par les checkpoints dans l'ordre puis finit à la sortie, en pas
    d'une case sans diagonale. — *Vérification :* test qui suit le trajet case par case.
-3. [ ] Un mur qui fermerait le dernier passage est refusé (`raison: 'bouche'`), l'or n'est pas débité ; même chose pour
+3. [x] Un mur qui fermerait le dernier passage est refusé (`raison: 'bouche'`), l'or n'est pas débité ; même chose pour
    une tour. — *Vérification :* test qui mure une colonne entière sauf une case, puis tente la dernière.
-4. [ ] Pendant une vague, un mur ou une tour posés sont seulement « prévus » : l'or est débité, le trajet des
+4. [x] Pendant une vague, un mur ou une tour posés sont seulement « prévus » : l'or est débité, le trajet des
    monstres en cours ne change pas, la tour prévue ne tire pas ; à la fin de la vague ils sont construits et le
    trajet est recalculé. Une vente prévue n'est faite (et payée) qu'à la fin de la vague. Annuler une pose prévue
    rend tout l'or. Entre deux vagues, poses et ventes sont immédiates et un mur vendu rend tout son prix. Le refus
    « bouché » tient compte de tout ce qui est prévu. — *Vérification :* tests.
-5. [ ] Ajouter des murs allonge le trajet : un serpentin de murs donne un trajet plus long que la carte vide.
+5. [x] Ajouter des murs allonge le trajet : un serpentin de murs donne un trajet plus long que la carte vide.
    — *Vérification :* test comparant `longueur`.
-6. [ ] Un monstre qui atteint l'entrée d'un TP se retrouve à sa sortie au pas suivant, sans glisser entre les deux.
+6. [x] Un monstre qui atteint l'entrée d'un TP se retrouve à sa sortie au pas suivant, sans glisser entre les deux.
    Sur une carte où les murs ne laissent que le TP comme passage, le trajet passe par lui même s'il est plus long ;
    sinon les monstres ne le prennent que s'il raccourcit. — *Vérification :* tests sur cartes à graine fixe.
-7. [ ] Un monstre mis à terre donne +1 vie et la moitié de son or, garde sa position, repart PV pleins et reste dans la vague.
+7. [x] Un monstre mis à terre donne +1 vie et la moitié de son or, garde sa position, repart PV pleins et reste dans la vague.
    — *Vérification :* test avec `blesser` sur un monstre immobile.
-8. [ ] Un monstre qui sort retire ses vies et disparaît ; la vague suivante n'arrive qu'une fois tous les monstres
+8. [x] Un monstre qui sort retire ses vies et disparaît ; la vague suivante n'arrive qu'une fois tous les monstres
    de la vague sortis. — *Vérification :* test.
-9. [ ] Atteindre 100 vies donne `fin = 'victoire'` ; 0 vie, `'defaite'`. — *Vérification :* test.
-10. [ ] Zones : un monstre sur Boue va 40 % moins vite, sur Sentier 30 % plus vite, Ronces le blessent, Source le
+9. [x] Atteindre 100 vies donne `fin = 'victoire'` ; 0 vie, `'defaite'`. — *Vérification :* test.
+10. [x] Zones : un monstre sur Boue va 40 % moins vite, sur Sentier 30 % plus vite, Ronces le blessent, Source le
     soigne ; une tour sur Promontoire / Forge / Marais a la portée / les dégâts / la cadence modifiés.
     — *Vérification :* tests avec `combattre` et `avancer`.
-11. [ ] Les volants vont en ligne droite de checkpoint en checkpoint puis à la sortie, sans tenir compte des murs, TP
+11. [x] Les volants vont en ligne droite de checkpoint en checkpoint puis à la sortie, sans tenir compte des murs, TP
     et zones. — *Vérification :* test.
-12. [ ] Les autres modes ne bougent pas : `npm run simulate` donne les mêmes repères que dans le CLAUDE.md.
+12. [x] Les autres modes ne bougent pas : `npm run simulate` donne les mêmes repères que dans le CLAUDE.md.
     — *Vérification :* lancer `npm run simulate`.
 
 Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 tools/serveur.py`) :
@@ -181,6 +181,20 @@ Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 
    (une PR)
 3. **Lot 3 — équilibre et sauvegarde** : joueur automatique, réglage des chiffres, records, transfert, CLAUDE.md.
    (une PR)
+
+## Livraison
+
+**Lot 1 — logique (fait).** Critères 1 à 12 cochés, couverts par `tests/labyrinthe.test.js` (14 tests) ; `npm test`
+passe (69 tests) et `npm run simulate` redonne exactement les mêmes repères qu'avant sur les autres modes.
+- `src/sim/labyrinthe.js` : terrain tiré d'une graine, chemin le plus court par les checkpoints (téléporteurs
+  compris), zones. `src/data/labyrinthe.js` : tous les chiffres du mode.
+- `src/sim/carte.js` : les trajets savent sauter d'un téléporteur à sa sortie (segment de longueur nulle).
+- `src/sim/partie.js` : `nouvellePartie('labyrinthe', diff, { graine })`, `poserMur`, `vendreMur`, `annulerPrevu`,
+  poses et ventes « prévues » pendant une vague, mise à terre, zones, objectif de vies, `statsEffectives`.
+- Rien ne s'affiche encore : le mode se joue par les tests (lot 2 : écran, lot 3 : équilibre et sauvegarde).
+- Chiffres choisis faute de précision dans la spec, à régler au lot 3 : or de départ 250, Ronces 5 % des PV par
+  seconde, Source 10 % des PV par seconde, 8 zones tirées au hasard parmi les 7 sortes.
+- À vérifier à la main : rien de visible avant le lot 2.
 
 ## Décisions de Thibault (2026-11-24)
 - Pendant une vague on peut tout faire : poses et ventes restent en transparence et ne s'appliquent qu'entre les
