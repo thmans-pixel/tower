@@ -4,7 +4,7 @@ import { CARTES } from './data/cartes.js';
 import { TOURS, ORDRE_TOURS } from './data/tours.js';
 import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret } from './sim/partie.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
-import { CHEMIN } from './sim/carte.js';
+import { CHEMIN, LIBRE } from './sim/carte.js';
 import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, aleatoireOuvert, progressionVide } from './sim/progression.js';
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
@@ -15,6 +15,7 @@ import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
 import { Son } from './audio/son.js';
 import { Musique, AIRS_DE_PARTIE } from './audio/musique.js';
+import { Mobile } from './ui/mobile.js';
 import { ENNEMIS } from './data/ennemis.js';
 import { Interface } from './ui/interface.js';
 import { rangDeTouche } from './ui/clavier.js';
@@ -240,39 +241,75 @@ toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') {
 toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; });
 toile.addEventListener('pointerdown', (e) => {
   son.reveiller();
-  if (!partie || e.button > 0) return;
+  if (mobile.actif && e.pointerType !== 'mouse') return;   // au doigt sur téléphone : gestes du mode mobile
+  if (e.button > 0) return;
+  toucher(e);
+});
+
+/** Pose la tour choisie en (c, r) ; `serie` garde la tour choisie s'il reste assez d'or. */
+function batir(c, r, serie) {
+  const res = poser(partie, ui.construction, c, r);
+  if (res.ok) {
+    if (serie && partie.or >= TOURS[ui.construction].prix) ui.fantome = mobile.actif ? null : ui.fantome;
+    else {
+      if (serie) vue.texte(c * T + T / 2, r * T - 16, 'Pas assez d’or', '#ff8a7a');
+      ui.construction = null; ui.fantome = null; ui.verrou = null;
+    }
+  } else {
+    son.jouer('erreur');
+    vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
+  }
+}
+
+/** Un clic ou un toucher sur la carte. */
+function toucher(e) {
+  if (!partie) return;
   const { c, r } = caseSous(e);
   if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return;
+  const doigt = e.pointerType !== 'mouse';
   if (ui.pouvoir) {
-    // Au doigt, le premier toucher montre la zone, le second lance (comme pour bâtir).
+    // Au doigt, le premier toucher montre la zone ; on lance par ✔ (mobile) ou par un second toucher.
     const v = pointSous(e);
-    if (e.pointerType !== 'mouse' && (!ui.visee || Math.hypot(ui.visee.x - v.x, ui.visee.y - v.y) > 24)) { ui.visee = v; return; }
+    if (doigt && (!ui.visee || Math.hypot(ui.visee.x - v.x, ui.visee.y - v.y) > 24)) { ui.visee = v; return; }
     lancerPouvoir(v);
     return;
   }
   if (ui.construction) {
-    // Au doigt, le premier toucher montre la portée, le second bâtit.
-    if (e.pointerType !== 'mouse' && (!ui.fantome || ui.fantome.c !== c || ui.fantome.r !== r)) { ui.fantome = { c, r }; return; }
-    const res = poser(partie, ui.construction, c, r);
-    if (res.ok) {
-      // Pose en série : Maj maintenue pendant le clic, ou tour verrouillée par un appui long.
-      const serie = e.shiftKey || ui.verrou === ui.construction;
-      if (serie && partie.or >= TOURS[ui.construction].prix) { if (e.pointerType !== 'mouse') ui.fantome = null; }
-      else {
-        if (serie) vue.texte(c * T + T / 2, r * T - 16, 'Pas assez d’or', '#ff8a7a');
-        ui.construction = null; ui.fantome = null; ui.verrou = null;
-      }
-    }
-    else {
-      son.jouer('erreur');
-      vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
-    }
+    // Au doigt, le premier toucher montre la portée ; on bâtit par ✔ (mobile) ou par un second toucher.
+    if (doigt && (!ui.fantome || ui.fantome.c !== c || ui.fantome.r !== r)) { ui.fantome = { c, r }; return; }
+    batir(c, r, e.shiftKey || ui.verrou === ui.construction);
     return;
   }
   const t = partie.tours.find((x) => x.c === c && x.r === r);
   ui.selection = t ? t.id : null;
   if (t) son.jouer('clic');
+}
+
+// Mode mobile (spec 015) : gestes, zoom, boutons ✔ / ✖.
+const mobile = new Mobile({
+  toile, cadre: document.getElementById('cadre'),
+  toucher: (e) => { son.reveiller(); toucher(e); },
+  glisser: (e) => { if (ui.construction) ui.fantome = caseSous(e); if (ui.pouvoir) ui.visee = pointSous(e); },
+  vise: () => !!(partie && ((ui.construction && ui.fantome) || (ui.pouvoir && ui.visee))),
+  confirmer: () => {
+    if (!partie) return;
+    if (ui.pouvoir && ui.visee) lancerPouvoir(ui.visee);
+    else if (ui.construction && ui.fantome) batir(ui.fantome.c, ui.fantome.r, ui.verrou === ui.construction);
+  },
+  annuler: () => { ui.construction = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; son.jouer('clic'); },
 });
+
+/** Place les boutons ✔ / ✖ près de la case visée (téléphone). */
+function majConfirmation() {
+  if (!partie || partie.fin || ecran !== 'jeu') return mobile.majConfirmation(null);
+  if (ui.construction && ui.fantome) {
+    const { c, r } = ui.fantome;
+    const libre = c >= 0 && r >= 0 && c < COLS && r < ROWS && partie.carte.etat(c, r) === LIBRE && !partie.tours.some((t) => t.c === c && t.r === r);
+    return mobile.majConfirmation({ x: c * T + T / 2, y: r * T + T / 2 }, 'Bâtir', libre && partie.or >= TOURS[ui.construction].prix);
+  }
+  if (ui.pouvoir && ui.visee) return mobile.majConfirmation(ui.visee, 'Lancer', true);
+  mobile.majConfirmation(null);
+}
 
 window.addEventListener('keydown', (e) => {
   son.reveiller();
@@ -300,11 +337,14 @@ const scene = document.getElementById('scene'), cadre = document.getElementById(
 const app = document.getElementById('app');
 const ajuster = () => {
   app.classList.remove('etroit');
-  const l = scene.clientWidth - 12, h = scene.clientHeight - 12;
+  const telephone = document.body.classList.contains('mobile');
+  const marge = telephone ? 2 : 12;
+  const l = scene.clientWidth - marge, h = scene.clientHeight - marge;
   const k = Math.max(0.2, Math.min(l / W, h / H));
   cadre.style.width = Math.floor(W * k) + 'px';
   cadre.style.height = Math.floor(H * k) + 'px';
-  app.classList.toggle('etroit', l / W < h / H - 0.02);
+  app.classList.toggle('etroit', !document.body.classList.contains('paysage') && l / W < h / H - 0.02);
+  mobile.appliquer();
 };
 const observateur = new ResizeObserver(ajuster);
 observateur.observe(app);
@@ -362,6 +402,7 @@ function boucle(maintenant) {
   const dtEffets = enPause ? 0 : partie && !partie.fin ? dtJeu : dtReel;
   vue.dessiner(partie || apercu, partie ? ui : { construction: null, selection: null }, dtEffets);
   interfaceJeu.maj(partie || apercu, ui, { vitesse, pause: enPause, son: son.actif, reduits: vue.reduits });
+  majConfirmation();
   requestAnimationFrame(boucle);
 }
 
@@ -401,6 +442,6 @@ fetch('version.json', { cache: 'no-store' })
   const params = new URLSearchParams(location.search);
   if (params.has('jouer')) await commencer(params.get('jouer') || 'prairie');
   else montrer('titre');
-  if (params.has('test')) window.td = { musique,  partie: () => partie, ui, vue, poser, appelerVague, avancer, commencer };
+  if (params.has('test')) window.td = { musique, mobile,  partie: () => partie, ui, vue, poser, appelerVague, avancer, commencer };
   requestAnimationFrame(boucle);
 })();

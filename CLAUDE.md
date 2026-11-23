@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -90,6 +90,9 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   `Vue.preparer`, ombres du décor allégées dans `decors.js` (`alleger`), mise en page `etroit` dans main.js.
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
+- Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour
+  essayer), gestes et zoom sur la toile, ✔ / ✖ (`majConfirmation`), `toucher(e)` et `batir()` dans main.js ; styles
+  `body.mobile …` à la fin de style.css.
 - Sprites en code : `dessiner(l, h, trace)` (sprites.js) trace en basse résolution puis ajoute le contour ;
   affichés ×2 (`ECHELLE`).
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé, voies `effets`

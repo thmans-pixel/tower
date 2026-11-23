@@ -8,6 +8,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="assets/manifest.webmanifest">
+<meta name="theme-color" content="#2a1c12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="assets/icone-192.png">
+<link rel="icon" href="assets/icone-192.png">
 </head>
 <body>
 <div id="app">
@@ -17,6 +24,7 @@
       <span class="compteur" title="Or"><i class="ico piece"></i><b id="or">0</b></span>
       <span class="compteur" title="Vague"><span class="etiquette">Vague</span><b id="vague">0/20</b></span>
     </div>
+    <button id="b-plus" class="petit" aria-label="Menu" aria-expanded="false">☰</button>
     <nav class="commandes">
       <span class="reglage-son">
         <button id="b-son" class="petit" title="Réglages du son" aria-expanded="false">Son</button>
