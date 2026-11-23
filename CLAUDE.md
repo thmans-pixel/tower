@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lot A fait). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A et B faits). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -84,6 +84,8 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lot A fait). Ne
 - Monstres à l'écran (`src/render/monstres.js`) : `suivre` (direction lissée, `Vue.suivi`), `silhouette` (clignotement),
   `poseMort` (corps dans `Vue.morts`) ; pièces d'or vers `#or` (`vue.cibleOr`, `vue.surPiece` dans main.js).
   Événements `blesse` et `mort` (avec `id`) émis par `blesser`.
+- Effets des tours (`src/render/tours-effets.js`) : `poseTour` (pose, amélioration, vente ; `Vue.animTours`, `Vue.vendues`),
+  `boutArme` ; `Vue.tirer` (lueurs additives `Vue.lueurs`, cône du Lance-flammes), `Vue.crateres`, `Vue.colonnes`.
 - Sprites en code : `dessiner(l, h, trace)` (sprites.js) trace en basse résolution puis ajoute le contour ;
   affichés ×2 (`ECHELLE`).
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé).

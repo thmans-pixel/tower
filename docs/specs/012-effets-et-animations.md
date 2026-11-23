@@ -1,6 +1,6 @@
 # 012 — Effets et animations
 
-Statut : **validé** (« ok vas y ») — lot A **réalisé** ; lots B et C à faire.
+Statut : **validé** (« ok vas y ») — lots A et B **réalisés** ; lot C à faire.
 
 Tout se passe dans l'affichage (`src/render/`) ; règles, équilibrage et joueur automatique inchangés. Seuls
 ajouts côté logique : événement `blesse` (id, armure) à chaque coup (pas pour la brûlure ni les soldats), `id`,
@@ -17,11 +17,19 @@ ajouts côté logique : événement `blesse` (id, armure) à chaque coup (pas po
   « +5 » au-dessus des monstres.
 - Apparition en fondu (0,35 s). Boss : grosse explosion, débris, onde, tremblement plus fort.
 
-## Lot B — Tours, projectiles et impacts (à faire)
+## Lot B — Tours, projectiles et impacts (réalisé)
 
-Pose qui tombe et rebondit ; amélioration avec colonne de lumière ; vente qui s'enfonce ; lueur, recul et fumée
-au tir ; flèches et carreaux en arc avec traînée, boulet avec fumée et ombre, boule magique pulsante, cône de feu ;
-impacts selon le type, cratères quelques secondes ; halo de la tour choisie.
+- Pose : la tour tombe et rebondit (écrasement, petit tremblement, poussière). Amélioration : colonne de lumière
+  dorée, la tour grossit un instant, étincelles qui retombent. Vente : la tour s'enfonce dans le sol (découpée au
+  ras du sol), pièces qui jaillissent et filent au compteur. Calculs dans `src/render/tours-effets.js`.
+- Tir : lueur additive au bout de l'arme (`boutArme`), recul plus marqué pour Canon et Baliste, fumée du Canon ;
+  Lance-flammes : vrai cône de flammes.
+- Projectiles : flèches et carreaux en arc avec traînée et ombre (l'arc ne change pas le trajet de la logique),
+  boulet avec fumée et ombre qui grandit à l'approche du sol, éclat de givre qui tourne, boule magique qui pulse
+  avec une queue d'étincelles, boule de feu pulsante.
+- Impacts : éclats de bois (flèches, carreaux), cristaux de glace, lueur aux points touchés par l'éclair,
+  explosion avec lueur, poussière et cratère qui reste 4 s au sol.
+- Tour choisie : halo pulsé à sa base au lieu du carré.
 
 ## Lot C — Vie du décor et interface (à faire)
 
