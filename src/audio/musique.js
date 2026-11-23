@@ -50,6 +50,18 @@ export const AIRS = {
     accords: ['Cm', 'Eb', 'Ab', 'Fm', 'Cm', 'Ab', 'G', 'Cm', 'Cm', 'G', 'Ab', 'Cm', 'Fm', 'Cm', 'G', 'Cm'],
   },
 };
+// L'Apprenti sorcier (Paul Dukas, 1897, domaine public) : le thème des balais, joué par Sorcery sur Amstrad CPC.
+// Ut mineur, mesures à 3 croches, notes détachées comme au basson ; son carré façon puce sonore des années 80.
+AIRS.sorcier = {
+  tempo: 170, mesure: 3, onde: 'square', coupure: 3200, basseOnde: 'triangle', batterie: 'valse',
+  melodie: lire(`G4 A4 B4   C5 - Eb5   C5 - Eb5   D5 C5 B4   C5 - Eb5   C5 - Eb5   D5 C5 B4   C5 - Eb5   C5 Eb5 D5
+                 C5 D5 Eb5   D5 F5 Eb5   D5 - F#5   C5 - Eb5   D5 F5 Eb5   D5 - F#5   C5 - Eb5   D5 Eb5 F5
+                 G5 G5 G5   G5 G5 G5   G5 F5 Eb5   D5 F5 Eb5   D5 C5 B4   C5 - -   G4 - -`),
+  accords: ['G', 'Cm', 'Cm', 'G', 'Cm', 'Cm', 'G', 'Cm', 'Cm', 'Cm', 'G', 'D', 'Cm', 'G', 'D', 'Cm', 'G',
+            'Eb', 'Eb', 'Cm', 'G', 'G', 'Cm', 'G'],
+};
+/** Airs tirés au hasard à chaque partie (demande de Thibault : tous les airs, au hasard). */
+export const AIRS_DE_PARTIE = ['prairie', 'desert', 'montagne', 'sorcier'];
 AIRS.menu = { ...AIRS.prairie, tempo: 112 };
 
 const FONDAMENTALE = (accord) => frequence(accord.replace('m', '').replace(/^([A-G][#b]?)$/, '$12'));
@@ -150,6 +162,11 @@ export class Musique {
   }
 
   batterie(style, temps, t) {
+    if (style === 'valse') {   // mesure à trois : grosse caisse sur le 1, charleston sur les deux autres
+      if (temps === 0) this.coup(t, 140, 45, 0.16, 0.2);
+      else this.frappe(t, 7000, 0.03, 0.02);
+      return;
+    }
     if (style === 'guerre') {   // tambours de guerre : grosse frappe sur le 1, deux coups sur le 3, roulement en fin de mesure
       if (temps === 0) { this.coup(t, 95, 40, 0.5, 0.32); this.frappe(t, 600, 0.3, 0.06, 'lowpass'); }
       if (temps === 4 || temps === 5) this.coup(t, 130, 60, 0.22, 0.18);

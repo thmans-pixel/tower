@@ -28,6 +28,10 @@ Demande de Thibault : la musique d'Arkanoid pour la Prairie et celle de Tetris p
 - **Désert** : air original en mode oriental, percussions doum-tek. **Boss** (tant que l'Ogre est en vie) :
   demande « dans le style de Game of Thrones » ; ce thème est protégé et n'est pas repris : thème original en ut
   mineur à trois temps, violoncelle en ostinato, cordes graves doublées à l'octave, tambours de guerre. **Menu** : l'air de la Prairie plus lent. Victoire et défaite : les fanfares de la partie 1.
+- **L'Apprenti sorcier** (Paul Dukas, 1897, domaine public) : le thème des balais, l'air du jeu Sorcery sur Amstrad
+  CPC (demande de Thibault), en son carré 8 bits, mesures à trois croches.
+- **Choix de l'air** : à chaque partie, un air est tiré au hasard parmi Prairie, Désert, Montagne (Korobeiniki) et
+  l'Apprenti sorcier, jamais deux fois le même de suite (`AIRS_DE_PARTIE`). Le boss garde son thème.
 - Intensité : entre les vagues, mélodie, basse douce et accords ; pendant une vague, batterie et basse pleine ;
   au dernier quart des vagues, tempo +8 %. Coupée quand l'onglet est caché ou le curseur Musique à 0.
 - `src/audio/musique.js` : séquenceur à programmation anticipée (`AIRS`, `Musique.jouer`, `intensite`) sur la voie

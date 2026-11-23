@@ -14,7 +14,7 @@ import { chargerDecors } from './render/decors.js';
 import { chargerModeles } from './render/modeles.js';
 import { Vue } from './render/vue.js';
 import { Son } from './audio/son.js';
-import { Musique } from './audio/musique.js';
+import { Musique, AIRS_DE_PARTIE } from './audio/musique.js';
 import { ENNEMIS } from './data/ennemis.js';
 import { Interface } from './ui/interface.js';
 import { rangDeTouche } from './ui/clavier.js';
@@ -311,15 +311,18 @@ observateur.observe(app);
 
 // ---------------------------------------------------------------- boucle
 
-/** Air et intensité selon l'écran et la partie (spec 014, partie 2). */
+/** Air et intensité selon l'écran et la partie (spec 014, partie 2). L'air d'une partie est tiré au hasard. */
+let airPartie = { partie: null, air: null };
 function majMusique() {
   let air = null, intensite = 0;
   if (!document.hidden && son.ac && son.volMusique > 0) {
     if (ecran !== 'jeu' || !partie) air = 'menu';
     else if (!partie.fin) {
-      const def = partie.carte.def;
-      air = (def.aleatoire && def.aleatoire.theme) || def.id;
-      if (!['prairie', 'desert', 'montagne'].includes(air)) air = 'prairie';
+      if (airPartie.partie !== partie) {
+        const autres = AIRS_DE_PARTIE.filter((a) => a !== airPartie.air);   // pas deux fois le même air de suite
+        airPartie = { partie, air: autres[Math.floor(Math.random() * autres.length)] };
+      }
+      air = airPartie.air;
       if (partie.ennemis.some((e) => ENNEMIS[e.sorte].boss)) air = 'boss';
       const enVague = partie.lancement || partie.ennemis.length > 0;
       intensite = enVague ? (Number.isFinite(partie.nbVagues) && partie.vague >= partie.nbVagues * 0.75 ? 2 : 1) : 0;
