@@ -318,7 +318,7 @@ def rendre_ennemis(ctx, racine):
         actions = {}
         for tr in ad.nla_tracks:
             for autre in ad.nla_tracks:
-                autre.mute = autre is not tr
+                autre.mute = autre.name != tr.name   # par le nom : Blender 5 ne garde pas les mêmes objets Python d'un accès à l'autre
             debut, fin = 1, 8
             if tr.strips and tr.strips[0].action:
                 a = tr.strips[0].action
