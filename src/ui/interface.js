@@ -139,7 +139,7 @@ export class Interface {
   majFiche(s, ui) {
     const f = $('fiche');
     let v = this.survol;
-    if (!v && this.tactile && ui.construction) v = { cle: 't:' + ui.construction, b: document.querySelector(`.outil[data-sorte="${ui.construction}"]`) };
+    // Sur écran tactile, pas de fiche au choix d'une tour : sur un téléphone elle couvrait la carte et empêchait de bâtir.
     if (!v || !v.b) { if (!f.hidden) { f.hidden = true; this.sigFiche = ''; } return; }
     const [genre, nom] = v.cle.split(':');
     const manque = genre === 't' && s ? Math.max(0, TOURS[nom].prix - s.or) : 0;
