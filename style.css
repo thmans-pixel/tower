@@ -245,3 +245,7 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 .carton.transfert input { font-family: var(--texte-police); letter-spacing: 1px; }
 .erreur { color: var(--rouge); }
 .succes { color: var(--vert); }
+
+/* Pièce d'or arrivée au compteur (spec 012). */
+.compteur.pulse { animation: pulse-or .25s ease-out; }
+@keyframes pulse-or { 40% { transform: scale(1.18); color: #fff3b0; } }

@@ -4,7 +4,8 @@ Tower defense en pixel-art dans le navigateur. Cahier des charges validé : `doc
 avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/003-tours-ennemis-blender.md`
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
-`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+`tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
+effets et animations : `docs/specs/012-effets-et-animations.md` (lot A fait). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -78,7 +79,11 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
   par nom `<carte>_<nom>`. Les sortes et leurs noms sont dans `src/data/decors.js`.
 - Tours et ennemis de Blender : `src/render/modeles.js` (`nomTour`, `nomEnnemi`), dessinés par
   `Vue.tourModele` (fût : orientation `round(-angle / pas)`, l'angle de Blender tourne vers le haut de l'écran)
-  et `Vue.ennemi` (bande d'images, ancre aux pieds). Packs produits par `tools/blender/rendu_blender.py`.
+  et `Vue.ennemi` (bande d'images, ancre aux pieds ; une ligne par direction si `directions`, spec 011). Packs produits
+  par `tools/blender/rendu_blender.py` (ennemis en 8 directions).
+- Monstres à l'écran (`src/render/monstres.js`) : `suivre` (direction lissée, `Vue.suivi`), `silhouette` (clignotement),
+  `poseMort` (corps dans `Vue.morts`) ; pièces d'or vers `#or` (`vue.cibleOr`, `vue.surPiece` dans main.js).
+  Événements `blesse` et `mort` (avec `id`) émis par `blesser`.
 - Sprites en code : `dessiner(l, h, trace)` (sprites.js) trace en basse résolution puis ajoute le contour ;
   affichés ×2 (`ECHELLE`).
 - Effets visuels (éclats, chiffres, bandeaux) : `Vue.evenements` ; sons : `Son.evenements` (tout synthétisé).

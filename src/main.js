@@ -19,6 +19,16 @@ import { rangDeTouche } from './ui/clavier.js';
 
 const toile = document.getElementById('toile');
 const vue = new Vue(toile);
+// Pièces d'or qui filent vers le compteur (spec 012) : position du compteur sur la toile, et pulsation à l'arrivée.
+vue.cibleOr = () => {
+  const r = toile.getBoundingClientRect(), o = document.getElementById('or').getBoundingClientRect();
+  const k = toile.width / r.width;
+  return { x: (o.left + o.width / 2 - r.left) * k, y: (o.top + o.height / 2 - r.top) * k };
+};
+vue.surPiece = () => {
+  const c = document.getElementById('or').parentElement;
+  c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse');
+};
 const son = new Son();
 const decors = {};
 let partie = null;          // partie en cours

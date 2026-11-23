@@ -1,6 +1,6 @@
 // Tours et ennemis rendus par Blender (tools/blender/rendu_blender.py, docs/specs/003-tours-ennemis-blender.md).
 // assets/tours/manifest.json : une image par tour et niveau, pièce mobile en bande de N orientations.
-// assets/ennemis/manifest.json : une bande d'images par action. Ce qui manque garde son sprite en code.
+// assets/ennemis/manifest.json : par action, une bande d'images (une ligne par direction si `directions`, spec 011). Ce qui manque garde son sprite en code.
 import { T } from '../sim/const.js';
 
 // Nom de l'ennemi dans le pack (propriété `ennemi` de l'armature, sans le préfixe « ennemi_ »).
@@ -31,7 +31,7 @@ async function manifest(dossier) {
   }
 }
 
-/** { tours: { nom: { img, ancre, k, lisse, piece? } }, ennemis: { nom: { action: { img, n, l, h, ancre, k, lisse } } } } */
+/** { tours: { nom: { img, ancre, k, lisse, piece? } }, ennemis: { nom: { action: { img, n, l, h, ancre, k, lisse, dirs } } } } */
 export async function chargerModeles() {
   const res = { tours: {}, ennemis: {} };
   const bt = 'assets/tours/';
@@ -57,7 +57,7 @@ export async function chargerModeles() {
       const actions = {};
       for (const [nom, a] of Object.entries(e.actions || {})) {
         const img = await image(be + a.fichier);
-        if (img) actions[nom] = { img, n: a.images, l: a.largeur, h: a.hauteur, ancre: a.ancre, k, lisse };
+        if (img) actions[nom] = { img, n: a.images, l: a.largeur, h: a.hauteur, ancre: a.ancre, k, lisse, dirs: a.directions || 1 };
       }
       if (Object.keys(actions).length) res.ennemis[sansPrefixe(e.nom)] = actions;
     }));
