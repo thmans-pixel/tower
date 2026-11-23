@@ -3,7 +3,7 @@
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, difficulte: 'normal', son: true, infiniOuvert: false };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, difficulte: 'normal', son: true, effetsReduits: false, infiniOuvert: false };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -69,6 +69,7 @@ export function relire(brut) {
   if (['facile', 'normal', 'difficile'].includes(brut.difficulte)) p.difficulte = brut.difficulte;
   if (brut.aleatoires && typeof brut.aleatoires === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.aleatoires[d])) p.aleatoires[d] = brut.aleatoires[d];
   if (typeof brut.son === 'boolean') p.son = brut.son;
+  if (typeof brut.effetsReduits === 'boolean') p.effetsReduits = brut.effetsReduits;
   p.infiniOuvert = brut.infiniOuvert === true;
   return p;
 }

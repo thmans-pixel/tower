@@ -10,6 +10,7 @@ import { nomTour, nomEnnemi } from './modeles.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 import { silhouette, suivre, poseMort, genreMort } from './monstres.js';
 import { poseTour, boutArme, DUREES } from './tours-effets.js';
+import { Ambiance } from './ambiance.js';
 
 const COULEUR_ENN = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#8a9a5b' };
 const POLICE = '"Chiffres", "Pixelify Sans", system-ui, sans-serif';   // chiffres lisibles (spec 009)
@@ -28,7 +29,10 @@ function partiePleine(img) {
   while (x1 > x0 && !plein(x1, mid(y0, y1))) x1--;
   while (y0 < y1 && !plein(mid(x0, x1), y0)) y0++;
   while (y1 > y0 && !plein(mid(x0, x1), y1)) y1--;
-  const k = d[(mid(y0, y1) * c.width + x0) * 4] < 60 ? 1 : 0;   // contour sombre : un pixel de plus
+  let k = d[(mid(y0, y1) * c.width + x0) * 4] < 60 ? 1 : 0;   // contour sombre : un pixel de plus
+  // Le contour peut rentrer d'un pixel dans les coins (points noirs en grille sur le sable) : on rogne encore.
+  const sombre = (x, y) => d[(y * c.width + x) * 4 + 3] === 255 && d[(y * c.width + x) * 4] < 60 && d[(y * c.width + x) * 4 + 1] < 60;
+  while (k < 3 && (sombre(x0 + k, y0 + k) || sombre(x1 - k, y0 + k) || sombre(x0 + k, y1 - k) || sombre(x1 - k, y1 - k))) k++;
   return [x0 + k, y0 + k, x1 - x0 + 1 - 2 * k, y1 - y0 + 1 - 2 * k];
 }
 
@@ -63,6 +67,9 @@ export class Vue {
     this.lueurs = [];
     this.crateres = [];
     this.etat = null;
+    // Spec 012 (lot C) : vie du décor ; « Effets réduits » coupe l'ambiance et allège les particules.
+    this.ambiance = new Ambiance();
+    this.reduits = false;
   }
 
   /** Prépare le fond et le décor d'une carte construite par la logique. */
@@ -127,6 +134,7 @@ export class Vue {
       ...(carte.def.ponts || []).map(([c, r]) => ({ nom: id + '_pont', x: c * T + T / 2, y: r * T + T / 2, c: -1, r: -1, bloquant: true, sol: true })),
       ...carte.decors,
     ];
+    this.ambiance.preparer(carte, this.fixes);
   }
 
   evenements(liste) {
@@ -235,6 +243,7 @@ export class Vue {
 
   /** Nuage de poussière (ronds doux qui gonflent, montent un peu et s'effacent). */
   poussiere(x, y, n, col = '201,170,120') {
+    if (this.reduits) n = Math.ceil(n / 2);
     for (let i = 0; i < n; i++) {
       this.bouffees.push({ x: x + (Math.random() - 0.5) * 18, y: y + (Math.random() - 0.5) * 6, r: 2, max: 6 + Math.random() * 6, vie: 0.5 + Math.random() * 0.3, t: 0, col, monte: 10, a: 0.45 });
     }
@@ -262,6 +271,7 @@ export class Vue {
   }
 
   eclater(x, y, col, n) {
+    if (this.reduits) n = Math.ceil(n / 2);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 90;
       this.eclats.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, vie: 0.5 + Math.random() * 0.3, t: 0, col, s: 2 + Math.floor(Math.random() * 2) * 2 });
@@ -338,6 +348,7 @@ export class Vue {
     for (const gr of s.renforts || []) liste.push({ y: gr.y, f: () => this.soldats(gr) });
     liste.sort((a, b) => a.y - b.y);
     for (const o of liste) o.f();
+    this.ambiance.details(g, this.horloge);
     for (const e of s.ennemis) if (e.vol) this.ennemi(e);
     if (this.suivi.size > s.ennemis.length) {   // monstres partis (tués ou passés) : on oublie leur suivi
       const ici = new Set(s.ennemis.map((e) => e.id));
@@ -347,6 +358,7 @@ export class Vue {
     for (const p of s.projectiles) this.projectile(p);
     for (const m of s.meteores || []) this.meteore(m);
     this.effets(dt);
+    if (!this.reduits) this.ambiance.dessiner(g, dt, this.horloge);
 
     if (fantome) {
       g.globalAlpha = 0.65;
@@ -666,6 +678,9 @@ export class Vue {
       }
     }
     this.eclats = this.eclats.filter((p) => (p.t += dt) < p.vie);
+    const plafond = this.reduits ? 160 : 600;   // au-delà, les plus anciens s'en vont
+    if (this.eclats.length > plafond) this.eclats.splice(0, this.eclats.length - plafond);
+    if (this.bouffees.length > plafond / 3) this.bouffees.splice(0, this.bouffees.length - plafond / 3);
     for (const p of this.eclats) {
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * (p.g ?? 1) * dt;
       if (p.flamme) { p.vx *= 1 - 3 * dt; p.vy *= 1 - 3 * dt; }
@@ -735,11 +750,17 @@ export class Vue {
     if (b.t > b.vie) { this.bandeau = null; return; }
     const g = this.g;
     const a = Math.min(1, b.t * 4, (b.vie - b.t) * 3);
+    // Glisse depuis le haut, puis repart vers le haut (spec 012, lot C).
+    const entree = Math.min(1, b.t / 0.3), sortie = Math.max(0, 1 - (b.vie - b.t) / 0.3);
+    const dy = -(1 - (1 - (1 - entree) ** 3)) * 120 - sortie * sortie * 80;
     g.globalAlpha = a;
+    g.save(); g.translate(0, dy);
     g.fillStyle = 'rgba(26,20,32,.72)'; g.fillRect(0, H / 2 - 44, W, b.sous ? 88 : 70);
+    g.fillStyle = b.alerte ? 'rgba(255,138,122,.8)' : 'rgba(242,193,78,.8)'; g.fillRect(0, H / 2 - 44, W, 2); g.fillRect(0, H / 2 - 44 + (b.sous ? 88 : 70) - 2, W, 2);
     g.textAlign = 'center';
     g.font = `700 ${b.texte.length > 26 ? 32 : 40}px ${POLICE}`; g.fillStyle = b.alerte ? '#ff8a7a' : '#f2c14e'; g.fillText(b.texte, W / 2, H / 2 + 6);
     if (b.sous) { g.font = `600 18px ${POLICE}`; g.fillStyle = '#fdf6e3'; g.fillText(b.sous, W / 2, H / 2 + 32); }
+    g.restore();
     g.globalAlpha = 1;
   }
 }

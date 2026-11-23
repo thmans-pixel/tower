@@ -38,6 +38,7 @@ let mode = 'campagne';         // choix de l'écran des cartes : campagne, carte
 const alea = { theme: 'prairie', longueur: 25, graine: numeroAuHasard(), vignette: null };
 let progression = charger();   // cartes débloquées, étoiles, difficulté choisie, son
 son.actif = progression.son;
+vue.reduits = progression.effetsReduits;
 let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
 const ui = {
@@ -48,7 +49,7 @@ const ui = {
 };
 
 const interfaceJeu = new Interface({
-  construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon,
+  construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon, effets: basculerEffets,
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
@@ -148,6 +149,12 @@ function basculerPause() {
 
 function changerVitesse() {
   vitesse = vitesse === 3 ? 1 : vitesse + 1;
+}
+
+function basculerEffets() {
+  vue.reduits = !vue.reduits;
+  progression.effetsReduits = vue.reduits;
+  enregistrer(progression);
 }
 
 function basculerSon() {
@@ -302,6 +309,10 @@ function boucle(maintenant) {
   if (partie) {
     const evs = partie.evenements.splice(0);
     vue.evenements(evs);
+    if (evs.some((e) => e.type === 'fuite')) {   // le cœur tremble et rougit (spec 012, lot C)
+      const c = document.getElementById('vies').parentElement;
+      c.classList.remove('aie'); void c.offsetWidth; c.classList.add('aie');
+    }
     son.evenements(evs);
     if (partie.fin && !finMontree) {
       finMontree = true;
@@ -312,7 +323,7 @@ function boucle(maintenant) {
   }
   const dtEffets = enPause ? 0 : partie && !partie.fin ? dtJeu : dtReel;
   vue.dessiner(partie || apercu, partie ? ui : { construction: null, selection: null }, dtEffets);
-  interfaceJeu.maj(partie || apercu, ui, { vitesse, pause: enPause, son: son.actif });
+  interfaceJeu.maj(partie || apercu, ui, { vitesse, pause: enPause, son: son.actif, reduits: vue.reduits });
   requestAnimationFrame(boucle);
 }
 
