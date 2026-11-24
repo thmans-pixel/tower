@@ -3,7 +3,7 @@
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, barresVie: false, infiniOuvert: false };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, reglesLaby: 2, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, barresVie: false, infiniOuvert: false };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -80,7 +80,8 @@ export function relire(brut) {
   if (brut.infini && typeof brut.infini === 'object') for (const c of ORDRE_CARTES) if (Number.isInteger(brut.infini[c])) p.infini[c] = brut.infini[c];
   if (['facile', 'normal', 'difficile'].includes(brut.difficulte)) p.difficulte = brut.difficulte;
   if (brut.aleatoires && typeof brut.aleatoires === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.aleatoires[d])) p.aleatoires[d] = brut.aleatoires[d];
-  if (brut.labyrinthe && typeof brut.labyrinthe === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.labyrinthe[d]) && brut.labyrinthe[d] > 0) p.labyrinthe[d] = brut.labyrinthe[d];
+  // Records du labyrinthe : seulement ceux faits avec les règles de la spec 017 (population, obstacles) ; les autres sont effacés.
+  if (brut.reglesLaby === 2 && brut.labyrinthe && typeof brut.labyrinthe === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.labyrinthe[d]) && brut.labyrinthe[d] > 0) p.labyrinthe[d] = brut.labyrinthe[d];
   if (typeof brut.son === 'boolean') p.son = brut.son;
   if (typeof brut.effetsReduits === 'boolean') p.effetsReduits = brut.effetsReduits;
   if (typeof brut.barresVie === 'boolean') p.barresVie = brut.barresVie;

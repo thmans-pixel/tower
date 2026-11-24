@@ -5,6 +5,7 @@ import { ORDRE_CARTES, relire } from './progression.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const PREFIXE = 'TDR1';
+const PREFIXE_LABY = 'TDR2';   // codes qui portent des records de labyrinthe d'après la spec 017 (règles de population)
 const DIFFS = ['facile', 'normal', 'difficile'];
 
 /** Somme de contrôle sur 10 bits (deux caractères). */
@@ -53,7 +54,8 @@ export function codeProgression(p) {
   corps.push(...controle(corps));
   const groupes = [];
   for (let i = 0; i < corps.length; i += 4) groupes.push(corps.slice(i, i + 4).join(''));
-  return [PREFIXE, ...groupes].join('-');
+  const avecRecords = nombres(p).length > 2 + ORDRE_CARTES.length + DIFFS.length;
+  return [avecRecords ? PREFIXE_LABY : PREFIXE, ...groupes].join('-');
 }
 
 /**
@@ -63,7 +65,8 @@ export function codeProgression(p) {
 export function lireCode(texte) {
   if (typeof texte !== 'string') return { ok: false };
   let t = texte.toUpperCase().replace(/[\s-]/g, '');
-  if (!t.startsWith(PREFIXE)) return { ok: false };
+  const laby = t.startsWith(PREFIXE_LABY);
+  if (!laby && !t.startsWith(PREFIXE)) return { ok: false };
   t = t.slice(PREFIXE.length).replace(/O/g, '0').replace(/[IL]/g, '1');
   if (t.length < 3 || [...t].some((ch) => !ALPHABET.includes(ch))) return { ok: false };
   const corps = [...t.slice(0, -2)];
@@ -81,7 +84,9 @@ export function lireCode(texte) {
   }));
   ORDRE_CARTES.forEach((c, i) => { if (l[2 + i]) brut.infini[c] = l[2 + i]; });
   DIFFS.forEach((d, i) => { if (l[2 + ORDRE_CARTES.length + i]) brut.aleatoires[d] = l[2 + ORDRE_CARTES.length + i]; });
-  DIFFS.forEach((d, i) => { if (l[base + i]) brut.labyrinthe[d] = l[base + i]; });
+  // Un code TDR1 d'avant la spec 017 ne fait pas revenir ses records de labyrinthe : les règles ont changé.
+  if (laby) DIFFS.forEach((d, i) => { if (l[base + i]) brut.labyrinthe[d] = l[base + i]; });
+  brut.reglesLaby = 2;
   return { ok: true, progression: relire(brut) };
 }
 

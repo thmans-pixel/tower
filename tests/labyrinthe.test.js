@@ -351,7 +351,13 @@ test('records : le plus petit nombre de vagues par difficulté, gardé à la rel
   assert.equal(r.progression.labyrinthe.normal, 12);
   assert.equal(r.progression.labyrinthe.facile, undefined);
   assert.deepEqual(relire(JSON.parse(JSON.stringify(r.progression))).labyrinthe, { normal: 12 });
-  assert.deepEqual(relire({ labyrinthe: { normal: -3, facile: 'x', difficile: 9 } }).labyrinthe, { difficile: 9 });
+  assert.deepEqual(relire({ reglesLaby: 2, labyrinthe: { normal: -3, facile: 'x', difficile: 9 } }).labyrinthe, { difficile: 9 });
+  // Spec 017 : une progression d'avant (sans marque des nouvelles règles) arrive sans record de labyrinthe, le reste intact.
+  const vieille = relire({ debloquees: ['prairie', 'desert'], infini: { prairie: 12 }, labyrinthe: { normal: 9 }, son: false });
+  assert.deepEqual(vieille.labyrinthe, {});
+  assert.deepEqual(vieille.debloquees, ['prairie', 'desert']);
+  assert.equal(vieille.infini.prairie, 12);
+  assert.equal(vieille.son, false);
 });
 
 test('transfert : les records du labyrinthe passent dans le code, un ancien code reste lisible et inchangé', () => {
@@ -371,6 +377,11 @@ test('transfert : les records du labyrinthe passent dans le code, un ancien code
   assert.ok(q.ok);
   assert.deepEqual(q.progression.labyrinthe, { normal: 17, difficile: 31 });
   assert.deepEqual(q.progression.etoiles, p.etoiles);
+  assert.ok(code.startsWith('TDR2'), 'un code avec records porte la marque des nouvelles règles');
+  const vieux = lireCode(code.replace('TDR2', 'TDR1'));   // code d'avant la spec 017 portant des records de labyrinthe
+  assert.ok(vieux.ok);
+  assert.deepEqual(vieux.progression.labyrinthe, {}, 'les anciens records ne reviennent pas');
+  assert.deepEqual(vieux.progression.etoiles, p.etoiles);
   // Réunir deux appareils garde le meilleur record (le moins de vagues).
   const autre = enregistrerLabyrinthe(enregistrerLabyrinthe(progressionVide(), 'normal', 25).progression, 'facile', 9).progression;
   assert.deepEqual(fusionner(p, autre).labyrinthe, { facile: 9, normal: 17, difficile: 31 });

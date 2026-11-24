@@ -425,6 +425,7 @@ export class Vue {
         g.globalAlpha = 1;
       }
       if (!fantome.ok) { g.strokeStyle = '#ff5a4a'; g.lineWidth = 3; g.strokeRect(fantome.c * T + 3, fantome.r * T + 3, T - 6, T - 6); }
+      if (fantome.raison === 'population') this.etiquette(fantome.c * T + T / 2, fantome.r * T - 14, 'Population maximale atteinte', '#ff8a7a');
       if (fantome.raison === 'bouche') this.etiquette(fantome.c * T + T / 2, fantome.r * T - 14, 'Le passage serait bouché', '#ff8a7a');
     }
     this.dessinerCouronnes(dt);
@@ -468,6 +469,10 @@ export class Vue {
     const y = (r) => r * T + T / 2;
     liste.push({ y: y(lab.entree.r), f: () => Laby.entree(g, lab.entree) }, { y: y(lab.sortie.r), f: () => Laby.sortie(g, lab.sortie) });
     for (const p of lab.cp) liste.push({ y: y(p.r) - 12, f: () => Laby.checkpoint(g, p) });
+    for (const o of lab.obstacles || []) {
+      const ens = new Set(o.cases.map((p) => p.r * COLS + p.c));
+      for (const p of o.cases) liste.push({ y: y(p.r) + 2, f: () => Laby.obstacle(g, o.type, p.c, p.r, ens.has((p.r - 1) * COLS + p.c)) });
+    }
     const aVendre = new Set(l.prevus.filter((p) => p.type === 'venteMur').map((p) => p.r * COLS + p.c));
     for (const k of l.murs) {
       const c = k % COLS, r = Math.floor(k / COLS);

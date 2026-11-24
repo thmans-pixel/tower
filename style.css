@@ -395,3 +395,7 @@ body.mobile.paysage.labyrinthe .outil .prix .ico { width: 10px; height: 10px; }
 #fin-podium[hidden] { display: none; }
 #fin-podium h3 { margin: 0 0 6px; font-size: 18px; color: var(--or); text-align: center; }
 body.mobile #classement { width: min(300px, 70%); font-size: 14px; }
+
+/* Population du labyrinthe (spec 017) */
+#compteur-pop[hidden] { display: none; }
+#compteur-pop.plein b { color: #ff6a5a; }

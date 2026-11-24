@@ -323,7 +323,7 @@ function batir(c, r, serie) {
     }
   } else {
     son.jouer('erreur');
-    if (res.raison !== 'bouche') vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
+    if (res.raison !== 'bouche') vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : res.raison === 'population' ? 'Population maximale atteinte' : 'Impossible ici', '#ff8a7a');
   }
 }
 

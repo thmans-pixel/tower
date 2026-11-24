@@ -39,7 +39,47 @@ export function genererLabyrinthe(graine = 1) {
   const zones = [];
   for (let i = 0; i < LABYRINTHE.nbZones; i++) zones.push({ sorte: ORDRE_ZONES[Math.floor(rnd() * ORDRE_ZONES.length)], ...place(1, COLS - 2, 0, ROWS - 1) });
 
-  return { graine, entree, sortie, cp, tp, zones };
+  // Population maximale et obstacles (spec 017) : tirés en dernier, pour que les terrains d'avant ne changent pas.
+  const popMax = LABYRINTHE.population[Math.floor(rnd() * LABYRINTHE.population.length)];
+  const obstacles = [];
+  const prisObs = new Set(pris);
+  const libre = (c, r) => c >= 1 && c <= COLS - 2 && r >= 0 && r <= ROWS - 1 && !prisObs.has(cle(c, r));
+  const nbRochers = entier(...LABYRINTHE.rochers);
+  for (let i = 0; i < nbRochers; i++) {
+    for (let essai = 0; essai < 200; essai++) {
+      const c = entier(1, COLS - 2), r = entier(0, ROWS - 1);
+      if (libre(c, r)) { prisObs.add(cle(c, r)); obstacles.push({ type: 'rocher', cases: [{ c, r }] }); break; }
+    }
+  }
+  const nbMontagnes = entier(...LABYRINTHE.montagnes);
+  for (let i = 0; i < nbMontagnes; i++) {
+    const taille = entier(...LABYRINTHE.tailleMontagne);
+    for (let essai = 0; essai < 100; essai++) {
+      const c = entier(1, COLS - 2), r = entier(0, ROWS - 1);
+      if (!libre(c, r)) continue;
+      const cases = [{ c, r }], dans = new Set([cle(c, r)]);
+      for (let k = 0; k < 60 && cases.length < taille; k++) {
+        const o = cases[Math.floor(rnd() * cases.length)], [dc, dr] = VOISINS[Math.floor(rnd() * 4)];
+        const nc = o.c + dc, nr = o.r + dr;
+        if (libre(nc, nr) && !dans.has(cle(nc, nr))) { dans.add(cle(nc, nr)); cases.push({ c: nc, r: nr }); }
+      }
+      if (cases.length < LABYRINTHE.tailleMontagne[0]) continue;
+      for (const k of dans) prisObs.add(k);
+      obstacles.push({ type: 'montagne', cases });
+      break;
+    }
+  }
+  const lab = { graine, entree, sortie, cp, tp, zones, popMax, obstacles };
+  // Le terrain vide doit toujours laisser un chemin à pied : sinon on retire des obstacles, en commençant par la fin.
+  while (lab.obstacles.length && !cheminLabyrinthe(lab, new Set())) lab.obstacles.pop();
+  return lab;
+}
+
+/** Cases fermées par les obstacles (rochers et montagnes). */
+export function casesObstacles(lab) {
+  const o = new Set();
+  for (const ob of lab.obstacles || []) for (const p of ob.cases) o.add(cle(p.c, p.r));
+  return o;
 }
 
 /** Cases où l'on ne construit pas : entrée, sortie, checkpoints et téléporteurs. */
@@ -123,6 +163,7 @@ function troncon(lab, bloques, de, vers, pied, evites = new Set()) {
  * téléporté (voir `troncon`). Sans chemin à pied, ils prennent un téléporteur si les murs ne laissent que lui.
  */
 export function cheminLabyrinthe(lab, bloques) {
+  if (lab.obstacles && lab.obstacles.length) bloques = new Set([...bloques, ...casesObstacles(lab)]);
   const etapes = [lab.entree, ...lab.cp, lab.sortie];
   const tout = [];
   const vus = new Map();   // tronçon à pied déjà calculé, par couple de points : l'aller et le retour suivent le même chemin
@@ -158,18 +199,19 @@ export function trajetVol(lab) {
 export function carteLabyrinthe(lab) {
   const murs = new Set();
   const fixes = casesFixes(lab);
+  const obstacles = casesObstacles(lab);
   const vols = [trajetVol(lab)];
   const carte = {
     def: {
       id: 'labyrinthe', nom: 'Labyrinthe', graine: lab.graine, orDepart: LABYRINTHE.orDepart, pvParVague: LABYRINTHE.pvParVague, vagues: [], ouverte: true,
       theme: 'prairie', labyrinthe: lab,
     },
-    lab, murs, fixes, decors: [], cheminCases: [], vols, vol: vols[0],
+    lab, murs, fixes, obstacles, decors: [], cheminCases: [], vols, vol: vols[0],
     sols: [], sol: null,
     chateau: { c: lab.sortie.c, r: lab.sortie.r, l: 1, h: 1 },
     entrees: [{ c: lab.entree.c, r: lab.entree.r, l: 1, h: 1 }],
     zoneEn: (c, r) => lab.zones.find((z) => z.c === c && z.r === r) || null,
-    etat: (c, r) => (!dedans(c, r) || fixes.has(cle(c, r)) || murs.has(cle(c, r)) ? PRIS : LIBRE),
+    etat: (c, r) => (!dedans(c, r) || fixes.has(cle(c, r)) || obstacles.has(cle(c, r)) || murs.has(cle(c, r)) ? PRIS : LIBRE),
   };
   return carte;
 }

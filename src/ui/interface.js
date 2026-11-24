@@ -15,7 +15,7 @@ import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
 import { codeProgression, lireCode } from '../sim/transfert.js';
 import { CARTES } from '../data/cartes.js';
-import { scoreInfini, classement } from '../sim/partie.js';
+import { scoreInfini, classement, populationLabyrinthe } from '../sim/partie.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
@@ -444,6 +444,13 @@ export class Interface {
     if (Math.sign(s.or - this.orAffiche) !== Math.sign(ecart)) this.orAffiche = s.or;
     this.majChamp('or', nb(this.orAffiche));
     this.majChamp('vague', maze ? String(s.vague) : s.infini ? `${s.vague} · sans fin` : `${s.vague}/${s.nbVagues}`);
+    const cp = $('compteur-pop');
+    cp.hidden = !maze;
+    if (maze) {
+      const pop = populationLabyrinthe(s);
+      this.majChamp('pop', `${pop} / ${s.labyrinthe.popMax}`);
+      cp.classList.toggle('plein', pop >= s.labyrinthe.popMax);
+    }
     this.majChamp('b-vitesse', '×' + opts.vitesse);
     this.majChamp('b-pause', opts.pause ? 'Reprendre' : 'Pause');
     this.majChamp('b-son', opts.son ? 'Son' : 'Muet');
