@@ -22,7 +22,8 @@ chaque monstre qui atteint la sortie **en coûte**.
 ## Règles du mode (décidées avec Thibault)
 - **Terrain** : la grille habituelle de 24 × 16 cases, sans décor bloquant. Une **entrée** sur le bord gauche et une
   **sortie** (le château) sur le bord droit, à des hauteurs tirées au hasard.
-- **Checkpoints** : de 3 à 5, numérotés, placés **au hasard à chaque partie** (à graine). Les monstres au sol
+- **Checkpoints** : de 3 à 5, numérotés, placés **au hasard à chaque partie** (à graine), n'importe où sur la carte et
+  dans le désordre (le 1 peut être à l'opposé de l'entrée, le 2 à côté du 3… ; précision de Thibault, 2026-11-24). Les monstres au sol
   passent par l'entrée, puis par les checkpoints dans l'ordre 1 → 5, puis vont à la sortie.
 - **Téléporteurs** : 1 ou 2 paires placées au hasard, à sens unique. Un monstre qui marche sur l'entrée d'un TP
   réapparaît aussitôt sur sa sortie. Selon l'endroit où le hasard les a mis, un TP peut **rallonger** le labyrinthe

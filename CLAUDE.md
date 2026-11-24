@@ -103,8 +103,9 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   Records : `enregistrerLabyrinthe` (`progression.labyrinthe[difficulte]` = moins de vagues pour gagner), portés par le
   code de transfert seulement s'il y en a. Joueur automatique : `node tests/simulate.js labyrinthe` (`jouerLabyrinthe`,
   serpentin de murs). Un monstre mis à terre revient plus fort (`renfort` : + 30 % de PV), ce qui empêche la partie de
-  s'emballer. Repères actuels : Normal, 18 terrains gagnés sur 20 en 17 vagues environ (autant sans mur) ; Facile 10 sur
-  10 en 4 à 12 vagues ; Difficile 3 sur 10 (l'Ogre de la vague 10 coûte 10 vies).
+  s'emballer. Repères actuels (checkpoints n'importe où, depuis le 2026-11-24) : Normal, 10 terrains
+  gagnés sur 10 en 9 vagues environ (de 5 à 16), 10 sur 10 sans mur aussi ; Facile 10 sur 10 en 3 à 8 vagues ;
+  Difficile 9 sur 10. Plus facile qu'avant : le trajet traverse la carte en tous sens.
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
 - Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour
