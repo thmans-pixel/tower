@@ -2,7 +2,7 @@
 numero: 018
 titre: Hall of fame en ligne, avec un classement enfants à part
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: en cours
 date: 2026-11-24
 ---
 
