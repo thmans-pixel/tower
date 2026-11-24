@@ -202,7 +202,7 @@ export function aideCase(lab, c, r) {
   const p = lab.cp.find(ici);
   if (p) return { titre: 'Checkpoint ' + p.n, texte: `Les monstres passent par les checkpoints dans l’ordre, de 1 à ${lab.cp.length}, avant d’aller à la sortie.`, pour: 'Passage obligé' };
   for (const t of lab.tp) {
-    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Un monstre qui marche ici réapparaît aussitôt sur la sortie rouge de la même forme.', pour: 'Sens unique' };
+    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Les monstres passent dessus sans le prendre. Fermez-leur tout autre passage avec vos murs : ils sont alors obligés d’y entrer, et ressortent par le téléporteur rouge de la même forme.', pour: 'Sens unique' };
     if (ici(t.b)) return { titre: 'Téléporteur : sortie', texte: 'Les monstres entrés par le téléporteur bleu de la même forme réapparaissent ici.', pour: 'Sens unique' };
   }
   if (ici(lab.entree)) return { titre: 'Entrée', texte: 'Les monstres arrivent par ici.', pour: '' };

@@ -180,12 +180,16 @@ test('entre les vagues, poses et ventes sont immédiates ; un mur vendu rend tou
   assert.equal(poserMur(s, 23, 5).raison, 'place', 'pas sur la sortie');
 });
 
-test('téléporteur : le monstre saute de l\'entrée à la sortie sans glisser, et ne le prend que s\'il raccourcit', () => {
-  // Raccourci : (5, 5) -> (18, 5).
+test('téléporteur : jamais pris de lui-même, même s\'il raccourcit ; pris quand les murs l\'imposent, sans glisser', () => {
+  // Raccourci (5, 5) -> (18, 5) sur la ligne droite des monstres : ils marchent dessus sans le prendre.
+  const libre = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } }] });
+  assert.ok(!libre.carte.sol.points.some((p) => p.saut), 'pas de saut tant qu\'un chemin à pied existe');
+  assert.equal(libre.carte.sol.longueur, 23 * T);
+  assert.ok(libre.carte.cheminCases.some(([c, r]) => c === 5 && r === 5), 'il passe sur l\'entrée sans la prendre');
+  // Le joueur ferme la colonne 10 : le seul passage est le téléporteur.
   const s = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } }] });
-  const pts = s.carte.sol.points;
-  assert.ok(pts.some((p) => p.saut), 'le trajet passe par le téléporteur');
-  assert.ok(s.carte.sol.longueur < 23 * T);
+  for (let r = 0; r < ROWS; r++) assert.ok(poserMur(s, 10, r).ok);
+  assert.ok(s.carte.sol.points.some((p) => p.saut), 'le téléporteur est le seul passage');
   const e = premierMonstre(s);
   let saut = null, prec = { x: e.x, y: e.y };
   for (let i = 0; i < 60 * 60 && s.ennemis.includes(e); i++) {
@@ -198,12 +202,12 @@ test('téléporteur : le monstre saute de l\'entrée à la sortie sans glisser, 
   assert.ok(saut, 'un saut a eu lieu');
   assert.ok(Math.abs(saut.avant.x - centre(5)) < 2 && Math.abs(saut.avant.y - centre(5)) < 2, 'part de l\'entrée');
   assert.ok(Math.abs(saut.apres.x - centre(18)) < 2 && Math.abs(saut.apres.y - centre(5)) < 2, 'arrive à la sortie');
-  // Détour : (10, 5) -> (11, 12) allongerait le trajet, les monstres l'évitent.
-  const t = partieSur({ tp: [{ forme: 'rond', a: { c: 10, r: 5 }, b: { c: 11, r: 12 } }] });
+  // Détour : (10, 5) -> (14, 12). À pied, les monstres passent sur l'entrée sans la prendre.
+  const t = partieSur({ tp: [{ forme: 'rond', a: { c: 10, r: 5 }, b: { c: 14, r: 12 } }] });
   assert.ok(!t.carte.sol.points.some((p) => p.saut));
-  assert.ok(!t.carte.cheminCases.some(([c, r]) => c === 10 && r === 5));
-  // Passage obligé : un mur ferme toute la colonne sauf la case du téléporteur, même s'il rallonge.
-  for (let r = 0; r < ROWS; r++) if (r !== 5) assert.ok(poserMur(t, 10, r).ok);
+  assert.ok(t.carte.cheminCases.some(([c, r]) => c === 10 && r === 5));
+  // Passage obligé : un mur ferme toute la colonne 12 ; le téléporteur passe par-dessus, même s'il rallonge.
+  for (let r = 0; r < ROWS; r++) assert.ok(poserMur(t, 12, r).ok);
   assert.ok(t.carte.sol.points.some((p) => p.saut), 'le téléporteur est le seul passage');
   assert.ok(t.carte.sol.longueur > 23 * T);
 });

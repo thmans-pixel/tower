@@ -31,8 +31,9 @@ chaque monstre qui atteint la sortie **en coûte**.
   (bleu), **sorties en rouge** ; l'entrée et la sortie d'une même paire portent la même forme (rond, losange).
 - **Construction** : le joueur pose des **murs** (bon marché, ne tirent pas) et ses **tours** habituelles. Murs et
   tours bloquent le passage. Les monstres prennent toujours **le plus court chemin** (cases voisines, sans diagonale)
-  qui respecte l'ordre des checkpoints. Ils ne choisissent un TP que s'il raccourcit leur trajet, ou si les murs ne
-  leur laissent pas d'autre passage. Il est **interdit de boucher** : une pose qui ne laisse plus aucun chemin
+  qui respecte l'ordre des checkpoints. **Ils ne prennent jamais un TP d'eux-mêmes**, même s'il raccourcit : ils
+  marchent dessus sans l'emprunter. Ils n'y entrent que lorsque les murs du joueur ne leur laissent aucun passage à
+  pied (correction de Thibault, 2026-11-24 : c'est au joueur de les y obliger quand il le veut). Il est **interdit de boucher** : une pose qui ne laisse plus aucun chemin
   complet (TP compris) est refusée (« Le passage serait bouché »).
 - **Le labyrinthe ne change qu'entre les vagues, mais on peut tout préparer pendant** : pendant une vague, un mur ou
   une tour posés apparaissent **en transparence** (« prévus »), une vente marque l'élément « à retirer ». L'or d'une
@@ -87,7 +88,7 @@ Logique (`npm test`) :
    — *Vérification :* test comparant `longueur`.
 6. [x] Un monstre qui atteint l'entrée d'un TP se retrouve à sa sortie au pas suivant, sans glisser entre les deux.
    Sur une carte où les murs ne laissent que le TP comme passage, le trajet passe par lui même s'il est plus long ;
-   sinon les monstres ne le prennent que s'il raccourcit. — *Vérification :* tests sur cartes à graine fixe.
+   sinon ils marchent dessus sans le prendre, même s'il raccourcirait. — *Vérification :* tests sur cartes à graine fixe.
 7. [x] Un monstre mis à terre donne +1 vie et la moitié de son or, garde sa position, repart PV pleins et reste dans la vague.
    — *Vérification :* test avec `blesser` sur un monstre immobile.
 8. [x] Un monstre qui sort retire ses vies et disparaît ; la vague suivante n'arrive qu'une fois tous les monstres
@@ -246,7 +247,7 @@ en une dizaine de vagues. Thibault a choisi la correction « le monstre revient 
 - Vies perdues à la sortie : valeurs actuelles (1, 2, 3, 10 pour l'Ogre).
 - Or d'une mise à terre : la moitié.
 - TP : placés au hasard, parfois utiles pour rallonger, parfois non ; entrées d'une couleur, sorties rouges, une forme
-  par paire.
+  par paire. Correction du 2026-11-24 : jamais pris d'eux-mêmes, seulement quand les murs ne laissent pas d'autre passage.
 - Prix du mur : 5 or pour commencer, revendu au prix plein ; à régler au lot 3 avec le joueur automatique.
 - Équilibre (lot 3) : un monstre mis à terre revient plus fort (+ 30 % de PV à chaque fois) ; mur ramené à 2 or.
 

@@ -341,7 +341,7 @@ export class Interface {
           <li>Posez des <b>murs</b> et des tours : les monstres prennent le plus court chemin par les drapeaux, dans l’ordre.</li>
           <li>Un monstre mis à terre se relève… et vous donne <b>1 vie</b>. Celui qui atteint la sortie vous en coûte.</li>
           <li>Gagnez en atteignant <b>${LABYRINTHE.objectif} vies</b> (départ : ${DIFFICULTES[prog.difficulte].vies}).</li>
-          <li>Téléporteurs : on entre par le bleu, on ressort par le rouge de la même forme.</li>
+          <li>Téléporteurs : les monstres ne les prennent que si vos murs ne leur laissent pas d’autre passage ; ils entrent par le bleu et ressortent par le rouge de la même forme.</li>
         </ul>
         <button id="b-jouer-laby" class="grand">Jouer ce terrain</button>
         <button id="b-autre-laby" class="petit">Un autre terrain</button>
