@@ -98,8 +98,18 @@ function plusCourt(lab, bloques, de, vers, avecTp) {
 export function cheminLabyrinthe(lab, bloques) {
   const etapes = [lab.entree, ...lab.cp, lab.sortie];
   const tout = [];
+  const vus = new Map();   // tronçon à pied déjà calculé, par couple de points : l'aller et le retour suivent le même chemin
   for (let i = 0; i + 1 < etapes.length; i++) {
-    const morceau = plusCourt(lab, bloques, etapes[i], etapes[i + 1], false) || plusCourt(lab, bloques, etapes[i], etapes[i + 1], true);
+    const de = etapes[i], vers = etapes[i + 1];
+    const kd = cle(de.c, de.r), kv = cle(vers.c, vers.r);
+    const sens = kd <= kv;
+    const kc = sens ? kd + '|' + kv : kv + '|' + kd;
+    let pied = vus.get(kc);
+    if (pied === undefined) {
+      pied = sens ? plusCourt(lab, bloques, de, vers, false) : plusCourt(lab, bloques, vers, de, false);   // toujours calculé dans le même sens
+      vus.set(kc, pied);
+    }
+    const morceau = pied ? (sens ? pied : [...pied].reverse()) : plusCourt(lab, bloques, de, vers, true);
     if (!morceau) return null;
     tout.push(...(i === 0 ? morceau : morceau.slice(1)));
   }
