@@ -8,7 +8,7 @@ import { LABYRINTHE } from './data/labyrinthe.js';
 import { aideCase } from './render/labyrinthe.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
 import { CHEMIN } from './sim/carte.js';
-import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, aleatoireOuvert, progressionVide } from './sim/progression.js';
+import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, enregistrerLabyrinthe, aleatoireOuvert, progressionVide } from './sim/progression.js';
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
 import { charger, enregistrer, effacer } from './ui/sauvegarde.js';
@@ -168,7 +168,7 @@ async function commencer(id, memeTerrain = false) {
   idCarte = id;
   const maze = id === 'labyrinthe';
   if (maze && !memeTerrain) laby.graine = numeroAuHasard();
-  if (maze) laby.vignette = null;
+  if (maze) { laby.vignette = null; mode = 'labyrinthe'; }
   const d = await decorsDe(maze ? 'prairie' : typeof id === 'object' ? id.id : id);
   partie = nouvellePartie(id, progression.difficulte, { infini: !maze && typeof id !== 'object' && mode === 'infini' && progression.infiniOuvert, graine: laby.graine });
   vue.preparer(partie.carte, d);
@@ -224,7 +224,12 @@ function basculerSon() {
 function bilanPartie(s) {
   const bilan = { etoiles: s.labyrinthe ? 0 : etoilesPartie(s), nouvelles: [], infini: false, record: false };
   if (s.labyrinthe) {
-    // Records du labyrinthe : lot 3 de la spec 016.
+    if (s.fin === 'victoire') {
+      const r = enregistrerLabyrinthe(progression, s.difficulte, s.vague);
+      progression = r.progression;
+      enregistrer(progression);
+      bilan.record = r.record;
+    }
   } else if (s.carte.def.aleatoire) {
     if (s.fin === 'victoire') { progression = enregistrerAleatoire(progression, s.difficulte); enregistrer(progression); }
   } else if (s.infini) {

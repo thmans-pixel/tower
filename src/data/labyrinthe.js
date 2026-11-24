@@ -5,6 +5,9 @@ export const LABYRINTHE = {
   orDepart: 250,
   prixMur: 5,             // revendu au prix plein
   partOr: 0.5,            // part de l'or habituel rendue par une mise à terre
+  tailleVagues: 0.5,      // effectifs des vagues générées (1 = ceux du mode infini)
+  multPV: 1,              // PV de base des monstres, multipliés (ils rapportent des vies : il faut qu'ils résistent)
+  pvParVague: 0.06,       // PV en plus par vague : sans cela, la partie est gagnée en quelques vagues
   checkpoints: [3, 5],    // nombre de checkpoints : de 3 à 5
   paires: [1, 2],         // paires de téléporteurs : 1 ou 2
   nbZones: 8,

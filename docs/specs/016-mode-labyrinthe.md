@@ -101,7 +101,7 @@ Logique (`npm test`) :
     — *Vérification :* lancer `npm run simulate`.
 
 Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 tools/serveur.py`) :
-13. [ ] Le menu propose « Labyrinthe » avec le choix de difficulté et le record ; `?jouer=labyrinthe` démarre direct.
+13. [x] Le menu propose « Labyrinthe » avec le choix de difficulté et le record ; `?jouer=labyrinthe` démarre direct.
 14. [x] Checkpoints (drapeaux numérotés), TP (entrées bleues, sorties rouges, même forme par paire), zones (icône et teinte par sorte)
     et sortie sont visibles et reconnaissables ; une fiche explique chaque zone au survol (appui long sur téléphone).
 15. [x] **Le trajet des monstres est tracé** à l'écran (pointillés avec flèches) et se met à jour à chaque mur posé
@@ -118,7 +118,7 @@ Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 
 19. [ ] Le joueur automatique a une stratégie labyrinthe (serpentin de murs, tours le long du trajet) : en Normal il
     gagne en 25 vagues environ ; sans mur il perd. Les chiffres retenus sont notés dans le CLAUDE.md.
     — *Vérification :* `npm run simulate -- labyrinthe` (ou équivalent) sur 10 graines.
-20. [ ] Les records du labyrinthe sont sauvegardés, passent dans le code de transfert, et un ancien code reste lisible.
+20. [x] Les records du labyrinthe sont sauvegardés, passent dans le code de transfert, et un ancien code reste lisible.
     — *Vérification :* test de `transfert.js` avec un code produit avant la spec.
 
 ## Conception
@@ -212,6 +212,38 @@ téléphone en paysage, au doigt), sans erreur dans la console.
 - Ajouts à la logique pour l'aperçu : `trajetPrevu`, `caseLibre` (testés).
 - À vérifier à la main par Thibault : le confort de la pose des murs à la souris et au doigt, la lisibilité des zones
   et des téléporteurs, le son des mises à terre.
+
+**Lot 3 — équilibre et sauvegarde (fait en partie).** Critères 13 et 20 cochés ; le **19 n'est pas atteint**.
+- Records : `enregistrerLabyrinthe` (le moins de vagues pour gagner, par difficulté), affichés au menu et à la fin
+  (« Nouveau record ! »). Code de transfert : trois nombres de plus, ajoutés seulement s'il y a un record ; un
+  ancien code reste lisible et ne change pas. Réunir deux appareils garde le meilleur record.
+- Joueur automatique : `jouerLabyrinthe` dans `tests/simulate.js`, lancé par `node tests/simulate.js labyrinthe`
+  (10 terrains par difficulté, puis sans mur).
+- Chiffres retenus (`src/data/labyrinthe.js`) : vagues deux fois moins fournies que le mode infini
+  (`tailleVagues` 0,5), PV + 6 % par vague (`pvParVague`), or de départ 250, mur 5 or. Résultats du joueur
+  automatique en Normal : il gagne 3 terrains sur 10 (en 5 à 12 vagues) et perd les autres vers la vague 10 ;
+  **sans mur il fait mieux** (5 sur 10). Facile : 9 sur 10, en 3 à 6 vagues. Difficile : 2 sur 10.
+- Correction en passant : l'aperçu « Prochaine : … » restait celui de la partie précédente en changeant de mode.
+
+### Pourquoi le critère 19 n'est pas atteint
+Environ 60 réglages essayés (PV de base, PV par vague, taille des vagues, or de départ, prix du mur, ordre de
+construction du joueur automatique). Aucun ne donne « gagne en 25 vagues environ, perd sans mur ». Trois raisons,
+qui tiennent aux règles et non aux chiffres :
+1. **Les dégâts d'une tour se partagent entre les monstres.** Le nombre de mises à terre d'une vague dépend surtout
+   du nombre de tours, peu de la longueur du trajet (sauf si les tours sont dans les replis du labyrinthe). Un
+   labyrinthe complet offert gratuitement aide nettement ; payé 5 or le mur, il ne rattrape pas le même or mis en tours.
+2. **Effet boule de neige.** Chaque mise à terre rapporte une vie *et* de l'or, donc des tours, donc plus de mises à
+   terre : la partie s'emballe ou s'effondre en une dizaine de vagues. Entre « trop facile » et « perdu d'avance »,
+   la marge est très étroite (PV × 1 : gagné vers la vague 8 ; PV × 2 : perdu vers la vague 5).
+3. **L'Ogre de la vague 10 coûte 10 vies** à la sortie et n'en rend qu'une ou deux : la plupart des défaites tombent là.
+
+### Corrections proposées (à valider par Thibault avant tout code)
+- **A. Le monstre revient plus fort** : chaque mise à terre lui ajoute des PV (par exemple + 30 %). Les gains d'une
+  vague plafonnent, la partie ne s'emballe plus, et un long trajet redevient utile. *Recommandé.*
+- **B. L'or seulement au premier passage** : une mise à terre rapporte toujours une vie, mais l'or n'est versé
+  qu'une fois par monstre. Coupe la boule de neige côté or.
+- **C. L'Ogre ne coûte que 3 vies** dans ce mode.
+- **D. Ne rien changer aux règles** : parties courtes (une dizaine de vagues), on règle les chiffres en jouant.
 
 ## Décisions de Thibault (2026-11-24)
 - Pendant une vague on peut tout faire : poses et ventes restent en transparence et ne s'appliquent qu'entre les

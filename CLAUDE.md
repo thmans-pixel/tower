@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (lots 1 et 2 faits : logique et écran ; reste le lot 3, équilibre et records). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (logique, écran, records et transfert faits ; équilibre à revoir : critère 19 non atteint, voir « Livraison » de la spec). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -99,6 +99,10 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   passe par `batir` / `retirer` (main.js) ; aperçu du futur trajet par `trajetPrevu` ; `ui.caseLibre` sert au
   surlignage des cases (pas de recherche de chemin par case) ; bulle `#aide-case` (`Interface.majAide`) ; touche V =
   `vue.barres` (`progression.barresVie`) ; `?jouer=labyrinthe&graine=5` rejoue un terrain précis.
+  Records : `enregistrerLabyrinthe` (`progression.labyrinthe[difficulte]` = moins de vagues pour gagner), portés par le
+  code de transfert seulement s'il y en a. Joueur automatique : `node tests/simulate.js labyrinthe` (`jouerLabyrinthe`,
+  serpentin de murs). Repères actuels en Normal : 3 terrains gagnés sur 10 (5 à 12 vagues), 5 sur 10 sans mur ; Facile
+  9 sur 10 ; Difficile 2 sur 10. Le mode s'emballe ou s'effondre vite : ne pas chercher à régler par les seuls chiffres.
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
 - Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour

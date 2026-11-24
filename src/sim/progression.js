@@ -3,7 +3,7 @@
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, barresVie: false, infiniOuvert: false };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, barresVie: false, infiniOuvert: false };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -51,6 +51,18 @@ export function enregistrerInfini(p, carte, score) {
   return { progression: q, record };
 }
 
+/**
+ * Labyrinthe (spec 016) : garde, par difficulté, le plus petit nombre de vagues qu'il a fallu pour gagner.
+ * Renvoie { progression, record: vrai si battu (ou premier) }.
+ */
+export function enregistrerLabyrinthe(p, difficulte, vagues) {
+  const q = structuredClone(p);
+  const ancien = q.labyrinthe[difficulte] || 0;
+  const record = vagues > 0 && (!ancien || vagues < ancien);
+  if (record) q.labyrinthe[difficulte] = vagues;
+  return { progression: q, record };
+}
+
 /** Le mode infini se joue sur une carte gagnée au moins une fois, une fois la Montagne battue. */
 export const infiniJouable = (p, carte) => p.infiniOuvert && Object.values(p.etoiles[carte] || {}).some((n) => n > 0);
 
@@ -68,6 +80,7 @@ export function relire(brut) {
   if (brut.infini && typeof brut.infini === 'object') for (const c of ORDRE_CARTES) if (Number.isInteger(brut.infini[c])) p.infini[c] = brut.infini[c];
   if (['facile', 'normal', 'difficile'].includes(brut.difficulte)) p.difficulte = brut.difficulte;
   if (brut.aleatoires && typeof brut.aleatoires === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.aleatoires[d])) p.aleatoires[d] = brut.aleatoires[d];
+  if (brut.labyrinthe && typeof brut.labyrinthe === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.labyrinthe[d]) && brut.labyrinthe[d] > 0) p.labyrinthe[d] = brut.labyrinthe[d];
   if (typeof brut.son === 'boolean') p.son = brut.son;
   if (typeof brut.effetsReduits === 'boolean') p.effetsReduits = brut.effetsReduits;
   if (typeof brut.barresVie === 'boolean') p.barresVie = brut.barresVie;

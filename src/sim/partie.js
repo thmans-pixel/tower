@@ -25,7 +25,7 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
   const s = {
-    difficulte, multPV: diff.pv, pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
+    difficulte, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: maze ? carteMaze : construireCarte(def),
     labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [] } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
@@ -298,7 +298,8 @@ export function appelerVague(s) {
 
 /** Groupes de la vague n : ceux de la carte, ou tirés au hasard (à graine) en mode infini. */
 function vagueN(s, n) {
-  return s.infini || s.labyrinthe ? genererVague(s.carte.def.graine, n) : s.carte.def.vagues[n - 1];
+  if (s.labyrinthe) return genererVague(s.carte.def.graine, n, LABYRINTHE.tailleVagues);
+  return s.infini ? genererVague(s.carte.def.graine, n) : s.carte.def.vagues[n - 1];
 }
 
 /** Score du mode infini : nombre de vagues entièrement repoussées (lancées, et plus aucun de leurs ennemis). */

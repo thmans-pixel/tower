@@ -26,9 +26,11 @@ function resumeProgression(p) {
   const etoiles = Object.values(p.etoiles).reduce((t, e) => t + Object.values(e).reduce((a, b) => a + b, 0), 0);
   const records = ORDRE_CARTES.filter((c) => p.infini[c]).map((c) => `${CARTES[c].nom} ${p.infini[c]}`);
   const alea = Object.values(p.aleatoires).reduce((a, b) => a + b, 0);
+  const laby = ORDRE_DIFFICULTES.filter((d) => (p.labyrinthe || {})[d]).map((d) => `${DIFFICULTES[d].nom} ${p.labyrinthe[d]} vagues`);
   return [`cartes ouvertes : ${cartes}`, `${etoiles} étoile${etoiles > 1 ? 's' : ''}`,
     records.length ? `records du mode infini : ${records.join(', ')}` : '',
-    alea ? `${alea} carte${alea > 1 ? 's' : ''} aléatoire${alea > 1 ? 's' : ''} gagnée${alea > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') + '.';
+    alea ? `${alea} carte${alea > 1 ? 's' : ''} aléatoire${alea > 1 ? 's' : ''} gagnée${alea > 1 ? 's' : ''}` : '',
+    laby.length ? `records du labyrinthe : ${laby.join(', ')}` : ''].filter(Boolean).join(' · ') + '.';
 }
 
 /** Fiche du mur (boutique du labyrinthe). */
@@ -343,7 +345,7 @@ export class Interface {
         </ul>
         <button id="b-jouer-laby" class="grand">Jouer ce terrain</button>
         <button id="b-autre-laby" class="petit">Un autre terrain</button>
-        <p class="alea-note">Le terrain est tiré au sort à chaque partie.</p>
+        <p class="alea-note">Le terrain est tiré au sort à chaque partie.<br>Record en ${DIFFICULTES[prog.difficulte].nom} : <b>${(prog.labyrinthe || {})[prog.difficulte] ? `gagné en ${prog.labyrinthe[prog.difficulte]} vague${prog.labyrinthe[prog.difficulte] > 1 ? 's' : ''}` : 'aucun'}</b></p>
       </div></div>`;
     if (laby.vignette) zone.querySelector('.alea-apercu').appendChild(laby.vignette);
     $('b-jouer-laby').onclick = () => this.a.jouerLabyrinthe();
@@ -456,7 +458,7 @@ export class Interface {
     appel.classList.toggle('attente', attente);
 
     const prochaine = s.vague + 1;
-    const cleApercu = prochaine;
+    const cleApercu = prochaine + '|' + s.carte.def.id + '|' + s.carte.def.graine + '|' + !!s.infini;   // la partie change : l'aperçu aussi
     if (this.cache.apercu !== cleApercu) {
       this.cache.apercu = cleApercu;
       const comp = composition(s, prochaine);
