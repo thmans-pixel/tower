@@ -2,9 +2,12 @@
 import { W, H, T, DT, COLS, ROWS } from './sim/const.js';
 import { CARTES } from './data/cartes.js';
 import { TOURS, ORDRE_TOURS } from './data/tours.js';
-import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret } from './sim/partie.js';
+import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret,
+  poserMur, vendreMur, annulerPrevu, raisonPose, caseLibre } from './sim/partie.js';
+import { LABYRINTHE } from './data/labyrinthe.js';
+import { aideCase } from './render/labyrinthe.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
-import { CHEMIN, LIBRE } from './sim/carte.js';
+import { CHEMIN } from './sim/carte.js';
 import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, aleatoireOuvert, progressionVide } from './sim/progression.js';
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
@@ -41,26 +44,34 @@ let apercu = null;          // carte affichée derrière les écrans de menu
 let idCarte = 'prairie';
 let mode = 'campagne';         // choix de l'écran des cartes : campagne, carte aléatoire ou mode infini
 const alea = { theme: 'prairie', longueur: 25, graine: numeroAuHasard(), vignette: null };
+const laby = { graine: numeroAuHasard(), vignette: null };   // terrain du labyrinthe montré au menu, puis joué
 let progression = charger();   // cartes débloquées, étoiles, difficulté choisie, son
 son.actif = progression.son;
 son.volMusique = progression.volMusique;
 son.volEffets = progression.volEffets;
 vue.reduits = progression.effetsReduits;
+vue.barres = progression.barresVie;
 let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
 const ui = {
   construction: null, fantome: null, selection: null, pouvoir: null, visee: null,
   verrou: null,     // tour verrouillée par un appui long (tablette) : on en pose plusieurs à la suite
   peutPoser: (c, r) => partie && peutPoser(partie, c, r),
-  surChemin: (c, r) => partie && partie.carte.etat(c, r) === CHEMIN,
+  caseLibre: (c, r) => partie && caseLibre(partie, c, r),
+  raisonPose: (c, r) => (partie ? raisonPose(partie, c, r) : 'place'),
+  surChemin: (c, r) => partie && (partie.labyrinthe ? partie.carte.cheminCases.some(([i, j]) => i === c && j === r) : partie.carte.etat(c, r) === CHEMIN),
+  survol: null,     // case sous la souris (bulle d'aide du labyrinthe)
+  aide: null,       // case touchée au doigt : sa bulle reste quelques secondes
 };
+const prixDe = (sorte) => (sorte === 'mur' ? LABYRINTHE.prixMur : TOURS[sorte].prix);
+const cleCase = (c, r) => r * COLS + c;
 
 const interfaceJeu = new Interface({
-  construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon, effets: basculerEffets,
+  construire, pouvoir: choisirPouvoir, verrouiller, appel, pause: basculerPause, vitesse: changerVitesse, son: basculerSon, effets: basculerEffets, barres: basculerBarres,
   volumes: () => ({ musique: son.volMusique, effets: son.volEffets }),
   volume: (voie, v) => { if (voie === 'musique') son.volMusique = progression.volMusique = v; else son.volEffets = progression.volEffets = v; son.appliquer(); enregistrer(progression); },
   essaiSon: () => son.jouer('piece'),
-  recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte)),
+  recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte, true)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
   difficulte: (d) => { progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
@@ -73,12 +84,18 @@ const interfaceJeu = new Interface({
     son.jouer('clic');
   },
   jouerAleatoire: () => commencer(genererCarte(alea.graine, alea.theme, alea.longueur)),
+  jouerLabyrinthe: () => commencer('labyrinthe', true),
+  autreLabyrinthe: () => { laby.vignette = null; afficherCartes(); son.jouer('clic'); },
   progression: () => progression,
   reunir: (q) => { progression = fusionner(progression, q); enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   effacer: () => { effacer(); progression = progressionVide(); mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
-  vendre: () => { if (partie && vendre(partie, ui.selection).ok) ui.selection = null; },
+  vendre: () => { const r = partie && vendre(partie, ui.selection); if (r && r.ok && !r.prevu) ui.selection = null; },
+  annulerVente: () => {
+    const t = partie && partie.tours.find((x) => x.id === ui.selection);
+    if (t && !annulerPrevu(partie, t.c, t.r).ok) { son.jouer('erreur'); vue.texte(t.x, t.y - 30, 'Le passage serait bouché', '#ff8a7a'); }
+  },
   cibler: (m) => { if (partie) { cibler(partie, ui.selection, m); son.jouer('clic'); } },
 });
 
@@ -88,7 +105,7 @@ async function decorsDe(id) {
 
 function montrer(nom) {
   ecran = nom;
-  if (nom !== 'jeu') { partie = null; ui.selection = null; ui.construction = null; enPause = false; }
+  if (nom !== 'jeu') { partie = null; ui.selection = null; ui.construction = null; enPause = false; ui.aide = null; }
   interfaceJeu.montrerEcran(nom);
   if (nom === 'cartes') afficherCartes();
 }
@@ -107,7 +124,11 @@ function vignette(id) {
 function afficherCartes() {
   if ((mode === 'infini' && !progression.infiniOuvert) || (mode === 'aleatoire' && !aleatoireOuvert(progression))) mode = 'campagne';
   if (mode === 'aleatoire' && !alea.vignette) { vignetteAleatoire().then((v) => { alea.vignette = v; afficherCartes(); }); }
-  interfaceJeu.listeCartes(CARTES, vignette, progression, mode, alea);
+  if (mode === 'labyrinthe' && !laby.vignette) {   // un nouveau terrain à chaque passage par le menu
+    laby.graine = numeroAuHasard();
+    vignetteLabyrinthe().then((v) => { laby.vignette = v; afficherCartes(); });
+  }
+  interfaceJeu.listeCartes(CARTES, vignette, progression, mode, alea, laby);
 }
 
 function numeroAuHasard() {
@@ -127,13 +148,31 @@ async function vignetteAleatoire() {
   return t;
 }
 
-/** `id` : nom d'une carte de la campagne, ou description d'une carte aléatoire (genererCarte). */
-async function commencer(id) {
+/** Aperçu du terrain de labyrinthe proposé au menu. */
+async function vignetteLabyrinthe() {
+  const t = document.createElement('canvas');
+  t.width = W; t.height = H;
+  const v = new Vue(t);
+  const etat = nouvellePartie('labyrinthe', 'normal', { graine: laby.graine });
+  v.modeles = vue.modeles;
+  v.preparer(etat.carte, await decorsDe('prairie'));
+  v.dessiner(etat, { construction: null, selection: null }, 0);
+  return t;
+}
+
+/**
+ * `id` : nom d'une carte de la campagne, description d'une carte aléatoire (genererCarte), ou 'labyrinthe'.
+ * `memeTerrain` (labyrinthe) : rejoue le terrain en cours au lieu d'en tirer un nouveau.
+ */
+async function commencer(id, memeTerrain = false) {
   idCarte = id;
-  const d = await decorsDe(typeof id === 'object' ? id.id : id);
-  partie = nouvellePartie(id, progression.difficulte, { infini: typeof id !== 'object' && mode === 'infini' && progression.infiniOuvert });
+  const maze = id === 'labyrinthe';
+  if (maze && !memeTerrain) laby.graine = numeroAuHasard();
+  if (maze) laby.vignette = null;
+  const d = await decorsDe(maze ? 'prairie' : typeof id === 'object' ? id.id : id);
+  partie = nouvellePartie(id, progression.difficulte, { infini: !maze && typeof id !== 'object' && mode === 'infini' && progression.infiniOuvert, graine: laby.graine });
   vue.preparer(partie.carte, d);
-  Object.assign(ui, { construction: null, fantome: null, selection: null, pouvoir: null, visee: null });
+  Object.assign(ui, { construction: null, fantome: null, selection: null, pouvoir: null, visee: null, verrou: null, aide: null });
   vitesse = 1; enPause = false; reste = 0; finMontree = false;
   interfaceJeu.signature = '';
   ecran = 'jeu';
@@ -141,7 +180,7 @@ async function commencer(id) {
 }
 
 function construire(sorte) {
-  if (!partie || partie.fin) return;
+  if (!partie || partie.fin || (sorte === 'mur' && !partie.labyrinthe)) return;
   ui.construction = ui.construction === sorte ? null : sorte;
   if (ui.verrou !== ui.construction) ui.verrou = null;
   ui.selection = null; ui.pouvoir = null; ui.visee = null;
@@ -167,6 +206,13 @@ function basculerEffets() {
   enregistrer(progression);
 }
 
+function basculerBarres() {
+  vue.barres = !vue.barres;
+  progression.barresVie = vue.barres;
+  enregistrer(progression);
+  son.jouer('clic');
+}
+
 function basculerSon() {
   son.actif = !son.actif;
   progression.son = son.actif;
@@ -176,8 +222,10 @@ function basculerSon() {
 
 /** Fin de partie : étoiles et déblocages enregistrés, puis l'écran de fin. */
 function bilanPartie(s) {
-  const bilan = { etoiles: etoilesPartie(s), nouvelles: [], infini: false, record: false };
-  if (s.carte.def.aleatoire) {
+  const bilan = { etoiles: s.labyrinthe ? 0 : etoilesPartie(s), nouvelles: [], infini: false, record: false };
+  if (s.labyrinthe) {
+    // Records du labyrinthe : lot 3 de la spec 016.
+  } else if (s.carte.def.aleatoire) {
     if (s.fin === 'victoire') { progression = enregistrerAleatoire(progression, s.difficulte); enregistrer(progression); }
   } else if (s.infini) {
     const r = enregistrerInfini(progression, idCarte, scoreInfini(s));
@@ -234,10 +282,17 @@ function lancerPouvoir(v) {
 
 toile.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse') return;
-  if (ui.construction) ui.fantome = caseSous(e);
+  const k = caseSous(e);
+  ui.survol = k;
+  if (ui.construction) {
+    // Souris enfoncée avec l'outil Mur : on trace une ligne de murs en glissant.
+    const change = !ui.fantome || ui.fantome.c !== k.c || ui.fantome.r !== k.r;
+    ui.fantome = k;
+    if (change && ui.construction === 'mur' && e.buttons === 1 && partie && caseLibre(partie, k.c, k.r) && partie.or >= LABYRINTHE.prixMur) poserMur(partie, k.c, k.r);
+  }
   if (ui.pouvoir) ui.visee = pointSous(e);
 });
-toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { ui.fantome = null; ui.visee = null; } });
+toile.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { ui.fantome = null; ui.visee = null; ui.survol = null; } });
 toile.addEventListener('contextmenu', (e) => { e.preventDefault(); ui.construction = null; ui.selection = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; });
 toile.addEventListener('pointerdown', (e) => {
   son.reveiller();
@@ -248,17 +303,39 @@ toile.addEventListener('pointerdown', (e) => {
 
 /** Pose la tour choisie en (c, r) ; `serie` garde la tour choisie s'il reste assez d'or. */
 function batir(c, r, serie) {
-  const res = poser(partie, ui.construction, c, r);
+  const mur = ui.construction === 'mur';
+  // L'outil Mur retire un mur déjà là (ou annule un mur prévu) : on dessine et on gomme avec le même outil.
+  if (mur && (partie.labyrinthe.murs.has(cleCase(c, r)) || partie.labyrinthe.prevus.some((p) => p.c === c && p.r === r && p.type === 'poseMur'))) { retirer(c, r); return; }
+  const res = mur ? poserMur(partie, c, r) : poser(partie, ui.construction, c, r);
   if (res.ok) {
-    if (serie && partie.or >= TOURS[ui.construction].prix) ui.fantome = mobile.actif ? null : ui.fantome;
+    if (res.prevu) { son.jouer('clic'); vue.texte(c * T + T / 2, r * T - 6, 'Prévu', '#8fe0ff'); }
+    if ((serie || mur) && partie.or >= prixDe(ui.construction)) ui.fantome = mobile.actif ? null : ui.fantome;
     else {
-      if (serie) vue.texte(c * T + T / 2, r * T - 16, 'Pas assez d’or', '#ff8a7a');
+      if (serie || mur) vue.texte(c * T + T / 2, r * T - 22, 'Pas assez d’or', '#ff8a7a');
       ui.construction = null; ui.fantome = null; ui.verrou = null;
     }
   } else {
     son.jouer('erreur');
-    vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
+    if (res.raison !== 'bouche') vue.texte(c * T + T / 2, r * T, res.raison === 'or' ? 'Pas assez d’or' : 'Impossible ici', '#ff8a7a');
   }
+}
+
+/** Labyrinthe : retire le mur de la case, ou annule ce qui y était prévu. Renvoie vrai si la case était concernée. */
+function retirer(c, r) {
+  const l = partie.labyrinthe;
+  const prevu = l.prevus.find((p) => p.c === c && p.r === r);
+  if (prevu && prevu.type === 'venteTour') return false;   // une tour à vendre se gère dans son panneau
+  if (!prevu && !l.murs.has(cleCase(c, r))) return false;
+  const x = c * T + T / 2, y = r * T - 6;
+  if (prevu) {
+    const res = annulerPrevu(partie, c, r);
+    if (res.ok) { son.jouer('clic'); vue.texte(x, y, 'Annulé', '#8fe0ff'); }
+    else { son.jouer('erreur'); vue.texte(x, y, 'Le passage serait bouché', '#ff8a7a'); }
+    return true;
+  }
+  const res = vendreMur(partie, c, r);
+  if (res.ok && res.prevu) { son.jouer('clic'); vue.texte(x, y, 'Retiré à la fin de la vague', '#8fe0ff'); }
+  return true;
 }
 
 /** Un clic ou un toucher sur la carte. */
@@ -283,6 +360,10 @@ function toucher(e) {
   const t = partie.tours.find((x) => x.c === c && x.r === r);
   ui.selection = t ? t.id : null;
   if (t) son.jouer('clic');
+  if (partie.labyrinthe && !t) {
+    // Sans outil : toucher un mur le vend, toucher un élément prévu l'annule, toucher une zone montre son aide.
+    if (!retirer(c, r) && doigt) ui.aide = aideCase(partie.carte.lab, c, r) ? { c, r, fin: performance.now() + 4500 } : null;
+  }
 }
 
 // Mode mobile (spec 015) : gestes, zoom, boutons ✔ / ✖.
@@ -304,8 +385,9 @@ function majConfirmation() {
   if (!partie || partie.fin || ecran !== 'jeu') return mobile.majConfirmation(null);
   if (ui.construction && ui.fantome) {
     const { c, r } = ui.fantome;
-    const libre = c >= 0 && r >= 0 && c < COLS && r < ROWS && partie.carte.etat(c, r) === LIBRE && !partie.tours.some((t) => t.c === c && t.r === r);
-    return mobile.majConfirmation({ x: c * T + T / 2, y: r * T + T / 2 }, 'Bâtir', libre && partie.or >= TOURS[ui.construction].prix);
+    const mur = ui.construction === 'mur' && (partie.labyrinthe.murs.has(cleCase(c, r)) || partie.labyrinthe.prevus.some((p) => p.c === c && p.r === r));
+    const libre = c >= 0 && r >= 0 && c < COLS && r < ROWS && peutPoser(partie, c, r);
+    return mobile.majConfirmation({ x: c * T + T / 2, y: r * T + T / 2 }, mur ? 'Retirer' : 'Bâtir', mur || (libre && partie.or >= prixDe(ui.construction)));
   }
   if (ui.pouvoir && ui.visee) return mobile.majConfirmation(ui.visee, 'Lancer', true);
   mobile.majConfirmation(null);
@@ -317,11 +399,15 @@ window.addEventListener('keydown', (e) => {
   if (!document.getElementById('question').hidden) return;
   const rang = rangDeTouche(e);
   if (rang && rang <= ORDRE_TOURS.length) { construire(ORDRE_TOURS[rang - 1]); return; }
-  if (rang > 6) { choisirPouvoir(ORDRE_POUVOIRS[rang - 7]); return; }
+  // Labyrinthe : la touche 7 est le Mur, les pouvoirs passent en 8 et 9.
+  if (partie.labyrinthe && rang === 7) { construire('mur'); return; }
+  const premier = partie.labyrinthe ? 8 : 7;
+  if (rang >= premier) { if (ORDRE_POUVOIRS[rang - premier]) choisirPouvoir(ORDRE_POUVOIRS[rang - premier]); return; }
   const pv = ORDRE_POUVOIRS.find((n) => POUVOIRS[n].touche === e.key.toLowerCase());
   if (pv) { choisirPouvoir(pv); return; }
   if (e.key === ' ') { e.preventDefault(); basculerPause(); }
   else if (e.key === 'f' || e.key === 'F') changerVitesse();
+  else if (e.key === 'v' || e.key === 'V') basculerBarres();
   else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; }
 });
 window.addEventListener('pointerdown', () => son.reveiller(), { once: true });
@@ -387,6 +473,10 @@ function boucle(maintenant) {
   if (partie) {
     const evs = partie.evenements.splice(0);
     vue.evenements(evs);
+    if (evs.some((e) => e.type === 'aTerre')) {   // labyrinthe : le cœur bat à chaque vie gagnée
+      const c = document.getElementById('vies').parentElement;
+      c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse');
+    }
     if (evs.some((e) => e.type === 'fuite')) {   // le cœur tremble et rougit (spec 012, lot C)
       const c = document.getElementById('vies').parentElement;
       c.classList.remove('aie'); void c.offsetWidth; c.classList.add('aie');
@@ -401,9 +491,21 @@ function boucle(maintenant) {
   }
   const dtEffets = enPause ? 0 : partie && !partie.fin ? dtJeu : dtReel;
   vue.dessiner(partie || apercu, partie ? ui : { construction: null, selection: null }, dtEffets);
-  interfaceJeu.maj(partie || apercu, ui, { vitesse, pause: enPause, son: son.actif, reduits: vue.reduits });
+  interfaceJeu.maj(partie || apercu, ui, { vitesse, pause: enPause, son: son.actif, reduits: vue.reduits, barres: vue.barres });
+  majAide();
   majConfirmation();
   requestAnimationFrame(boucle);
+}
+
+/** Labyrinthe : bulle d'aide de la case survolée (souris) ou touchée (doigt). */
+function majAide() {
+  let k = null;
+  if (partie && partie.labyrinthe && ecran === 'jeu' && !partie.fin) {
+    if (ui.aide && performance.now() > ui.aide.fin) ui.aide = null;
+    k = ui.aide || (mobile.actif ? null : ui.survol);
+  }
+  const info = k && k.c >= 0 && k.r >= 0 && k.c < COLS && k.r < ROWS ? aideCase(partie.carte.lab, k.c, k.r) : null;
+  interfaceJeu.majAide(info, k);
 }
 
 // Version en ligne (écrite par tools/deploiement/mettre-a-jour.sh) ; absente en local.
@@ -440,8 +542,9 @@ fetch('version.json', { cache: 'no-store' })
     vignettes[def.id] = t;
   }
   const params = new URLSearchParams(location.search);
-  if (params.has('jouer')) await commencer(params.get('jouer') || 'prairie');
+  if (params.has('graine')) laby.graine = Number(params.get('graine')) || 1;
+  if (params.has('jouer')) await commencer(params.get('jouer') || 'prairie', params.has('graine'));
   else montrer('titre');
-  if (params.has('test')) window.td = { musique, mobile,  partie: () => partie, ui, vue, poser, appelerVague, avancer, commencer };
+  if (params.has('test')) window.td = { musique, mobile,  partie: () => partie, ui, vue, poser, poserMur, vendreMur, appelerVague, avancer, commencer };
   requestAnimationFrame(boucle);
 })();

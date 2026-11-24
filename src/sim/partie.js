@@ -10,7 +10,7 @@ import { DIFFICULTES } from '../data/difficultes.js';
 import { genererVague } from '../data/vagues.js';
 import { LABYRINTHE } from '../data/labyrinthe.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
-import { genererLabyrinthe, carteLabyrinthe, majChemin, cheminLabyrinthe, zoneMonstre, zoneTour, cle } from './labyrinthe.js';
+import { genererLabyrinthe, carteLabyrinthe, majChemin, cheminLabyrinthe, trajetDeChemin, zoneMonstre, zoneTour, cle } from './labyrinthe.js';
 
 /**
  * `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées).
@@ -54,12 +54,16 @@ const ev = (s, type, donnees = {}) => s.evenements.push({ type, ...donnees });
 
 // ---------------------------------------------------------------- commandes du joueur
 
+/** Case sans rien de construit ni de prévu (sans vérifier que le passage reste ouvert). */
+export function caseLibre(s, c, r) {
+  if (s.carte.etat(c, r) !== LIBRE || s.tours.some((t) => t.c === c && t.r === r)) return false;
+  return !s.labyrinthe || !s.labyrinthe.prevus.some((p) => p.c === c && p.r === r && p.type.startsWith('pose'));
+}
+
 /** Pourquoi on ne peut pas construire en (c, r) : 'place', 'bouche' (labyrinthe : plus de passage), ou null. */
 export function raisonPose(s, c, r) {
-  if (s.carte.etat(c, r) !== LIBRE || s.tours.some((t) => t.c === c && t.r === r)) return 'place';
-  const l = s.labyrinthe;
-  if (!l) return null;
-  if (l.prevus.some((p) => p.c === c && p.r === r && p.type.startsWith('pose'))) return 'place';
+  if (!caseLibre(s, c, r)) return 'place';
+  if (!s.labyrinthe) return null;
   const b = bloquesPrevus(s);
   b.add(cle(c, r));
   return cheminLabyrinthe(s.carte.lab, b) ? null : 'bouche';
@@ -115,6 +119,17 @@ function bloquesPrevus(s) {
     else b.delete(cle(p.c, p.r));
   }
   return b;
+}
+
+/**
+ * Trajet au sol une fois tout ce qui est prévu appliqué, et la case (c, r) fermée si elle est donnée (aperçu d'une
+ * pose). Renvoie null si le passage serait bouché.
+ */
+export function trajetPrevu(s, c = null, r = null) {
+  const b = bloquesPrevus(s);
+  if (c !== null) b.add(cle(c, r));
+  const chemin = cheminLabyrinthe(s.carte.lab, b);
+  return chemin ? trajetDeChemin(chemin) : null;
 }
 
 function recalculerChemin(s) {

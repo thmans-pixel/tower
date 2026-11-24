@@ -141,6 +141,11 @@ export class Son {
         case 'blesse': if (e.armure && this.libre('tink', 110)) { this.ton('triangle', 2600, 2200, 0.07, 0.025); this.ton('sine', 3900, 3900, 0.05, 0.012); } break;
         case 'fuite': this.ton('sawtooth', 240, 90, 0.4, 0.07); this.souffle(0.3, 0.06, 500); break;
         case 'pose': this.souffle(0.1, 0.1, 400, 'lowpass', 150, 1, 0.2); this.ton('sine', 160, 70, 0.14, 0.14, 0.2); break;   // la tour touche le sol
+        // Labyrinthe (spec 016)
+        case 'poseMur': if (this.libre('mur', 50)) { this.souffle(0.08, 0.08, 500, 'lowpass', 150); this.ton('sine', 200, 90, 0.1, 0.1); } break;
+        case 'venteMur': if (this.libre('mur', 50)) this.ton('sine', 1318, 1568, 0.1, 0.025); break;
+        case 'aTerre': if (this.libre('aterre', 70)) { this.ton('sine', 660, 990, 0.12, 0.04); this.ton('sine', 990, 1320, 0.14, 0.03, 0.07); } break;
+        case 'prevusAppliques': this.souffle(0.25, 0.1, 500, 'lowpass', 150); [392, 523].forEach((f, i) => this.cloche(f, 0.4, 0.03, 0.1 + i * 0.1)); break;
         case 'amelioration': [523, 659, 784, 1046].forEach((f, i) => this.cloche(f, 0.5, 0.035, i * 0.07)); break;
         case 'vente': this.souffle(0.35, 0.07, 600, 'lowpass', 150); [1318, 1568, 1760].forEach((f, i) => this.ton('sine', f, f, 0.12, 0.025, 0.1 + i * 0.06)); break;
         case 'vague': this.cloche(392, 1.4, 0.07); this.cloche(392, 1.4, 0.05, 0.45); break;   // cloche du château
