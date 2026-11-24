@@ -89,17 +89,54 @@ function plusCourt(lab, bloques, de, vers, avecTp) {
 }
 
 /**
+ * Tronçon à pied où les téléporteurs agissent : la recherche ne les cherche jamais, mais un monstre dont le chemin
+ * pose le pied sur une entrée est téléporté à la sortie, puis repart de là vers `vers`. C'est au joueur de placer ses
+ * murs pour y faire passer le chemin (ou l'en écarter). Une entrée déjà prise sur ce tronçon n'est pas reprise.
+ */
+function troncon(lab, bloques, de, vers, pied, evites = new Set()) {
+  const entrees = new Map(lab.tp.map((t) => [cle(t.a.c, t.a.r), t.b]));
+  const pris = new Set();
+  const sortie = [];
+  let chemin = pied;
+  for (let tour = 0; tour <= lab.tp.length; tour++) {
+    const debut = sortie.length ? 1 : 0;
+    const i = chemin.findIndex((p, k) => k > 0 && entrees.has(cle(p.c, p.r)) && !pris.has(cle(p.c, p.r)));
+    if (i < 0) { sortie.push(...chemin.slice(debut)); return sortie; }
+    const k = cle(chemin[i].c, chemin[i].r), b = entrees.get(k);
+    pris.add(k);
+    sortie.push(...chemin.slice(debut, i + 1), { c: b.c, r: b.r, saut: true });
+    if (b.c === vers.c && b.r === vers.r) return sortie;
+    chemin = plusCourt(lab, new Set([...bloques, ...pris]), b, vers, false) || plusCourt(lab, bloques, b, vers, false);
+    if (!chemin) {   // la sortie est murée : on contourne cette entrée si l'on peut
+      evites.add(k);
+      const autre = plusCourt(lab, new Set([...bloques, ...evites]), de, vers, false);
+      return autre ? troncon(lab, bloques, de, vers, autre, evites) : null;
+    }
+  }
+  return sortie;
+}
+
+/**
  * Chemin complet des monstres au sol : entrée, checkpoints 1 à n dans l'ordre, sortie. `bloques` : cases fermées
  * (murs, tours). Renvoie la suite de cases, ou null si le passage est bouché.
- * Les téléporteurs ne sont jamais pris d'eux-mêmes : sur chaque tronçon, les monstres marchent (et passent sur
- * l'entrée d'un téléporteur sans l'emprunter) tant qu'un chemin à pied existe. Ils ne prennent un téléporteur que
- * lorsque les murs du joueur ne leur laissent pas d'autre passage : c'est au joueur de les y obliger.
+ * Les téléporteurs ne sont jamais cherchés : la recherche marche, mais un monstre qui pose le pied sur une entrée est
+ * téléporté (voir `troncon`). Sans chemin à pied, ils prennent un téléporteur si les murs ne laissent que lui.
  */
 export function cheminLabyrinthe(lab, bloques) {
   const etapes = [lab.entree, ...lab.cp, lab.sortie];
   const tout = [];
+  const vus = new Map();   // tronçon à pied déjà calculé, par couple de points : l'aller et le retour suivent le même chemin
   for (let i = 0; i + 1 < etapes.length; i++) {
-    const morceau = plusCourt(lab, bloques, etapes[i], etapes[i + 1], false) || plusCourt(lab, bloques, etapes[i], etapes[i + 1], true);
+    const de = etapes[i], vers = etapes[i + 1];
+    const kd = cle(de.c, de.r), kv = cle(vers.c, vers.r);
+    const sens = kd <= kv;
+    const kc = sens ? kd + '|' + kv : kv + '|' + kd;
+    let pied = vus.get(kc);
+    if (pied === undefined) {
+      pied = sens ? plusCourt(lab, bloques, de, vers, false) : plusCourt(lab, bloques, vers, de, false);   // toujours calculé dans le même sens
+      vus.set(kc, pied);
+    }
+    const morceau = (pied && troncon(lab, bloques, de, vers, sens ? pied : [...pied].reverse())) || plusCourt(lab, bloques, de, vers, true);
     if (!morceau) return null;
     tout.push(...(i === 0 ? morceau : morceau.slice(1)));
   }

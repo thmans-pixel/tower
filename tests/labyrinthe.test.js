@@ -5,7 +5,7 @@ import {
   nouvellePartie, avancer, appelerVague, peutAppeler, poser, vendre, poserMur, vendreMur, annulerPrevu, blesser,
   enVague, statsEffectives, trajetPrevu, caseLibre, peutPoser,
 } from '../src/sim/partie.js';
-import { genererLabyrinthe, carteLabyrinthe, majChemin, cle } from '../src/sim/labyrinthe.js';
+import { genererLabyrinthe, carteLabyrinthe, majChemin, cle, cheminLabyrinthe } from '../src/sim/labyrinthe.js';
 import { positionSur, centre } from '../src/sim/carte.js';
 import { ENNEMIS } from '../src/data/ennemis.js';
 import { statsTour } from '../src/data/tours.js';
@@ -181,12 +181,16 @@ test('entre les vagues, poses et ventes sont immédiates ; un mur vendu rend tou
   assert.equal(poserMur(s, 23, 5).raison, 'place', 'pas sur la sortie');
 });
 
-test('téléporteur : jamais pris de lui-même, même s\'il raccourcit ; pris quand les murs l\'imposent, sans glisser', () => {
-  // Raccourci (5, 5) -> (18, 5) sur la ligne droite des monstres : ils marchent dessus sans le prendre.
+test('téléporteur : jamais cherché, mais pris dès que le chemin pose le pied sur l\'entrée ; pris aussi quand les murs l\'imposent, sans glisser', () => {
+  // Raccourci (5, 5) -> (18, 5) sur la ligne droite des monstres : le chemin passe sur l'entrée, ils sont téléportés.
   const libre = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } }] });
-  assert.ok(!libre.carte.sol.points.some((p) => p.saut), 'pas de saut tant qu\'un chemin à pied existe');
-  assert.equal(libre.carte.sol.longueur, 23 * T);
-  assert.ok(libre.carte.cheminCases.some(([c, r]) => c === 5 && r === 5), 'il passe sur l\'entrée sans la prendre');
+  const sautLibre = libre.carte.sol.points.find((p) => p.saut);
+  assert.ok(sautLibre, 'le chemin passe sur l\'entrée : saut');
+  assert.ok(Math.abs(sautLibre.x - centre(18)) < 1 && Math.abs(sautLibre.y - centre(5)) < 1, 'arrivée à la sortie');
+  // Hors du chemin, le téléporteur reste inutilisé : une entrée loin de la ligne droite n'est pas cherchée.
+  const loin = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 12 }, b: { c: 18, r: 12 } }] });
+  assert.ok(!loin.carte.sol.points.some((p) => p.saut), 'pas de saut si le chemin ne touche pas l\'entrée');
+  assert.equal(loin.carte.sol.longueur, 23 * T);
   // Le joueur ferme la colonne 10 : le seul passage est le téléporteur.
   const s = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } }] });
   for (let r = 0; r < ROWS; r++) assert.ok(poserMur(s, 10, r).ok);
@@ -203,10 +207,9 @@ test('téléporteur : jamais pris de lui-même, même s\'il raccourcit ; pris qu
   assert.ok(saut, 'un saut a eu lieu');
   assert.ok(Math.abs(saut.avant.x - centre(5)) < 2 && Math.abs(saut.avant.y - centre(5)) < 2, 'part de l\'entrée');
   assert.ok(Math.abs(saut.apres.x - centre(18)) < 2 && Math.abs(saut.apres.y - centre(5)) < 2, 'arrive à la sortie');
-  // Détour : (10, 5) -> (14, 12). À pied, les monstres passent sur l'entrée sans la prendre.
-  const t = partieSur({ tp: [{ forme: 'rond', a: { c: 10, r: 5 }, b: { c: 14, r: 12 } }] });
+  // Détour : (10, 12) -> (14, 12) hors de la ligne droite, puis un mur ferme toute la colonne 12 : passage obligé.
+  const t = partieSur({ tp: [{ forme: 'rond', a: { c: 10, r: 12 }, b: { c: 14, r: 12 } }] });
   assert.ok(!t.carte.sol.points.some((p) => p.saut));
-  assert.ok(t.carte.cheminCases.some(([c, r]) => c === 10 && r === 5));
   // Passage obligé : un mur ferme toute la colonne 12 ; le téléporteur passe par-dessus, même s'il rallonge.
   for (let r = 0; r < ROWS; r++) assert.ok(poserMur(t, 12, r).ok);
   assert.ok(t.carte.sol.points.some((p) => p.saut), 'le téléporteur est le seul passage');
@@ -381,4 +384,20 @@ test('joueur automatique du labyrinthe : rejouable, dessine un serpentin qui all
   const droit = jouerLabyrinthe({ graine: 3, maxVagues: 8, murs: false });
   assert.equal(droit.murs, 0);
   assert.ok(a.trajet > droit.trajet, `${a.trajet} > ${droit.trajet}`);
+});
+
+test('aller et retour entre deux mêmes points : le même chemin, dans les deux sens', () => {
+  for (let g = 1; g <= 30; g++) {
+    const lab = genererLabyrinthe(g);
+    const a = lab.cp[0];
+    // checkpoint 1 puis 2 à la même place que 1 : le retour doit repasser exactement par l'aller
+    const l2 = { ...lab, tp: [], cp: [a, lab.cp[1] || a, a] };
+    const chemin = cheminLabyrinthe(l2, new Set());
+    const cases = chemin.map((p) => cle(p.c, p.r));
+    const i1 = cases.indexOf(cle(a.c, a.r));
+    const i2 = cases.lastIndexOf(cle(a.c, a.r));
+    const iMilieu = cases.indexOf(cle((lab.cp[1] || a).c, (lab.cp[1] || a).r), i1);
+    const aller = cases.slice(i1, iMilieu + 1), retour = cases.slice(iMilieu, i2 + 1).reverse();
+    assert.deepEqual(retour, aller, 'graine ' + g);
+  }
 });

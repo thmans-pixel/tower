@@ -89,9 +89,10 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
 - Spec 013 : `TAILLE_MONSTRES` (vue.js), liseré par `silhouette(..., couleur)`, chemin teinté et bords en dégradé dans
   `Vue.preparer`, ombres du décor allégées dans `decors.js` (`alleger`), mise en page `etroit` dans main.js.
 - Mode labyrinthe (spec 016) : `nouvellePartie('labyrinthe', diff, { graine })` ; `src/sim/labyrinthe.js` (`genererLabyrinthe`,
-  `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, à pied d'abord ; un téléporteur n'est pris (saut
-  gratuit) que si les murs ne laissent aucun chemin à pied sur le tronçon ;
-  `majChemin`, zones), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
+  `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, à pied d'abord ; la recherche ne cherche jamais un téléporteur,
+  mais un monstre dont le chemin pose le pied sur une entrée est téléporté (`troncon`, saut gratuit), et un téléporteur est aussi
+  pris si les murs ne laissent aucun chemin à pied ;
+  `majChemin`, zones ; l'aller et le retour entre deux mêmes points suivent le même chemin à pied), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
   `vendreMur`, `annulerPrevu` ; pendant une vague (`enVague`) poses et ventes sont « prévues » et appliquées d'un coup
   par `appliquerPrevus` à la fin ; mise à terre dans `metAterre` (événement `aTerre`, pas `mort`) ; tours lues par
   `statsEffectives(s, t)` (effet de zone). Dans les trajets, un point `saut: true` est l'arrivée d'un téléporteur.
