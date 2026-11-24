@@ -27,7 +27,7 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
   const s = {
     difficulte, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: maze ? carteMaze : construireCarte(def),
-    labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [] } : null,
+    labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [], popMax: carteMaze.lab.popMax } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
     vague: 0, nbVagues: options.infini || maze ? Infinity : def.vagues.length, infini: !!options.infini,
     temps: 0,
@@ -63,10 +63,19 @@ export function caseLibre(s, c, r) {
   return !s.labyrinthe || !s.labyrinthe.prevus.some((p) => p.c === c && p.r === r && p.type.startsWith('pose'));
 }
 
-/** Pourquoi on ne peut pas construire en (c, r) : 'place', 'bouche' (labyrinthe : plus de passage), ou null. */
+/** Labyrinthe : murs et tours construits ou prévus (poses prévues comptées, ventes prévues déduites). */
+export function populationLabyrinthe(s) {
+  const l = s.labyrinthe;
+  let n = l.murs.size + s.tours.length;
+  for (const p of l.prevus) n += p.type.startsWith('pose') ? 1 : -1;
+  return n;
+}
+
+/** Pourquoi on ne peut pas construire en (c, r) : 'place', 'population' (labyrinthe : plafond atteint), 'bouche' (labyrinthe : plus de passage), ou null. */
 export function raisonPose(s, c, r) {
   if (!caseLibre(s, c, r)) return 'place';
   if (!s.labyrinthe) return null;
+  if (populationLabyrinthe(s) >= s.labyrinthe.popMax) return 'population';
   const b = bloquesPrevus(s);
   b.add(cle(c, r));
   return cheminLabyrinthe(s.carte.lab, b) ? null : 'bouche';
@@ -213,7 +222,8 @@ export function annulerPrevu(s, c, r) {
   if (i < 0) return { ok: false, raison: 'impossible' };
   const p = l.prevus[i];
   if (p.type === 'venteMur' || p.type === 'venteTour') {
-    // Garder ce qu'on voulait vendre referme la case : il faut qu'un passage reste.
+    // Garder ce qu'on voulait vendre referme la case : il faut qu'un passage reste, et une place dans la population.
+    if (populationLabyrinthe(s) >= l.popMax) return { ok: false, raison: 'population' };
     const b = bloquesPrevus(s);
     b.add(cle(c, r));
     if (!cheminLabyrinthe(s.carte.lab, b)) return { ok: false, raison: 'bouche' };

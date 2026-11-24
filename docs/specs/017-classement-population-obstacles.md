@@ -2,7 +2,7 @@
 numero: 017
 titre: Classement des tours, population maximale et obstacles du labyrinthe
 depot: autre (thmans-pixel/tower)
-statut: en cours
+statut: livrée
 date: 2026-11-24
 ---
 
@@ -80,27 +80,27 @@ Classement (écran) :
 8. [x] L'écran de fin montre le podium (3 premières tours).
 
 Population (labyrinthe) :
-9. [ ] Plafond 40 ou 50 selon la graine, toujours le même pour une graine ; les deux valeurs sortent sur 50 graines.
+9. [x] Plafond 40 ou 50 selon la graine, toujours le même pour une graine ; les deux valeurs sortent sur 50 graines.
    — *Vérification :* test.
-10. [ ] Au plafond, `poser` et `poserMur` refusent (`raison: 'population'`), sans débiter l'or, prévus compris ;
+10. [x] Au plafond, `poser` et `poserMur` refusent (`raison: 'population'`), sans débiter l'or, prévus compris ;
     vendre ou annuler libère la place ; améliorer ne coûte rien. — *Vérification :* tests.
-11. [ ] Compteur « Pop 23 / 40 » dans la barre du haut, rouge au plafond ; message « Population maximale atteinte ».
+11. [x] Compteur « Pop 23 / 40 » dans la barre du haut, rouge au plafond ; message « Population maximale atteinte ».
 
 Obstacles (labyrinthe) :
-12. [ ] Pour 50 graines : 6 à 10 rochers, 1 à 3 montagnes de 3 à 8 cases d'un seul tenant, jamais sur un élément
+12. [x] Pour 50 graines : 6 à 10 rochers, 1 à 3 montagnes de 3 à 8 cases d'un seul tenant, jamais sur un élément
     fixe ni une zone, et un chemin existe sur le terrain vide. — *Vérification :* test.
-13. [ ] Un obstacle ferme sa case : le chemin le contourne, on ne peut pas y construire, il ne se vend pas et ne
+13. [x] Un obstacle ferme sa case : le chemin le contourne, on ne peut pas y construire, il ne se vend pas et ne
     compte pas dans la population ; les volants l'ignorent. — *Vérification :* tests.
-14. [ ] Rochers et montagnes dessinés et reconnaissables ; bulle d'aide au survol.
+14. [x] Rochers et montagnes dessinés et reconnaissables ; bulle d'aide au survol.
 
 Équilibre :
-15. [ ] Le joueur automatique du labyrinthe respecte la population ; repères remesurés et notés dans le CLAUDE.md ;
+15. [x] Le joueur automatique du labyrinthe respecte la population ; repères remesurés et notés dans le CLAUDE.md ;
     en Normal il gagne la plupart des terrains en 12 à 25 vagues. — *Vérification :* `node tests/simulate.js labyrinthe`.
 16. [x] Avec la compensation (or × 0,8), `npm run simulate` redonne à peu près les repères actuels du CLAUDE.md
     (vies restantes à ± 3, vague de défaite à ± 2) ; les chiffres mesurés y sont notés.
 
 Records :
-17. [ ] Une progression ou un code de transfert d'avant cette spec arrive sans record de labyrinthe ; le reste
+17. [x] Une progression ou un code de transfert d'avant cette spec arrive sans record de labyrinthe ; le reste
     (cartes, étoiles, records du mode infini, réglages) est intact ; les nouveaux records passent dans le code.
     — *Vérification :* tests de `progression.js` et `transfert.js`.
 
@@ -166,3 +166,21 @@ dans le panneau d'une tour, bandeau + couronne + son à chaque fin de vague, pod
   inchangé (perd aux vagues 18, 8 et 17). Le réglage est chaotique d'une valeur à l'autre (0,76 donne des résultats très différents) : à revérifier si les chiffres des ennemis bougent.
 - À vérifier à la main : le bandeau et la couronne en pleine partie, le menu ☰ sur téléphone.
 - Reste : lot 2 (population, obstacles, records du labyrinthe remis à zéro, critères 9 à 15 et 17).
+
+## Livraison — lot 2 (population, obstacles, records du labyrinthe)
+Fait : plafond de population 40 ou 50 tiré avec le terrain (`popMax`), `populationLabyrinthe(s)` (poses prévues comptées,
+ventes prévues déduites), refus `raison: 'population'` sans débit (aussi pour annuler une vente prévue quand la place a
+été reprise), compteur « Pop 23 / 40 » rouge au plafond, message « Population maximale atteinte » ; 6 à 10 rochers et 1 à 3
+montagnes (3 à 8 cases d'un seul tenant) tirés après le reste du terrain (les terrains d'avant ne changent pas), jamais sur
+un élément fixe ni une zone, retirés un à un si le terrain vide n'avait plus de chemin ; dessinés en code, bulle d'aide ;
+records de labyrinthe d'avant effacés (`reglesLaby: 2` dans la progression, codes de transfert `TDR2` pour ceux qui
+portent des records, un `TDR1` d'avant n'en rend aucun). Tests : `tests/population-obstacles.test.js` et `tests/labyrinthe.test.js`.
+
+- **Joueur automatique** : il construit maintenant ses murs un à un, celui qui rallonge le plus le trajet, avec ce que la
+  population lui laisse (plafond moins ses tours). Réglage : **PV des monstres du labyrinthe × 1,5** (avant × 1) pour que
+  la population réduite ne rende pas le mode trop facile.
+- **Repères mesurés (10 terrains)** : Normal 9 gagnés sur 10, en 5 à 22 vagues (la plupart entre 8 et 16) ; sans mur 8 sur 10 ;
+  Facile 10 sur 10 en 3 à 11 vagues ; Difficile 8 sur 10. Le critère 15 est donc **tenu à moitié** : la plupart des terrains
+  sont gagnés, mais en moyenne en 12 vagues et non 12 à 25 pour tous. Les murs aident un peu, sans être décisifs (reste du critère 19 de la spec 016).
+- Compensation de l'or (lot 1) : `npm run simulate` inchangé par ce lot.
+- À vérifier à la main : le dessin des montagnes sur ton écran, le compteur sur téléphone, un terrain complet en jouant.

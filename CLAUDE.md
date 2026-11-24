@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Classement des tours, population et obstacles du labyrinthe : `docs/specs/017-classement-population-obstacles.md` (livrée). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -104,9 +104,12 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   Records : `enregistrerLabyrinthe` (`progression.labyrinthe[difficulte]` = moins de vagues pour gagner), portés par le
   code de transfert seulement s'il y en a. Joueur automatique : `node tests/simulate.js labyrinthe` (`jouerLabyrinthe`,
   serpentin de murs). Un monstre mis à terre revient plus fort (`renfort` : + 30 % de PV), ce qui empêche la partie de
-  s'emballer. Repères actuels (checkpoints n'importe où, depuis le 2026-11-24) : Normal, 10 terrains
-  gagnés sur 10 en 9 vagues environ (de 5 à 16), 10 sur 10 sans mur aussi ; Facile 10 sur 10 en 3 à 8 vagues ;
-  Difficile 9 sur 10. Plus facile qu'avant : le trajet traverse la carte en tous sens.
+  s'emballer. Population maximale (spec 017) : `s.labyrinthe.popMax` (40 ou 50 selon la graine), `populationLabyrinthe(s)`, refus
+  `raison: 'population'` ; obstacles `lab.obstacles` ({ type: 'rocher' | 'montagne', cases }), `casesObstacles`, fermés comme des
+  murs mais non vendables ni comptés ; dessinés par `Laby.obstacle`. Records : `progression.reglesLaby = 2` (sinon les records
+  de labyrinthe sont ignorés), codes `TDR2` quand ils portent des records. PV des monstres × 1,5. Repères actuels (2026-11-24, 10
+  terrains) : Normal 9 gagnés sur 10 en 5 à 22 vagues, sans mur 8 sur 10 ; Facile 10 sur 10 en 3 à 11 ; Difficile 8 sur 10.
+  Joueur automatique : murs gloutons (celui qui rallonge le plus le trajet) dans ce que la population permet.
 - Classement des tours (spec 017, lot 1) : `tour.degatsVague[v]` (dans `blesser`), `s.orVague[v]`, `s.vendues` ; à la fin de
   chaque vague (`bilanVagues`) la tour qui a le plus frappé ses monstres reçoit `ceil(¼ × (or des monstres + bonus de fin))`
   (`tourDeLaVague`, couronnes). Or des monstres et bonus de fin × `COMPENSATION_OR` (0,78, `const.js`, restes reportés par

@@ -41,6 +41,27 @@ export function mur(g, c, r, alpha = 1) {
   if (alpha < 1) g.globalAlpha = 1;
 }
 
+/**
+ * Obstacle (spec 017) : un rocher isolé, ou une case de montagne (la montagne est faite de plusieurs cases ; chacune
+ * garde le contour d'un pic, les cases du haut portent la neige). Dessiné en code, comme les murs.
+ */
+export function obstacle(g, type, c, r, auDessus = false) {
+  const x = c * T, y = r * T;
+  if (type === 'rocher') {
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 20, y + 33, 15, 5, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#1a1420'; g.beginPath(); g.moveTo(x + 4, y + 33); g.lineTo(x + 8, y + 14); g.lineTo(x + 20, y + 6); g.lineTo(x + 33, y + 12); g.lineTo(x + 37, y + 33); g.closePath(); g.fill();
+    g.fillStyle = '#8b8d96'; g.beginPath(); g.moveTo(x + 7, y + 31); g.lineTo(x + 11, y + 16); g.lineTo(x + 20, y + 9); g.lineTo(x + 31, y + 14); g.lineTo(x + 34, y + 31); g.closePath(); g.fill();
+    g.fillStyle = '#b4b6c0'; g.fillRect(x + 12, y + 13, 9, 3); g.fillRect(x + 22, y + 16, 6, 2);
+    g.fillStyle = '#62646e'; g.fillRect(x + 8, y + 26, 24, 5);
+    return;
+  }
+  // Case de montagne : un pic plein, un peu plus haut que la case.
+  g.fillStyle = '#1a1420'; g.beginPath(); g.moveTo(x, y + 40); g.lineTo(x + 6, y + 14); g.lineTo(x + 20, y - 8); g.lineTo(x + 34, y + 14); g.lineTo(x + 40, y + 40); g.closePath(); g.fill();
+  g.fillStyle = '#7a6a5a'; g.beginPath(); g.moveTo(x + 3, y + 38); g.lineTo(x + 9, y + 15); g.lineTo(x + 20, y - 4); g.lineTo(x + 31, y + 15); g.lineTo(x + 37, y + 38); g.closePath(); g.fill();
+  g.fillStyle = '#5a4c40'; g.beginPath(); g.moveTo(x + 20, y - 4); g.lineTo(x + 31, y + 15); g.lineTo(x + 37, y + 38); g.lineTo(x + 22, y + 38); g.closePath(); g.fill();
+  if (!auDessus) { g.fillStyle = '#f4f6fa'; g.beginPath(); g.moveTo(x + 20, y - 4); g.lineTo(x + 13, y + 8); g.lineTo(x + 18, y + 6); g.lineTo(x + 21, y + 11); g.lineTo(x + 25, y + 6); g.lineTo(x + 28, y + 9); g.closePath(); g.fill(); }
+}
+
 /** Croix rouge sur un élément à retirer. */
 export function croix(g, c, r) {
   const x = c * T, y = r * T;
@@ -199,10 +220,12 @@ export function aideCase(lab, c, r) {
   const ici = (p) => p.c === c && p.r === r;
   const z = lab.zones.find(ici);
   if (z) return { titre: ZONES[z.sorte].nom, texte: ZONES[z.sorte].description, pour: ZONES[z.sorte].cible === 'tour' ? 'Zone de tour' : 'Zone de monstres' };
+  const ob = (lab.obstacles || []).find((o) => o.cases.some(ici));
+  if (ob) return { titre: ob.type === 'rocher' ? 'Rocher' : 'Montagne', texte: 'Un obstacle : les monstres le contournent. On ne peut pas construire dessus, il ne se vend pas et ne compte pas dans la population. Les volants passent au-dessus.', pour: 'Obstacle' };
   const p = lab.cp.find(ici);
   if (p) return { titre: 'Checkpoint ' + p.n, texte: `Les monstres passent par les checkpoints dans l’ordre, de 1 à ${lab.cp.length}, avant d’aller à la sortie.`, pour: 'Passage obligé' };
   for (const t of lab.tp) {
-    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Les monstres passent dessus sans le prendre. Fermez-leur tout autre passage avec vos murs : ils sont alors obligés d’y entrer, et ressortent par le téléporteur rouge de la même forme.', pour: 'Sens unique' };
+    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Un monstre dont le chemin passe sur cette case est téléporté : il ressort par le téléporteur rouge de la même forme. Les monstres ne le cherchent jamais : c’est à vous de placer vos murs pour les y mener, ou pour les en écarter.', pour: 'Sens unique' };
     if (ici(t.b)) return { titre: 'Téléporteur : sortie', texte: 'Les monstres entrés par le téléporteur bleu de la même forme réapparaissent ici.', pour: 'Sens unique' };
   }
   if (ici(lab.entree)) return { titre: 'Entrée', texte: 'Les monstres arrivent par ici.', pour: '' };
