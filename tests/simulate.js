@@ -48,7 +48,7 @@ export function jouer({ carte = 'prairie', difficulte = 'normal', maxTours = 20,
  * sur trois, ouverte tour à tour en bas et en haut), pose ses tours là où elles couvrent le plus de trajet et les
  * améliore. `murs: false` : il ne pose que des tours. `maxVagues` : abandon (fin = null) au-delà.
  */
-export function jouerLabyrinthe({ graine = 1, difficulte = 'normal', murs = true, maxTours = 16, maxVagues = 60, parTour = 15, debut = 3, plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'] } = {}) {
+export function jouerLabyrinthe({ graine = 1, difficulte = 'normal', murs = true, maxTours = 16, maxVagues = 60, parTour = 15, debut = 5, plan = ['archers', 'archers', 'mage', 'canon', 'givre', 'mage', 'baliste', 'tempete'] } = {}) {
   const s = nouvellePartie('labyrinthe', difficulte, { graine });
   // Serpentin : colonnes 3, 6, 9… ; chaque colonne laisse une case libre, en bas puis en haut.
   const aMurer = [];

@@ -212,12 +212,14 @@ test('mise à terre : +1 vie, la moitié de l\'or, le monstre reste sur place av
   const s = partieSur({});
   const e = premierMonstre(s);
   e.pv = 1;
+  const pvAvant = e.pvMax;
   const { x, y, d } = e, vies = s.vies, or = s.or, vivants = s.vivants[e.vague];
   blesser(s, e, 1e6, 'physique', null);
   assert.equal(s.vies, vies + 1);
   assert.equal(s.or, or + Math.ceil(ENNEMIS.gob.or / 2));
   assert.ok(s.ennemis.includes(e));
   assert.equal(e.pv, e.pvMax);
+  assert.ok(Math.abs(e.pvMax - pvAvant * (1 + LABYRINTHE.renfort)) < 1e-9, 'il revient plus fort');
   assert.deepEqual([e.x, e.y, e.d], [x, y, d]);
   assert.equal(s.vivants[e.vague], vivants);
   assert.ok(s.evenements.some((v) => v.type === 'aTerre' && v.id === e.id));

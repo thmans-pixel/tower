@@ -47,7 +47,8 @@ chaque monstre qui atteint la sortie **en coûte**.
     **Marais** (cadence − 25 %).
   Un mur peut recouvrir une zone de monstres (elle n'agit plus) ; une zone de tour n'agit que sur une tour.
 - **Monstres « immortels »** : quand les PV d'un monstre tombent à 0, il est **mis à terre** : le joueur gagne
-  **+1 vie** et **la moitié de l'or habituel** (arrondie au-dessus), le monstre repart **de là où il est** avec ses PV pleins et continue son trajet.
+  **+1 vie** et **la moitié de l'or habituel** (arrondie au-dessus), le monstre repart **de là où il est** avec ses PV pleins et continue son trajet. Il revient
+  **plus fort** : + 30 % de PV à chaque mise à terre (ajout du lot 3).
 - **Sortie** : un monstre qui atteint la sortie coûte ses vies habituelles (1, 2 pour l'orc, 3 pour le golem, 10 pour
   l'Ogre) et **quitte la carte** pour de bon.
 - **Vagues** : générées comme le mode infini (`genererVague`). Une vague est **finie quand tous ses monstres sont
@@ -213,37 +214,31 @@ téléphone en paysage, au doigt), sans erreur dans la console.
 - À vérifier à la main par Thibault : le confort de la pose des murs à la souris et au doigt, la lisibilité des zones
   et des téléporteurs, le son des mises à terre.
 
-**Lot 3 — équilibre et sauvegarde (fait en partie).** Critères 13 et 20 cochés ; le **19 n'est pas atteint**.
+**Lot 3 — équilibre et sauvegarde (fait, sauf la moitié du critère 19).** Critères 13 et 20 cochés.
 - Records : `enregistrerLabyrinthe` (le moins de vagues pour gagner, par difficulté), affichés au menu et à la fin
   (« Nouveau record ! »). Code de transfert : trois nombres de plus, ajoutés seulement s'il y a un record ; un
   ancien code reste lisible et ne change pas. Réunir deux appareils garde le meilleur record.
 - Joueur automatique : `jouerLabyrinthe` dans `tests/simulate.js`, lancé par `node tests/simulate.js labyrinthe`
   (10 terrains par difficulté, puis sans mur).
-- Chiffres retenus (`src/data/labyrinthe.js`) : vagues deux fois moins fournies que le mode infini
-  (`tailleVagues` 0,5), PV + 6 % par vague (`pvParVague`), or de départ 250, mur 5 or. Résultats du joueur
-  automatique en Normal : il gagne 3 terrains sur 10 (en 5 à 12 vagues) et perd les autres vers la vague 10 ;
-  **sans mur il fait mieux** (5 sur 10). Facile : 9 sur 10, en 3 à 6 vagues. Difficile : 2 sur 10.
 - Correction en passant : l'aperçu « Prochaine : … » restait celui de la partie précédente en changeant de mode.
 
-### Pourquoi le critère 19 n'est pas atteint
-Environ 60 réglages essayés (PV de base, PV par vague, taille des vagues, or de départ, prix du mur, ordre de
-construction du joueur automatique). Aucun ne donne « gagne en 25 vagues environ, perd sans mur ». Trois raisons,
-qui tiennent aux règles et non aux chiffres :
-1. **Les dégâts d'une tour se partagent entre les monstres.** Le nombre de mises à terre d'une vague dépend surtout
-   du nombre de tours, peu de la longueur du trajet (sauf si les tours sont dans les replis du labyrinthe). Un
-   labyrinthe complet offert gratuitement aide nettement ; payé 5 or le mur, il ne rattrape pas le même or mis en tours.
-2. **Effet boule de neige.** Chaque mise à terre rapporte une vie *et* de l'or, donc des tours, donc plus de mises à
-   terre : la partie s'emballe ou s'effondre en une dizaine de vagues. Entre « trop facile » et « perdu d'avance »,
-   la marge est très étroite (PV × 1 : gagné vers la vague 8 ; PV × 2 : perdu vers la vague 5).
-3. **L'Ogre de la vague 10 coûte 10 vies** à la sortie et n'en rend qu'une ou deux : la plupart des défaites tombent là.
+### Ce qui bloquait, et la règle ajoutée
+Avec les règles de départ, aucun réglage (une soixantaine essayés) ne donnait une partie posée : chaque mise à terre
+rapporte une vie *et* de l'or, donc des tours, donc plus de mises à terre, et la partie s'emballait ou s'effondrait
+en une dizaine de vagues. Thibault a choisi la correction « le monstre revient plus fort » (2026-11-24) :
+- **chaque mise à terre ajoute 30 % de PV au monstre** (`renfort`), en plus de lui rendre toute sa vie ;
+- vagues deux fois moins fournies que le mode infini (`tailleVagues` 0,5), pas de PV en plus par vague ;
+- **mur à 2 or** au lieu de 5 : à 5 or, un labyrinthe complet (une centaine de murs) coûtait autant que sept tours.
 
-### Corrections proposées (à valider par Thibault avant tout code)
-- **A. Le monstre revient plus fort** : chaque mise à terre lui ajoute des PV (par exemple + 30 %). Les gains d'une
-  vague plafonnent, la partie ne s'emballe plus, et un long trajet redevient utile. *Recommandé.*
-- **B. L'or seulement au premier passage** : une mise à terre rapporte toujours une vie, mais l'or n'est versé
-  qu'une fois par monstre. Coupe la boule de neige côté or.
-- **C. L'Ogre ne coûte que 3 vies** dans ce mode.
-- **D. Ne rien changer aux règles** : parties courtes (une dizaine de vagues), on règle les chiffres en jouant.
+### Résultats du joueur automatique (chiffres retenus)
+- Normal : il gagne 18 terrains sur 20, en **17 vagues** environ (de 7 à 25). La spec visait 25 vagues.
+- Facile : 10 sur 10, en 4 à 12 vagues. Difficile : 3 sur 10.
+- **Sans mur, il gagne aussi** (18 sur 20, en 16 vagues) : la seconde moitié du critère 19 (« sans mur il perd »)
+  n'est pas atteinte. Un labyrinthe complet *offert* fait pourtant gagner bien plus vite (8 à 16 vagues contre 17 à
+  22) : les murs aident, mais mon joueur automatique ne sait pas en tirer parti aussi bien qu'un humain qui
+  place ses tours dans les replis. C'est à juger en jouant.
+- Les défaites tombent presque toutes à la vague 10 : l'Ogre coûte 10 vies à la sortie et n'en rend qu'une ou deux.
+  Thibault a gardé cette valeur ; « Ogre à 3 vies » reste la première chose à essayer si le Difficile paraît injuste.
 
 ## Décisions de Thibault (2026-11-24)
 - Pendant une vague on peut tout faire : poses et ventes restent en transparence et ne s'appliquent qu'entre les
@@ -253,6 +248,7 @@ qui tiennent aux règles et non aux chiffres :
 - TP : placés au hasard, parfois utiles pour rallonger, parfois non ; entrées d'une couleur, sorties rouges, une forme
   par paire.
 - Prix du mur : 5 or pour commencer, revendu au prix plein ; à régler au lot 3 avec le joueur automatique.
+- Équilibre (lot 3) : un monstre mis à terre revient plus fort (+ 30 % de PV à chaque fois) ; mur ramené à 2 or.
 
 ## Questions ouvertes
 (aucune)

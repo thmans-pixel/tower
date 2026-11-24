@@ -767,6 +767,8 @@ export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
  */
 function metAterre(s, e, tour) {
   const d = ENNEMIS[e.sorte];
+  e.pvMax *= 1 + LABYRINTHE.renfort;   // il revient plus fort : les gains d'une vague plafonnent
+  e.aTerre = (e.aTerre || 0) + 1;
   e.pv = e.pvMax;
   e.brule = null;
   const gain = Math.ceil(d.or * LABYRINTHE.partOr);
