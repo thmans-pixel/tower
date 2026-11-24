@@ -142,7 +142,7 @@ def verifier_envoi(p):
             raise Refus(400, 'mode', 'Demande incorrecte.')
         tour = dans(p.get('tour'), REGLES['tours'], 'tour')
         vagues = entier(p.get('vagues'), 1, b['tour']['vaguesMax'])
-        valeur = entier(p.get('valeur'), 1, vagues * b['tour']['degatsParVagueMax'])
+        valeur = entier(p.get('valeur'), 1, vagues * b['tour']['degatsParVagueMax'][mode])
         detail = {'tour': tour, 'carte': carte, 'difficulte': difficulte, 'mode': mode, 'vagues': vagues}
         cle_carte, cle_diff, score = '', '', valeur
     else:

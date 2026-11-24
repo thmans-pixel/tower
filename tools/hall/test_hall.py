@@ -138,8 +138,9 @@ class Bornes(Base):
 
     def test_tour(self):
         t = {'pseudo': 'Alice', 'enfant': False, 'classement': 'tour', 'carte': 'prairie', 'difficulte': 'normal',
-             'mode': 'campagne', 'tour': 'mage', 'vagues': 20, 'valeur': 100000 * 20 + 1}
+             'mode': 'campagne', 'tour': 'mage', 'vagues': 20, 'valeur': 20000 * 20 + 1}
         self.refus(t, 'valeur')
+        self.hall.envoyer({**t, 'valeur': 20000 * 20})   # le plafond lui-même passe (le meilleur du joueur automatique : ~2 700 par vague)
         self.refus({**t, 'valeur': 10, 'tour': 'canon2'}, 'tour')
         self.refus({**t, 'valeur': 10, 'mode': 'labyrinthe'}, 'mode')
         self.refus({**t, 'valeur': 10, 'carte': 'aleatoire'}, 'carte')

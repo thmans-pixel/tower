@@ -11,6 +11,7 @@ import { CHEMIN } from './sim/carte.js';
 import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, enregistrerLabyrinthe, aleatoireOuvert, progressionVide } from './sim/progression.js';
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
+import { HallUi } from './ui/hall.js';
 import { charger, enregistrer, effacer } from './ui/sauvegarde.js';
 import { fusionner } from './sim/transfert.js';
 import { chargerDecors } from './render/decors.js';
@@ -74,6 +75,7 @@ const interfaceJeu = new Interface({
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte, true)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
+  enfant: (v) => { progression.enfant = v; enregistrer(progression); son.jouer('clic'); },
   difficulte: (d) => { progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   mode: (m) => { mode = m; afficherCartes(); son.jouer('clic'); },
   alea: async (changement) => {
@@ -99,6 +101,13 @@ const interfaceJeu = new Interface({
     if (t && !annulerPrevu(partie, t.c, t.r).ok) { son.jouer('erreur'); vue.texte(t.x, t.y - 30, 'Le passage serait bouché', '#ff8a7a'); }
   },
   cibler: (m) => { if (partie) { cibler(partie, ui.selection, m); son.jouer('clic'); } },
+});
+
+// Hall of fame (spec 018) : seul src/ui/hall.js parle au réseau.
+const hallUi = new HallUi({
+  progression: () => progression,
+  retenir: (changements) => { Object.assign(progression, changements); enregistrer(progression); },
+  son: (nom) => son.jouer(nom),
 });
 
 async function decorsDe(id) {
@@ -494,7 +503,7 @@ function boucle(maintenant) {
       finMontree = true;
       ui.construction = null; ui.pouvoir = null;
       const bilan = bilanPartie(partie);
-      setTimeout(() => partie && partie.fin && interfaceJeu.fin(partie, bilan), 1200);
+      setTimeout(() => { if (partie && partie.fin) { interfaceJeu.fin(partie, bilan); hallUi.proposer(partie, idCarte); } }, 1200);
     }
   }
   const dtEffets = enPause ? 0 : partie && !partie.fin ? dtJeu : dtReel;

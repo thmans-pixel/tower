@@ -12,7 +12,7 @@
     "labyrinthe": { "vaguesMin": 1, "vaguesMax": 200 },
     "infini": { "vaguesMin": 1, "vaguesMax": 500 },
     "campagne": { "viesMin": 1 },
-    "tour": { "vaguesMax": 500, "degatsParVagueMax": 100000 }
+    "tour": { "vaguesMax": 500, "degatsParVagueMax": { "campagne": 20000, "labyrinthe": 30000, "infini": 100000 } }
   },
   "limiteParIp": { "envois": 20, "secondes": 3600 },
   "motsInterdits": ["merde", "putain", "pute", "salope", "salaud", "connard", "connasse", "encule", "enculer", "bite", "couille", "nique", "niquer", "ntm", "fdp", "pd", "pedo", "pedophile", "viol", "violer", "nazi", "hitler", "sexe", "sex", "porno", "porn", "cul", "chatte", "zizi", "bordel", "batard", "branleur", "fuck", "shit", "bitch", "cunt", "dick", "pussy", "nigger", "negre", "fag", "rape", "kkk", "suicide", "con", "conne", "tg"]
