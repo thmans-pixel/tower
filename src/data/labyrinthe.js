@@ -3,8 +3,12 @@
 export const LABYRINTHE = {
   objectif: 100,          // vies à atteindre pour gagner
   orDepart: 250,
-  prixMur: 5,             // revendu au prix plein
+  prixMur: 2,             // revendu au prix plein (5 au départ : un labyrinthe complet coûtait trop face aux tours)
   partOr: 0.5,            // part de l'or habituel rendue par une mise à terre
+  renfort: 0.3,           // PV en plus à chaque mise à terre : le monstre revient plus fort
+  tailleVagues: 0.5,      // effectifs des vagues générées (1 = ceux du mode infini)
+  multPV: 1,              // PV de base des monstres, multipliés (ils rapportent des vies : il faut qu'ils résistent)
+  pvParVague: 0,          // PV en plus par vague (en plus de la montée habituelle) : inutile depuis `renfort`
   checkpoints: [3, 5],    // nombre de checkpoints : de 3 à 5
   paires: [1, 2],         // paires de téléporteurs : 1 ou 2
   nbZones: 8,

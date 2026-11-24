@@ -40,7 +40,10 @@ function nombres(p) {
   const drapeaux = (p.debloquees.includes('desert') ? 1 : 0) | (p.debloquees.includes('montagne') ? 2 : 0) | (p.infiniOuvert ? 4 : 0);
   let etoiles = 0;
   ORDRE_CARTES.forEach((c, i) => DIFFS.forEach((d, j) => { etoiles += ((p.etoiles[c] || {})[d] || 0) * 4 ** (i * 3 + j); }));
-  return [drapeaux, etoiles, ...ORDRE_CARTES.map((c) => p.infini[c] || 0), ...DIFFS.map((d) => p.aleatoires[d] || 0)];
+  const base = [drapeaux, etoiles, ...ORDRE_CARTES.map((c) => p.infini[c] || 0), ...DIFFS.map((d) => p.aleatoires[d] || 0)];
+  // Records du labyrinthe (spec 016) : ajoutés seulement s'il y en a, pour que les anciens codes ne changent pas.
+  const laby = DIFFS.map((d) => (p.labyrinthe || {})[d] || 0);
+  return laby.some(Boolean) ? [...base, ...laby] : base;
 }
 
 /** Code d'une progression, par exemple « TDR1-K7Q2-3M0A-… ». */
@@ -66,9 +69,10 @@ export function lireCode(texte) {
   const corps = [...t.slice(0, -2)];
   if (controle(corps) !== t.slice(-2)) return { ok: false };
   const l = lireNombres(corps);
-  if (!l || l.length !== 2 + ORDRE_CARTES.length + DIFFS.length) return { ok: false };
+  const base = 2 + ORDRE_CARTES.length + DIFFS.length;
+  if (!l || (l.length !== base && l.length !== base + DIFFS.length)) return { ok: false };
   const [drapeaux, etoiles] = l;
-  const brut = { debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, infiniOuvert: (drapeaux & 4) !== 0 };
+  const brut = { debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, infiniOuvert: (drapeaux & 4) !== 0 };
   if (drapeaux & 1) brut.debloquees.push('desert');
   if (drapeaux & 2) brut.debloquees.push('montagne');
   ORDRE_CARTES.forEach((c, i) => DIFFS.forEach((d, j) => {
@@ -77,6 +81,7 @@ export function lireCode(texte) {
   }));
   ORDRE_CARTES.forEach((c, i) => { if (l[2 + i]) brut.infini[c] = l[2 + i]; });
   DIFFS.forEach((d, i) => { if (l[2 + ORDRE_CARTES.length + i]) brut.aleatoires[d] = l[2 + ORDRE_CARTES.length + i]; });
+  DIFFS.forEach((d, i) => { if (l[base + i]) brut.labyrinthe[d] = l[base + i]; });
   return { ok: true, progression: relire(brut) };
 }
 
@@ -90,6 +95,11 @@ export function fusionner(p, q) {
   }
   for (const c of ORDRE_CARTES) { const n = Math.max(p.infini[c] || 0, q.infini[c] || 0); if (n) r.infini[c] = n; }
   for (const d of DIFFS) { const n = Math.max(p.aleatoires[d] || 0, q.aleatoires[d] || 0); if (n) r.aleatoires[d] = n; }
+  r.labyrinthe = {};
+  for (const d of DIFFS) {   // labyrinthe : le meilleur record est le plus petit nombre de vagues
+    const n = [(p.labyrinthe || {})[d], (q.labyrinthe || {})[d]].filter(Boolean);
+    if (n.length) r.labyrinthe[d] = Math.min(...n);
+  }
   r.infiniOuvert = p.infiniOuvert || q.infiniOuvert;
   return r;
 }

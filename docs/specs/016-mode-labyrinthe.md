@@ -47,7 +47,8 @@ chaque monstre qui atteint la sortie **en coûte**.
     **Marais** (cadence − 25 %).
   Un mur peut recouvrir une zone de monstres (elle n'agit plus) ; une zone de tour n'agit que sur une tour.
 - **Monstres « immortels »** : quand les PV d'un monstre tombent à 0, il est **mis à terre** : le joueur gagne
-  **+1 vie** et **la moitié de l'or habituel** (arrondie au-dessus), le monstre repart **de là où il est** avec ses PV pleins et continue son trajet.
+  **+1 vie** et **la moitié de l'or habituel** (arrondie au-dessus), le monstre repart **de là où il est** avec ses PV pleins et continue son trajet. Il revient
+  **plus fort** : + 30 % de PV à chaque mise à terre (ajout du lot 3).
 - **Sortie** : un monstre qui atteint la sortie coûte ses vies habituelles (1, 2 pour l'orc, 3 pour le golem, 10 pour
   l'Ogre) et **quitte la carte** pour de bon.
 - **Vagues** : générées comme le mode infini (`genererVague`). Une vague est **finie quand tous ses monstres sont
@@ -101,7 +102,7 @@ Logique (`npm test`) :
     — *Vérification :* lancer `npm run simulate`.
 
 Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 tools/serveur.py`) :
-13. [ ] Le menu propose « Labyrinthe » avec le choix de difficulté et le record ; `?jouer=labyrinthe` démarre direct.
+13. [x] Le menu propose « Labyrinthe » avec le choix de difficulté et le record ; `?jouer=labyrinthe` démarre direct.
 14. [x] Checkpoints (drapeaux numérotés), TP (entrées bleues, sorties rouges, même forme par paire), zones (icône et teinte par sorte)
     et sortie sont visibles et reconnaissables ; une fiche explique chaque zone au survol (appui long sur téléphone).
 15. [x] **Le trajet des monstres est tracé** à l'écran (pointillés avec flèches) et se met à jour à chaque mur posé
@@ -118,7 +119,7 @@ Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 
 19. [ ] Le joueur automatique a une stratégie labyrinthe (serpentin de murs, tours le long du trajet) : en Normal il
     gagne en 25 vagues environ ; sans mur il perd. Les chiffres retenus sont notés dans le CLAUDE.md.
     — *Vérification :* `npm run simulate -- labyrinthe` (ou équivalent) sur 10 graines.
-20. [ ] Les records du labyrinthe sont sauvegardés, passent dans le code de transfert, et un ancien code reste lisible.
+20. [x] Les records du labyrinthe sont sauvegardés, passent dans le code de transfert, et un ancien code reste lisible.
     — *Vérification :* test de `transfert.js` avec un code produit avant la spec.
 
 ## Conception
@@ -213,6 +214,32 @@ téléphone en paysage, au doigt), sans erreur dans la console.
 - À vérifier à la main par Thibault : le confort de la pose des murs à la souris et au doigt, la lisibilité des zones
   et des téléporteurs, le son des mises à terre.
 
+**Lot 3 — équilibre et sauvegarde (fait, sauf la moitié du critère 19).** Critères 13 et 20 cochés.
+- Records : `enregistrerLabyrinthe` (le moins de vagues pour gagner, par difficulté), affichés au menu et à la fin
+  (« Nouveau record ! »). Code de transfert : trois nombres de plus, ajoutés seulement s'il y a un record ; un
+  ancien code reste lisible et ne change pas. Réunir deux appareils garde le meilleur record.
+- Joueur automatique : `jouerLabyrinthe` dans `tests/simulate.js`, lancé par `node tests/simulate.js labyrinthe`
+  (10 terrains par difficulté, puis sans mur).
+- Correction en passant : l'aperçu « Prochaine : … » restait celui de la partie précédente en changeant de mode.
+
+### Ce qui bloquait, et la règle ajoutée
+Avec les règles de départ, aucun réglage (une soixantaine essayés) ne donnait une partie posée : chaque mise à terre
+rapporte une vie *et* de l'or, donc des tours, donc plus de mises à terre, et la partie s'emballait ou s'effondrait
+en une dizaine de vagues. Thibault a choisi la correction « le monstre revient plus fort » (2026-11-24) :
+- **chaque mise à terre ajoute 30 % de PV au monstre** (`renfort`), en plus de lui rendre toute sa vie ;
+- vagues deux fois moins fournies que le mode infini (`tailleVagues` 0,5), pas de PV en plus par vague ;
+- **mur à 2 or** au lieu de 5 : à 5 or, un labyrinthe complet (une centaine de murs) coûtait autant que sept tours.
+
+### Résultats du joueur automatique (chiffres retenus)
+- Normal : il gagne 18 terrains sur 20, en **17 vagues** environ (de 7 à 25). La spec visait 25 vagues.
+- Facile : 10 sur 10, en 4 à 12 vagues. Difficile : 3 sur 10.
+- **Sans mur, il gagne aussi** (18 sur 20, en 16 vagues) : la seconde moitié du critère 19 (« sans mur il perd »)
+  n'est pas atteinte. Un labyrinthe complet *offert* fait pourtant gagner bien plus vite (8 à 16 vagues contre 17 à
+  22) : les murs aident, mais mon joueur automatique ne sait pas en tirer parti aussi bien qu'un humain qui
+  place ses tours dans les replis. C'est à juger en jouant.
+- Les défaites tombent presque toutes à la vague 10 : l'Ogre coûte 10 vies à la sortie et n'en rend qu'une ou deux.
+  Thibault a gardé cette valeur ; « Ogre à 3 vies » reste la première chose à essayer si le Difficile paraît injuste.
+
 ## Décisions de Thibault (2026-11-24)
 - Pendant une vague on peut tout faire : poses et ventes restent en transparence et ne s'appliquent qu'entre les
   vagues ; améliorations et choix de cible sont immédiats.
@@ -221,6 +248,7 @@ téléphone en paysage, au doigt), sans erreur dans la console.
 - TP : placés au hasard, parfois utiles pour rallonger, parfois non ; entrées d'une couleur, sorties rouges, une forme
   par paire.
 - Prix du mur : 5 or pour commencer, revendu au prix plein ; à régler au lot 3 avec le joueur automatique.
+- Équilibre (lot 3) : un monstre mis à terre revient plus fort (+ 30 % de PV à chaque fois) ; mur ramené à 2 or.
 
 ## Questions ouvertes
 (aucune)

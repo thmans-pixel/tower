@@ -11,6 +11,9 @@ import { ENNEMIS } from '../src/data/ennemis.js';
 import { statsTour } from '../src/data/tours.js';
 import { LABYRINTHE } from '../src/data/labyrinthe.js';
 import { COLS, ROWS, T, DT } from '../src/sim/const.js';
+import { progressionVide, enregistrerLabyrinthe, relire } from '../src/sim/progression.js';
+import { codeProgression, lireCode, fusionner } from '../src/sim/transfert.js';
+import { jouerLabyrinthe } from './simulate.js';
 
 const vide = { graine: 1, entree: { c: 0, r: 5 }, sortie: { c: 23, r: 5 }, cp: [], tp: [], zones: [] };
 
@@ -209,12 +212,14 @@ test('mise à terre : +1 vie, la moitié de l\'or, le monstre reste sur place av
   const s = partieSur({});
   const e = premierMonstre(s);
   e.pv = 1;
+  const pvAvant = e.pvMax;
   const { x, y, d } = e, vies = s.vies, or = s.or, vivants = s.vivants[e.vague];
   blesser(s, e, 1e6, 'physique', null);
   assert.equal(s.vies, vies + 1);
   assert.equal(s.or, or + Math.ceil(ENNEMIS.gob.or / 2));
   assert.ok(s.ennemis.includes(e));
   assert.equal(e.pv, e.pvMax);
+  assert.ok(Math.abs(e.pvMax - pvAvant * (1 + LABYRINTHE.renfort)) < 1e-9, 'il revient plus fort');
   assert.deepEqual([e.x, e.y, e.d], [x, y, d]);
   assert.equal(s.vivants[e.vague], vivants);
   assert.ok(s.evenements.some((v) => v.type === 'aTerre' && v.id === e.id));
@@ -324,4 +329,51 @@ test('aperçu : le futur trajet tient compte des travaux prévus et de la case v
   assert.equal(caseLibre(s, 3, 3), false, 'une case où un mur est prévu n\'est plus libre');
   assert.equal(caseLibre(s, 10, 15), true);
   assert.equal(peutPoser(s, 10, 15), true, 'permis : le mur du milieu sera retiré');
+});
+
+test('records : le plus petit nombre de vagues par difficulté, gardé à la relecture', () => {
+  let r = enregistrerLabyrinthe(progressionVide(), 'normal', 18);
+  assert.ok(r.record);
+  assert.equal(r.progression.labyrinthe.normal, 18);
+  r = enregistrerLabyrinthe(r.progression, 'normal', 22);
+  assert.equal(r.record, false);
+  assert.equal(r.progression.labyrinthe.normal, 18);
+  r = enregistrerLabyrinthe(r.progression, 'normal', 12);
+  assert.ok(r.record);
+  assert.equal(r.progression.labyrinthe.normal, 12);
+  assert.equal(r.progression.labyrinthe.facile, undefined);
+  assert.deepEqual(relire(JSON.parse(JSON.stringify(r.progression))).labyrinthe, { normal: 12 });
+  assert.deepEqual(relire({ labyrinthe: { normal: -3, facile: 'x', difficile: 9 } }).labyrinthe, { difficile: 9 });
+});
+
+test('transfert : les records du labyrinthe passent dans le code, un ancien code reste lisible et inchangé', () => {
+  const ancien = progressionVide();
+  ancien.debloquees.push('desert');
+  ancien.etoiles = { prairie: { normal: 3 } };
+  const codeAncien = 'TDR1-1C00-0000-EN';   // produit avant la spec 016 pour cette progression
+  assert.equal(codeProgression(ancien), codeAncien, 'sans record de labyrinthe, le code ne change pas');
+  const lu = lireCode(codeAncien);
+  assert.ok(lu.ok);
+  assert.deepEqual(lu.progression.labyrinthe, {});
+  assert.deepEqual(lu.progression.etoiles, { prairie: { normal: 3 } });
+  const p = enregistrerLabyrinthe(enregistrerLabyrinthe(ancien, 'normal', 17).progression, 'difficile', 31).progression;
+  const code = codeProgression(p);
+  assert.notEqual(code, codeAncien);
+  const q = lireCode(code);
+  assert.ok(q.ok);
+  assert.deepEqual(q.progression.labyrinthe, { normal: 17, difficile: 31 });
+  assert.deepEqual(q.progression.etoiles, p.etoiles);
+  // Réunir deux appareils garde le meilleur record (le moins de vagues).
+  const autre = enregistrerLabyrinthe(enregistrerLabyrinthe(progressionVide(), 'normal', 25).progression, 'facile', 9).progression;
+  assert.deepEqual(fusionner(p, autre).labyrinthe, { facile: 9, normal: 17, difficile: 31 });
+  assert.deepEqual(fusionner(autre, p).labyrinthe, { facile: 9, normal: 17, difficile: 31 });
+});
+
+test('joueur automatique du labyrinthe : rejouable, dessine un serpentin qui allonge le trajet', () => {
+  const a = jouerLabyrinthe({ graine: 3, maxVagues: 8 }), b = jouerLabyrinthe({ graine: 3, maxVagues: 8 });
+  assert.deepEqual(a, b);
+  assert.ok(a.murs > 10 && a.tours >= 3, `${a.murs} murs, ${a.tours} tours`);
+  const droit = jouerLabyrinthe({ graine: 3, maxVagues: 8, murs: false });
+  assert.equal(droit.murs, 0);
+  assert.ok(a.trajet > droit.trajet, `${a.trajet} > ${droit.trajet}`);
 });

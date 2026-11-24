@@ -123,7 +123,7 @@ export function carteLabyrinthe(lab) {
   const vols = [trajetVol(lab)];
   const carte = {
     def: {
-      id: 'labyrinthe', nom: 'Labyrinthe', graine: lab.graine, orDepart: LABYRINTHE.orDepart, vagues: [], ouverte: true,
+      id: 'labyrinthe', nom: 'Labyrinthe', graine: lab.graine, orDepart: LABYRINTHE.orDepart, pvParVague: LABYRINTHE.pvParVague, vagues: [], ouverte: true,
       theme: 'prairie', labyrinthe: lab,
     },
     lab, murs, fixes, decors: [], cheminCases: [], vols, vol: vols[0],
