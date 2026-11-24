@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   nouvellePartie, avancer, appelerVague, peutAppeler, poser, vendre, poserMur, vendreMur, annulerPrevu, blesser,
-  enVague, statsEffectives,
+  enVague, statsEffectives, trajetPrevu, caseLibre, peutPoser,
 } from '../src/sim/partie.js';
 import { genererLabyrinthe, carteLabyrinthe, majChemin, cle } from '../src/sim/labyrinthe.js';
 import { positionSur, centre } from '../src/sim/carte.js';
@@ -306,4 +306,22 @@ test('volants : ligne droite entrée, checkpoints, sortie, sans tenir compte des
   const avant = vol.longueur;
   for (let r = 0; r < ROWS - 1; r++) assert.ok(poserMur(s, 11, r).ok);
   assert.equal(s.carte.vols[0].longueur, avant);
+});
+
+test('aperçu : le futur trajet tient compte des travaux prévus et de la case visée, sans rien changer', () => {
+  const s = partieSur({});
+  for (let r = 0; r < ROWS - 1; r++) assert.ok(poserMur(s, 10, r).ok);     // seul passage : (10, 15)
+  const actuel = s.carte.sol;
+  assert.equal(trajetPrevu(s).longueur, actuel.longueur, 'rien de prévu : le même trajet');
+  assert.equal(trajetPrevu(s, 10, 15), null, 'viser la dernière case libre boucherait');
+  assert.ok(actuel.points.some((p) => p.x === centre(1) && p.y === centre(5)));
+  assert.ok(!trajetPrevu(s, 1, 5).points.some((p) => p.x === centre(1) && p.y === centre(5)), 'viser une case du chemin le détourne');
+  assert.equal(s.carte.sol, actuel);
+  premierMonstre(s);
+  assert.ok(vendreMur(s, 10, 5).prevu);
+  assert.ok(trajetPrevu(s).longueur < actuel.longueur, 'le mur à retirer ouvre un raccourci');
+  assert.ok(poserMur(s, 3, 3).prevu);
+  assert.equal(caseLibre(s, 3, 3), false, 'une case où un mur est prévu n\'est plus libre');
+  assert.equal(caseLibre(s, 10, 15), true);
+  assert.equal(peutPoser(s, 10, 15), true, 'permis : le mur du milieu sera retiré');
 });

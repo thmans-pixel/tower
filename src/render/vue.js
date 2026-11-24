@@ -11,6 +11,9 @@ import { POUVOIRS } from '../data/pouvoirs.js';
 import { silhouette, suivre, poseMort, genreMort } from './monstres.js';
 import { poseTour, boutArme, DUREES } from './tours-effets.js';
 import { Ambiance } from './ambiance.js';
+import * as Laby from './labyrinthe.js';
+import { statsEffectives, trajetPrevu, enVague } from '../sim/partie.js';
+import { ZONES, LABYRINTHE } from '../data/labyrinthe.js';
 
 const TAILLE_MONSTRES = 1.25;   // spec 013 : monstres affichés plus gros (la logique ne change pas)
 
@@ -72,6 +75,8 @@ export class Vue {
     // Spec 012 (lot C) : vie du décor ; « Effets réduits » coupe l'ambiance et allège les particules.
     this.ambiance = new Ambiance();
     this.reduits = false;
+    this.barres = false;    // touche V : barres de vie de tous les monstres, même pleines (spec 016)
+    this.apercuTrajet = { cle: '', trajet: null };
   }
 
   /** Prépare le fond et le décor d'une carte construite par la logique. */
@@ -126,7 +131,9 @@ export class Vue {
     const theme = (carte.def.aleatoire && carte.def.aleatoire.theme) || carte.def.id;
     const teinte = { desert: '150,95,40', montagne: '90,120,170', prairie: '110,70,30' }[theme] || '110,70,30';
     g.fillStyle = `rgba(${teinte},${theme === 'montagne' ? 0.1 : 0.16})`;
-    for (const [c, r] of carte.cheminCases) g.fillRect(c * T, r * T, T, T);
+    // Labyrinthe : le chemin change à chaque mur, il est tracé à chaque image et non peint dans le fond.
+    const cases = carte.lab ? [] : carte.cheminCases;
+    for (const [c, r] of cases) g.fillRect(c * T, r * T, T, T);
     const estChemin = (c, r) => carte.etat(c, r) === CHEMIN || (c < 0 && carte.etat(0, r) === CHEMIN);
     // Dégradé de 7 px depuis le bord (ex, ey) vers l'intérieur du chemin (direction vx, vy).
     const bord = (ex, ey, vx, vy, rx, ry, l, h) => {
@@ -134,14 +141,14 @@ export class Vue {
       d.addColorStop(0, `rgba(${teinte},.42)`); d.addColorStop(1, `rgba(${teinte},0)`);
       g.fillStyle = d; g.fillRect(rx, ry, l, h);
     };
-    for (const [c, r] of carte.cheminCases) {
+    for (const [c, r] of cases) {
       const x = c * T, y = r * T;
       if (!estChemin(c, r - 1)) bord(x, y, 0, 1, x, y, T, 7);
       if (!estChemin(c, r + 1)) bord(x, y + T, 0, -1, x, y + T - 7, T, 7);
       if (!estChemin(c - 1, r)) bord(x, y, 1, 0, x, y, 7, T);
       if (!estChemin(c + 1, r) && !(c + 1 === carte.chateau.c)) bord(x + T, y, -1, 0, x + T - 7, y, 7, T);
     }
-    for (const [c, r] of carte.cheminCases) {
+    for (const [c, r] of cases) {
       if (rnd() < 0.55) continue;
       const x = c * T + 8 + rnd() * 20, y = r * T + 8 + rnd() * 20;
       g.fillStyle = `rgba(${teinte},.22)`;
@@ -151,7 +158,7 @@ export class Vue {
     // Décor fixe : château, entrée, puis éléments placés par la logique.
     const ch = carte.chateau, id = carte.def.id;
     const noms = carte.def.noms || { chateau: 'chateau', entrees: carte.entrees.map(() => 'entree') };
-    this.fixes = [
+    this.fixes = carte.lab ? [] : [
       ...carte.entrees.map((en, k) => ({ nom: id + '_' + noms.entrees[k], x: (en.c + en.l / 2) * T, y: (en.r + en.h / 2) * T, c: -1, r: -1, bloquant: true })),
       { nom: id + '_' + noms.chateau, x: (ch.c + ch.l / 2) * T, y: (ch.r + ch.h / 2) * T, c: -1, r: -1, bloquant: true },
       // Ponts : posés sur le chemin, dessinés sous les ennemis.
@@ -226,6 +233,18 @@ export class Vue {
           break;
         }
         case 'tir': this.tirer(e); break;
+        case 'aTerre': {   // labyrinthe : le monstre repart, le joueur gagne une vie
+          const st = this.suivi.get(e.id);
+          if (st) st.flash = 0.25;
+          this.anneaux.push({ x: e.x, y: e.y, r: 4, max: e.boss ? 46 : 24, vie: 0.4, t: 0, col: '125,255,154' });
+          for (let i = 0; i < 6; i++) this.eclats.push({ x: e.x, y: e.y - (e.vol ? 24 : 10), vx: (Math.random() - 0.5) * 80, vy: -60 - Math.random() * 60, vie: 0.5, t: 0, col: i % 2 ? '#7dff9a' : '#eafff0', s: 2 });
+          this.texte(e.x, e.y - (e.vol ? 44 : 28), '+1 ♥', '#7dff9a');
+          if (this.pieces.length < 25 && this.cibleOr) this.pieces.push({ x0: e.x, y0: e.y - 12, t: 0, vie: 0.6 });
+          break;
+        }
+        case 'poseMur': this.poussiere(e.x, e.y + 14, 4); break;
+        case 'venteMur': this.poussiere(e.x, e.y + 14, 5); this.texte(e.x, e.y - 18, '+' + e.or, '#f2c14e'); break;
+        case 'prevusAppliques': this.bandeau = { texte: 'Travaux terminés', sous: 'Le labyrinthe est à jour', t: 0, vie: 1.6 }; break;
         case 'fuite': this.secousse = 0.25; this.texte((this.carte.chateau.c + 0.5) * T, this.carte.chateau.r * T + 20, '−' + e.vies + ' ♥', '#ff6b5a'); break;
         case 'vague': this.bandeau = { texte: 'Vague ' + e.vague, sous: '', t: 0, vie: 2 }; break;
         case 'finVague': this.bandeau = { texte: 'Vague ' + e.vague + ' terminée', sous: '+' + e.or + ' or', t: 0, vie: 1.8 }; break;
@@ -324,23 +343,30 @@ export class Vue {
     }
     for (const [id, a] of this.animTours) { a.tPrec = a.t; a.t += dt; if (a.t > 1) this.animTours.delete(id); }
 
-    // Cases constructibles.
+    // Cases constructibles (`caseLibre` : test rapide, sans chercher si le passage du labyrinthe reste ouvert).
     if (ui.construction) {
+      const libre = ui.caseLibre || ui.peutPoser;
       g.fillStyle = 'rgba(255,255,255,.07)';
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++)
-        if (ui.peutPoser(c, r)) g.fillRect(c * T + 2, r * T + 2, T - 4, T - 4);
+        if (libre(c, r)) g.fillRect(c * T + 2, r * T + 2, T - 4, T - 4);
     }
 
     // Portées.
     const sel = ui.selection && s.tours.find((t) => t.id === ui.selection);
-    if (sel) this.portee(sel.x, sel.y, statsTour(sel).portee, true);
+    if (sel) this.portee(sel.x, sel.y, statsEffectives(s, sel).portee, true);
     let fantome = null;
+    const unMur = ui.construction === 'mur';
     if (ui.construction && ui.fantome) {
       const { c, r } = ui.fantome;
-      const ok = ui.peutPoser(c, r) && s.or >= TOURS[ui.construction].prix;
-      fantome = { c, r, ok };
-      this.portee(c * T + T / 2, r * T + T / 2, TOURS[ui.construction].niveaux[0].portee, ok);
+      const raison = ui.raisonPose ? ui.raisonPose(c, r) : ui.peutPoser(c, r) ? null : 'place';
+      const ok = !raison && s.or >= (unMur ? LABYRINTHE.prixMur : TOURS[ui.construction].prix);
+      fantome = { c, r, ok, raison };
+      if (!unMur) {
+        const z = s.labyrinthe && s.carte.zoneEn(c, r);
+        this.portee(c * T + T / 2, r * T + T / 2, TOURS[ui.construction].niveaux[0].portee * ((z && ZONES[z.sorte].portee) || 1), ok);
+      }
     }
+    if (s.labyrinthe) this.solLabyrinthe(s, fantome);
 
     // Visée d'un pouvoir.
     if (ui.pouvoir && ui.visee) {
@@ -363,7 +389,8 @@ export class Vue {
       if (!d.bloquant && occupees.has(d.c + ',' + d.r)) continue;
       liste.push({ y: d.sol ? -1e6 : d.bloquant ? d.y : d.y - 30, f: () => this.element(d) });
     }
-    for (const t of s.tours) liste.push({ y: t.y + 1, f: () => this.tour(t, t.id === ui.selection) });
+    for (const t of s.tours) liste.push({ y: t.y + 1, f: () => { this.tour(t, t.id === ui.selection); if (t.aRetirer) Laby.croix(g, t.c, t.r); } });
+    if (s.labyrinthe) this.objetsLabyrinthe(s, liste);
     this.vendues = this.vendues.filter((v) => (v.t += dt) < DUREES.vente);
     for (const v of this.vendues) liste.push({ y: v.tour.y + 1, f: () => this.tour(v.tour, false, { genre: 'vente', t: v.t }) });
     for (const e of s.ennemis) if (!e.vol) liste.push({ y: e.y, f: () => this.ennemi(e) });
@@ -385,12 +412,69 @@ export class Vue {
     if (!this.reduits) this.ambiance.dessiner(g, dt, this.horloge);
 
     if (fantome) {
-      g.globalAlpha = 0.65;
-      this.tour({ sorte: ui.construction, niveau: 0, x: fantome.c * T + T / 2, y: fantome.r * T + T / 2, angle: 0, tir: 0 }, false);
-      g.globalAlpha = 1;
+      if (unMur) Laby.mur(g, fantome.c, fantome.r, 0.65);
+      else {
+        g.globalAlpha = 0.65;
+        this.tour({ sorte: ui.construction, niveau: 0, x: fantome.c * T + T / 2, y: fantome.r * T + T / 2, angle: 0, tir: 0 }, false);
+        g.globalAlpha = 1;
+      }
       if (!fantome.ok) { g.strokeStyle = '#ff5a4a'; g.lineWidth = 3; g.strokeRect(fantome.c * T + 3, fantome.r * T + 3, T - 6, T - 6); }
+      if (fantome.raison === 'bouche') this.etiquette(fantome.c * T + T / 2, fantome.r * T - 14, 'Le passage serait bouché', '#ff8a7a');
     }
     this.dessinerBandeau(dt);
+  }
+
+  /** Petit texte fixe sur fond sombre, gardé dans l'écran. */
+  etiquette(x, y, txt, col) {
+    const g = this.g;
+    g.font = `700 14px ${POLICE}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const l = g.measureText(txt).width + 14;
+    const cx = Math.max(l / 2 + 4, Math.min(W - l / 2 - 4, x)), cy = Math.max(14, y);
+    g.fillStyle = 'rgba(26,20,32,.88)'; g.fillRect(cx - l / 2, cy - 11, l, 22);
+    g.fillStyle = col; g.fillText(txt, cx, cy + 1);
+  }
+
+  /**
+   * Labyrinthe, à plat sous les objets : zones, trajet des monstres, téléporteurs. Pendant une vague le trajet en
+   * cours est estompé ; s'il y a des travaux prévus (ou une pose visée), le futur trajet est tracé en bleu clair.
+   */
+  solLabyrinthe(s, fantome) {
+    const g = this.g, lab = s.carte.lab, t = this.horloge + performance.now() / 1000;
+    const prises = new Set(s.tours.map((x) => x.c + ',' + x.r));
+    for (const z of lab.zones) if (!s.labyrinthe.murs.has(z.r * COLS + z.c)) Laby.zone(g, z, prises.has(z.c + ',' + z.r) ? 0 : t);
+    const vague = enVague(s);
+    const vise = fantome && !fantome.raison ? fantome : null;
+    let futur = null;
+    if (s.labyrinthe.prevus.length || vise) {
+      const cle = s.labyrinthe.prevus.map((p) => p.type + p.c + ',' + p.r).join(';') + '|' + s.tours.length + '|' + s.labyrinthe.murs.size + '|' + (vise ? vise.c + ',' + vise.r : '');
+      if (this.apercuTrajet.cle !== cle) this.apercuTrajet = { cle, trajet: vise ? trajetPrevu(s, vise.c, vise.r) : trajetPrevu(s) };
+      futur = this.apercuTrajet.trajet;
+    }
+    if (s.carte.sol) Laby.tracer(g, s.carte.sol, t, 'cours', futur ? 0.4 : vague ? 0.55 : 1);
+    if (futur) Laby.tracer(g, futur, t, 'futur', 1);
+    for (const tp of lab.tp) { Laby.teleporteur(g, tp.a, tp.forme, false, t); Laby.teleporteur(g, tp.b, tp.forme, true, t); }
+  }
+
+  /** Labyrinthe, objets debout triés par profondeur : entrée, sortie, checkpoints, murs, travaux prévus. */
+  objetsLabyrinthe(s, liste) {
+    const g = this.g, lab = s.carte.lab, l = s.labyrinthe;
+    const y = (r) => r * T + T / 2;
+    liste.push({ y: y(lab.entree.r), f: () => Laby.entree(g, lab.entree) }, { y: y(lab.sortie.r), f: () => Laby.sortie(g, lab.sortie) });
+    for (const p of lab.cp) liste.push({ y: y(p.r) - 12, f: () => Laby.checkpoint(g, p) });
+    const aVendre = new Set(l.prevus.filter((p) => p.type === 'venteMur').map((p) => p.r * COLS + p.c));
+    for (const k of l.murs) {
+      const c = k % COLS, r = Math.floor(k / COLS);
+      liste.push({ y: y(r) + 1, f: () => { Laby.mur(g, c, r); if (aVendre.has(k)) Laby.croix(g, c, r); } });
+    }
+    const pouls = 0.42 + 0.12 * Math.sin(performance.now() / 250);
+    for (const p of l.prevus) {
+      if (p.type === 'poseMur') liste.push({ y: y(p.r) + 1, f: () => Laby.mur(g, p.c, p.r, pouls) });
+      else if (p.type === 'poseTour') liste.push({ y: y(p.r) + 1, f: () => {
+        g.globalAlpha = pouls;
+        this.tour({ sorte: p.sorte, niveau: 0, x: p.c * T + T / 2, y: y(p.r), angle: 0, tir: 0 }, false);
+        g.globalAlpha = 1;
+      } });
+    }
   }
 
   /** Météore en chute : arrive en diagonale depuis le haut, son ombre grandit au sol. */
@@ -574,7 +658,7 @@ export class Vue {
     }
     // Barre de vie et marques.
     const bx = Math.round(e.x - 13), by = y - 4;
-    if (e.pv < e.pvMax && !e.invisible) {
+    if ((e.pv < e.pvMax || this.barres) && !e.invisible) {
       g.fillStyle = '#1a1420'; g.fillRect(bx - 1, by - 1, 28, 6);
       const p = Math.max(0, e.pv / e.pvMax);
       g.fillStyle = p > 0.5 ? '#5fd068' : p > 0.25 ? '#f2c14e' : '#e5533d';

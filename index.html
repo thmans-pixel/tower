@@ -35,6 +35,7 @@
         </div>
       </span>
       <button id="b-effets" class="petit" title="Effets complets ou réduits (tablettes lentes)">Effets</button>
+      <button id="b-barres" class="petit" title="Barres de vie de tous les monstres (V)">Barres de vie</button>
       <button id="b-pause" class="petit" title="Pause (Espace)">Pause</button>
       <button id="b-vitesse" class="petit" title="Vitesse (F)">×1</button>
       <button id="b-recommencer" class="petit" title="Recommencer">Recommencer</button>
@@ -47,6 +48,7 @@
       <canvas id="toile" width="960" height="640"></canvas>
       <aside id="panneau" hidden></aside>
       <div id="pause" hidden>Pause</div>
+      <div id="aide-case" role="tooltip" hidden></div>
       <div id="barre-boss" hidden><span id="nom-boss"></span><div class="jauge"><i id="jauge-boss"></i></div></div>
     </div>
   </main>
@@ -74,7 +76,8 @@
         <li>Choisissez une tour en bas (ou touches &amp; é " ' ( - ou 1 à 6), puis une case libre ; Maj + clic pour en poser plusieurs à la suite. Au doigt : touchez la case une fois pour voir la portée, une seconde fois pour bâtir.</li>
         <li>Touchez une tour pour l'améliorer, la revendre ou changer sa cible.</li>
         <li>Chaque ennemi qui atteint le château coûte des vies. Lancer la vague suivante en avance rapporte de l'or.</li>
-        <li>Pouvoirs : è ou 7 (météores), _ ou 8 (renforts). Espace : pause. F : vitesse. Échap : annuler.</li>
+        <li>Pouvoirs : è ou 7 (météores), _ ou 8 (renforts). Espace : pause. F : vitesse. V : barres de vie. Échap : annuler.</li>
+        <li>Mode Labyrinthe : posez des murs (è ou 7) pour dessiner le parcours des monstres ; chaque monstre mis à terre rapporte une vie, il en faut 100 pour gagner.</li>
       </ul>
     </details>
   </div>

@@ -102,16 +102,16 @@ Logique (`npm test`) :
 
 Affichage et interface (manipulations sur https://tower.izicraft.fr ou `python3 tools/serveur.py`) :
 13. [ ] Le menu propose « Labyrinthe » avec le choix de difficulté et le record ; `?jouer=labyrinthe` démarre direct.
-14. [ ] Checkpoints (drapeaux numérotés), TP (entrées bleues, sorties rouges, même forme par paire), zones (icône et teinte par sorte)
+14. [x] Checkpoints (drapeaux numérotés), TP (entrées bleues, sorties rouges, même forme par paire), zones (icône et teinte par sorte)
     et sortie sont visibles et reconnaissables ; une fiche explique chaque zone au survol (appui long sur téléphone).
-15. [ ] **Le trajet des monstres est tracé** à l'écran (pointillés avec flèches) et se met à jour à chaque mur posé
+15. [x] **Le trajet des monstres est tracé** à l'écran (pointillés avec flèches) et se met à jour à chaque mur posé
     ou vendu ; le fantôme d'un mur interdit est rouge avec « Le passage serait bouché ». Pendant une vague, les
     éléments prévus sont dessinés en transparence, ceux à retirer sont barrés, et le **futur trajet** est tracé en
     plus clair à côté du trajet en cours ; un clic sur un élément prévu l'annule.
-16. [ ] Le bouton **Mur** est dans la boutique (touche **7**), avec pose en série (Maj + clic, appui long, ×n sur
+16. [x] Le bouton **Mur** est dans la boutique (touche **7**), avec pose en série (Maj + clic, appui long, ×n sur
     téléphone).
-17. [ ] La touche **V** affiche ou cache toutes les barres de vie, dans tous les modes ; le choix est gardé.
-18. [ ] Une mise à terre montre « +1 ♥ » et un petit effet sur le monstre ; le compteur de vies affiche l'objectif
+17. [x] La touche **V** affiche ou cache toutes les barres de vie, dans tous les modes ; le choix est gardé.
+18. [x] Une mise à terre montre « +1 ♥ » et un petit effet sur le monstre ; le compteur de vies affiche l'objectif
     (« 47 / 100 »).
 
 Équilibre et sauvegarde :
@@ -194,7 +194,24 @@ passe (69 tests) et `npm run simulate` redonne exactement les mêmes repères qu
 - Rien ne s'affiche encore : le mode se joue par les tests (lot 2 : écran, lot 3 : équilibre et sauvegarde).
 - Chiffres choisis faute de précision dans la spec, à régler au lot 3 : or de départ 250, Ronces 5 % des PV par
   seconde, Source 10 % des PV par seconde, 8 zones tirées au hasard parmi les 7 sortes.
-- À vérifier à la main : rien de visible avant le lot 2.
+
+**Lot 2 — écran (fait).** Critères 14 à 18 cochés ; le 13 l'est à moitié : le menu, la difficulté et
+`?jouer=labyrinthe` sont là, le **record** arrive avec le lot 3. Essayé dans Chrome sans écran (ordinateur et
+téléphone en paysage, au doigt), sans erreur dans la console.
+- Menu : mode « Labyrinthe » toujours proposé, avec les règles en bref et l'aperçu du terrain tiré au sort ;
+  « Un autre terrain » en tire un nouveau. « Recommencer » rejoue le même terrain, « Rejouer » en tire un autre.
+- `src/render/labyrinthe.js` : murs, zones, drapeaux, téléporteurs, entrée, sortie et tracé du trajet, dessinés en
+  code. Le futur trajet (bleu clair) s'affiche dès qu'il y a des travaux prévus ou qu'on vise une case.
+- Bouton **Mur** (touche 7) : toujours en série, souris enfoncée pour tracer une ligne, reclic sur un mur pour le
+  retirer. Sans outil, toucher un mur le vend et toucher un élément prévu l'annule.
+- Les pouvoirs passent en 8 et 9 dans ce mode (la 7 est le Mur) ; leurs lettres M et R ne changent pas.
+- Touche **V** et bouton « Barres de vie » (dans le menu ☰ sur téléphone), choix gardé dans la progression.
+- Bulle d'aide : au survol d'une zone, d'un drapeau, d'un téléporteur, de l'entrée ou de la sortie ; au doigt, en
+  touchant la case (elle reste 4 secondes), à la place de l'appui long prévu, que les gestes du zoom prennent déjà.
+- Panneau d'une tour : effet de la zone, « Vendre à la fin de la vague » puis « Annuler la vente ».
+- Ajouts à la logique pour l'aperçu : `trajetPrevu`, `caseLibre` (testés).
+- À vérifier à la main par Thibault : le confort de la pose des murs à la souris et au doigt, la lisibilité des zones
+  et des téléporteurs, le son des mises à terre.
 
 ## Décisions de Thibault (2026-11-24)
 - Pendant une vague on peut tout faire : poses et ventes restent en transparence et ne s'appliquent qu'entre les
