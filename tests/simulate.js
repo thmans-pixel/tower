@@ -40,7 +40,7 @@ export function jouer({ carte = 'prairie', difficulte = 'normal', maxTours = 20,
     if (s.vague !== v) journal.push(s.vies);
     s.evenements.length = 0;
   }
-  return { fin: s.fin, vague: s.vague, vies: s.vies, or: s.or, tours: s.tours.length, abattus: s.abattus, minutes: +(s.temps / 60).toFixed(1), journal };
+  return { fin: s.fin, vague: s.vague, vies: s.vies, or: s.or, orGagne: s.orGagne, tours: s.tours.length, abattus: s.abattus, minutes: +(s.temps / 60).toFixed(1), journal };
 }
 
 /**

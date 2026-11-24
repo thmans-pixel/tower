@@ -149,6 +149,7 @@ export class Son {
         case 'amelioration': [523, 659, 784, 1046].forEach((f, i) => this.cloche(f, 0.5, 0.035, i * 0.07)); break;
         case 'vente': this.souffle(0.35, 0.07, 600, 'lowpass', 150); [1318, 1568, 1760].forEach((f, i) => this.ton('sine', f, f, 0.12, 0.025, 0.1 + i * 0.06)); break;
         case 'vague': this.cloche(392, 1.4, 0.07); this.cloche(392, 1.4, 0.05, 0.45); break;   // cloche du château
+        case 'tourDeLaVague': [1047, 1319, 1568, 2093].forEach((f, i) => this.cloche(f, 0.45, 0.025, 0.25 + i * 0.07)); break;
         case 'finVague': [784, 988, 1175].forEach((f, i) => this.cloche(f, 0.5, 0.03, i * 0.08)); break;
         case 'soin': if (e.soignes && this.libre('soin', 300)) this.ton('sine', 600, 900, 0.2, 0.03, 0, 0.04); break;
         case 'boss': [110, 98, 82].forEach((f, i) => { this.ton('sawtooth', f, f, 0.55, 0.06, i * 0.45); this.ton('sine', f / 2, f / 2, 0.6, 0.12, i * 0.45); }); break;

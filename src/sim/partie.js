@@ -1,7 +1,7 @@
 // Déroulement d'une partie : vagues, déplacements, tirs, or et vies. Aucune dépendance au navigateur.
 // L'affichage et le son lisent l'état et vident `etat.evenements` ; ils ne le modifient jamais directement :
 // toute action du joueur passe par les commandes exportées (poser, ameliorer, vendre, cibler, appelerVague).
-import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES } from './const.js';
+import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES, COMPENSATION_OR, PRIME_TOUR } from './const.js';
 import { CARTES } from '../data/cartes.js';
 import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
@@ -39,6 +39,9 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
     payees: {},               // vagues dont le bonus de fin a été versé
     fin: null,                // 'victoire' ou 'defaite'
     abattus: 0, orGagne: 0,
+    orVague: {},              // or des monstres de chaque vague, tant que son bonus n'est pas versé
+    vendues: [],              // tours vendues, gardées jusqu'à la fin des vagues où elles ont frappé
+    resteOr: 0,               // fraction d'or non versée (compensation × 0,8)
     pouvoirs: { meteores: 0, renforts: 0 },   // secondes de recharge restantes
     meteores: [],             // météores en train de tomber : { x, y, t }
     renforts: [],             // groupes de soldats : { id, x, y, ds: { route: distance }, pv, pvMax, t }
@@ -75,6 +78,7 @@ function construireTour(s, sorte, c, r, prix) {
   const t = {
     id: s.prochainId++, sorte, niveau: 0, c, r, x: centre(c), y: centre(r),
     recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: prix, angle: 0, tir: 0, variante: null,
+    degatsVague: {}, couronnes: 0,   // dégâts par vague du monstre touché ; vagues remportées (spec 017)
   };
   s.tours.push(t);
   ev(s, 'pose', { tour: t.id, x: t.x, y: t.y });
@@ -149,6 +153,7 @@ export function appliquerPrevus(s) {
       const t = s.tours[i], gain = prixRevente(t);
       s.or += gain;
       s.tours.splice(i, 1);
+      s.vendues.push(t);
       ev(s, 'vente', { x: t.x, y: t.y, or: gain });
     } else if (p.type === 'venteMur') {
       l.murs.delete(cle(p.c, p.r));
@@ -259,6 +264,7 @@ export function vendre(s, id) {
   }
   s.or += gain;
   s.tours.splice(i, 1);
+  s.vendues.push(t);
   ev(s, 'vente', { x: t.x, y: t.y, or: gain });
   if (s.labyrinthe) recalculerChemin(s);
   return { ok: true, or: gain };
@@ -746,14 +752,14 @@ export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
   if (!continu) ev(s, 'blesse', { id: e.id, x: e.x, y: e.y, vol: e.vol, armure: armure >= 0.2 });
   const avant = e.pv;
   e.pv -= reel;
-  if (tour) tour.degats += Math.min(reel, avant);
+  if (tour) { const d = Math.min(reel, avant); tour.degats += d; (tour.degatsVague ??= {})[e.vague] = (tour.degatsVague[e.vague] || 0) + d; }
   if (e.pv > 0) return;
   if (s.labyrinthe) { metAterre(s, e, tour); return; }
   const i = s.ennemis.indexOf(e);
   if (i >= 0) s.ennemis.splice(i, 1);
   s.vivants[e.vague]--;
-  const gain = ENNEMIS[e.sorte].or;
-  s.or += gain; s.orGagne += gain;
+  const gain = orCompense(s, ENNEMIS[e.sorte].or);
+  s.or += gain; s.orGagne += gain; s.orVague[e.vague] = (s.orVague[e.vague] || 0) + gain;
   s.abattus++;
   if (tour) tour.abattus++;
   ev(s, 'mort', { id: e.id, sorte: e.sorte, x: e.x, y: e.y, dx: e.dx, dy: e.dy, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
@@ -771,8 +777,8 @@ function metAterre(s, e, tour) {
   e.aTerre = (e.aTerre || 0) + 1;
   e.pv = e.pvMax;
   e.brule = null;
-  const gain = Math.ceil(d.or * LABYRINTHE.partOr);
-  s.or += gain; s.orGagne += gain;
+  const gain = orCompense(s, Math.ceil(d.or * LABYRINTHE.partOr));
+  s.or += gain; s.orGagne += gain; s.orVague[e.vague] = (s.orVague[e.vague] || 0) + gain;
   s.abattus++;
   if (tour) tour.abattus++;
   s.vies++;
@@ -780,13 +786,51 @@ function metAterre(s, e, tour) {
   if (s.vies >= s.labyrinthe.objectif && !s.fin) { s.fin = 'victoire'; ev(s, 'victoire'); }
 }
 
+/** Or des monstres et bonus de fin de vague, × 0,8 : compense la prime de la meilleure tour (0,8 × 1,25 = 1). Les restes s'additionnent. */
+function orCompense(s, base) {
+  const total = base * COMPENSATION_OR + s.resteOr;
+  const gain = Math.floor(total + 1e-9);
+  s.resteOr = total - gain;
+  return gain;
+}
+
+/** Nom d'une tour : celui de sa spécialisation au niveau 3. */
+export const nomTour = (t) => (t.niveau === 2 && t.variante ? TOURS[t.sorte].specialisations[t.variante].nom : TOURS[t.sorte].nom);
+
+/** Tours classées par dégâts totaux (la plus ancienne devant en cas d'égalité) : pour l'écran. */
+export function classement(s) {
+  return [...s.tours]
+    .sort((a, b) => b.degats - a.degats || a.id - b.id)
+    .map((t, i) => ({ rang: i + 1, id: t.id, sorte: t.sorte, niveau: t.niveau, variante: t.variante, degats: t.degats, couronnes: t.couronnes, nom: nomTour(t) }));
+}
+
+/** La tour qui a fait le plus de dégâts aux monstres de la vague v (vendues comprises), ou null. */
+function tourDeLaVague(s, v) {
+  let meilleure = null;
+  for (const t of [...s.tours, ...s.vendues]) {
+    const d = (t.degatsVague || {})[v] || 0;
+    if (d > 0 && (!meilleure || d > (meilleure.degatsVague[v] || 0) || (d === (meilleure.degatsVague[v] || 0) && t.id < meilleure.id))) meilleure = t;
+  }
+  return meilleure;
+}
+
 function bilanVagues(s) {
   for (let v = 1; v <= s.vague; v++) {
     if (s.payees[v] || !s.finies[v] || s.vivants[v] > 0) continue;
     s.payees[v] = true;
-    const bonus = 15 + 4 * v;
+    const bonus = orCompense(s, 15 + 4 * v);
     s.or += bonus; s.orGagne += bonus;
     ev(s, 'finVague', { vague: v, or: bonus });
+    const meilleure = tourDeLaVague(s, v);
+    if (meilleure) {
+      const prime = Math.ceil(((s.orVague[v] || 0) + bonus) * PRIME_TOUR);
+      meilleure.couronnes++;
+      s.or += prime; s.orGagne += prime;
+      ev(s, 'tourDeLaVague', { tour: meilleure.id, sorte: meilleure.sorte, niveau: meilleure.niveau, nom: nomTour(meilleure), x: meilleure.x, y: meilleure.y, vague: v, or: prime });
+    }
+    delete s.orVague[v];
+    for (const t of [...s.tours, ...s.vendues]) if (t.degatsVague) delete t.degatsVague[v];
+    s.vendues = s.vendues.filter((t) => Object.keys(t.degatsVague || {}).length > 0);
   }
   if (s.vague === s.nbVagues && s.finies[s.vague] && s.ennemis.length === 0) {
     s.fin = 'victoire';

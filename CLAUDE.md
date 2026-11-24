@@ -107,6 +107,11 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   s'emballer. Repères actuels (checkpoints n'importe où, depuis le 2026-11-24) : Normal, 10 terrains
   gagnés sur 10 en 9 vagues environ (de 5 à 16), 10 sur 10 sans mur aussi ; Facile 10 sur 10 en 3 à 8 vagues ;
   Difficile 9 sur 10. Plus facile qu'avant : le trajet traverse la carte en tous sens.
+- Classement des tours (spec 017, lot 1) : `tour.degatsVague[v]` (dans `blesser`), `s.orVague[v]`, `s.vendues` ; à la fin de
+  chaque vague (`bilanVagues`) la tour qui a le plus frappé ses monstres reçoit `ceil(¼ × (or des monstres + bonus de fin))`
+  (`tourDeLaVague`, couronnes). Or des monstres et bonus de fin × `COMPENSATION_OR` (0,78, `const.js`, restes reportés par
+  `orCompense`). `classement(s)` alimente `#classement` (touche C) et le podium de fin. Repères Normal : Prairie posé 3 vies,
+  pressé perd vague 10, Désert 7 vies, Montagne 7 vies (maxTours 30) ; Difficile inchangé.
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
 - Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour

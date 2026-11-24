@@ -15,7 +15,7 @@ import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
 import { codeProgression, lireCode } from '../sim/transfert.js';
 import { CARTES } from '../data/cartes.js';
-import { scoreInfini } from '../sim/partie.js';
+import { scoreInfini, classement } from '../sim/partie.js';
 
 const $ = (id) => document.getElementById(id);
 const nb = (n) => Math.round(n).toLocaleString('fr-FR');
@@ -40,6 +40,8 @@ const ficheMur = (or) => `<h4>Mur <span class="prix${or !== null && or < LABYRIN
   <li>Pendant une vague, il est seulement prévu : il sera bâti à la fin.</li></ul>`;
 
 const COUL = { gob: '#5fae3a', loup: '#8c8f99', orc: '#9aa3ad', bat: '#6d5585', cham: '#9b5fc0', slime: '#8be04e', slime_petit: '#8be04e', golem: '#7f8288', spectre: '#cfe3f0', ogre: '#c0392b' };
+
+const rangDe = (s, t) => classement(s).find((x) => x.id === t.id).rang;
 
 export class Interface {
   constructor(actions) {
@@ -79,6 +81,8 @@ export class Interface {
     $('b-muet').onclick = () => actions.son();
     $('b-effets').onclick = () => actions.effets();
     $('b-barres').onclick = () => actions.barres();
+    $('b-classement').onclick = () => actions.classement();
+    $('classement').onclick = (e) => { const l = e.target.closest('[data-tour]'); if (l) actions.choisirTour(Number(l.dataset.tour)); };
     $('b-recommencer').onclick = () => actions.recommencer();
     $('b-menu').onclick = () => actions.menu();
     $('b-jouer').onclick = () => actions.ecran('cartes');
@@ -414,6 +418,9 @@ export class Interface {
       ['Durée', `${Math.floor(s.temps / 60)} min ${String(Math.floor(s.temps % 60)).padStart(2, '0')} s`],
     ];
     $('fin-bilan').innerHTML = lignes.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
+    const podium = s.tours.length ? classement(s).slice(0, 3) : [];
+    $('fin-podium').hidden = !podium.length;
+    $('fin-podium').innerHTML = podium.length ? '<h3>Les meilleures tours</h3><ol>' + podium.map((x) => `<li><b>${x.rang}</b><img alt="" src="${spriteTour(x.sorte, x.niveau).toDataURL()}"><span class="nom">${x.nom}</span><span class="deg">${nb(x.degats)}</span><span class="cour">${x.couronnes ? '♛ ' + x.couronnes : ''}</span></li>`).join('') + '</ol>' : '';
     $('fin').hidden = false;
   }
 
@@ -443,6 +450,8 @@ export class Interface {
     this.majChamp('b-muet', opts.son ? 'Tout couper' : 'Remettre le son');
     this.majChamp('b-effets', opts.reduits ? 'Effets −' : 'Effets');
     $('b-barres').classList.toggle('actif', !!opts.barres);
+    $('b-classement').classList.toggle('actif', !!ui.classement);
+    this.majClassement(s, ui);
     $('pause').hidden = !opts.pause;
 
     const appel = $('appel');
@@ -498,6 +507,21 @@ export class Interface {
     this.majFiche(s, ui);
   }
 
+  /** Panneau « Classement » : les tours de la plus forte à la plus faible (spec 017). */
+  majClassement(s, ui) {
+    const p = $('classement');
+    if (!ui.classement || !s.tours) { if (!p.hidden) { p.hidden = true; this.sigClassement = ''; } return; }
+    const l = classement(s);
+    const sig = l.map((x) => [x.id, x.niveau, Math.round(x.degats), x.couronnes].join(':')).join('|') + '|' + ui.selection;
+    if (sig === this.sigClassement && !p.hidden) return;
+    this.sigClassement = sig;
+    p.hidden = false;
+    p.innerHTML = '<button class="fermer" data-act="fermer-classement" aria-label="Fermer">×</button><h3>Classement des tours<small>Dégâts totaux · ♛ vagues remportées</small></h3>' +
+      (l.length ? '<ol>' + l.map((x) => `<li data-tour="${x.id}" class="${x.id === ui.selection ? 'choisie' : ''}"><b>${x.rang}</b><img alt="" src="${spriteTour(x.sorte, x.niveau).toDataURL()}"><span class="nom">${x.nom}<small>niveau ${x.niveau + 1}</small></span><span class="deg">${nb(x.degats)}</span><span class="cour">${x.couronnes ? '♛ ' + x.couronnes : ''}</span></li>`).join('') + '</ol>'
+        : '<p class="petit-texte">Aucune tour pour le moment.</p>');
+    p.querySelector('.fermer').onclick = () => this.a.classement();
+  }
+
   majPanneau(s, ui) {
     const p = $('panneau');
     const t = ui.selection && s.tours.find((x) => x.id === ui.selection);
@@ -508,7 +532,7 @@ export class Interface {
     const vague = !!s.labyrinthe && enVague(s);
     const suiv = t.niveau === 0 ? statsEffectives(s, { ...t, niveau: 1 }) : null;   // flèches vers le niveau 2 seulement
     const prix = prixAmelioration(t), vente = prixRevente(t);
-    const sig = [t.id, t.niveau, t.variante, t.ciblage, Math.round(t.degats), t.abattus, prix !== null && s.or >= prix, s.fin, vague, !!t.aRetirer].join('|');
+    const sig = [t.id, t.niveau, t.variante, t.ciblage, Math.round(t.degats), t.abattus, t.couronnes, s.tours.length, rangDe(s, t), prix !== null && s.or >= prix, s.fin, vague, !!t.aRetirer].join('|');
     if (sig === this.signature && !p.hidden) return;
     this.signature = sig;
     const fleche = (a, b, f) => (b !== undefined && b !== a ? ` <em>→ ${f(b)}</em>` : '');
@@ -531,6 +555,7 @@ export class Interface {
     if (n.perce) lignes.push(['Ignore', pct(n.perce) + ' de l’armure']);
     lignes.push(['Vise', n.volants ? 'sol et air' : 'sol seulement']);
     if (zoneTour) lignes.push(['Zone', `${zoneTour.nom} : ${zoneTour.portee ? 'portée + 25 %' : zoneTour.degats ? 'dégâts + 25 %' : 'cadence − 25 %'}`]);
+    lignes.push(['Rang', `${rangDe(s, t)}${rangDe(s, t) === 1 ? 'er' : 'e'} sur ${s.tours.length}`], ['Vagues remportées', t.couronnes ? '♛ ' + t.couronnes : '0']);
     lignes.push(['Dégâts totaux', nb(t.degats)], [s.labyrinthe ? 'Mises à terre' : 'Abattus', nb(t.abattus)]);
     const titre = t.niveau === 2 ? `${d.specialisations[t.variante].nom}<small>Niveau 3 — ${d.nom}</small>` : `${d.nom}<small>Niveau ${t.niveau + 1} sur 3</small>`;
     const rappel = t.niveau === 2 ? `<p class="desc">${d.specialisations[t.variante].description}</p>` : '';

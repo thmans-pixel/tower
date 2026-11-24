@@ -90,6 +90,8 @@ const interfaceJeu = new Interface({
   reunir: (q) => { progression = fusionner(progression, q); enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   effacer: () => { effacer(); progression = progressionVide(); mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
+  classement: () => { ui.classement = !ui.classement; son.jouer('clic'); },
+  choisirTour: (id) => { ui.selection = id; ui.construction = null; son.jouer('clic'); },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
   vendre: () => { const r = partie && vendre(partie, ui.selection); if (r && r.ok && !r.prevu) ui.selection = null; },
   annulerVente: () => {
@@ -105,7 +107,7 @@ async function decorsDe(id) {
 
 function montrer(nom) {
   ecran = nom;
-  if (nom !== 'jeu') { partie = null; ui.selection = null; ui.construction = null; enPause = false; ui.aide = null; }
+  if (nom !== 'jeu') { partie = null; ui.classement = false; ui.selection = null; ui.construction = null; enPause = false; ui.aide = null; }
   interfaceJeu.montrerEcran(nom);
   if (nom === 'cartes') afficherCartes();
 }
@@ -413,6 +415,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === ' ') { e.preventDefault(); basculerPause(); }
   else if (e.key === 'f' || e.key === 'F') changerVitesse();
   else if (e.key === 'v' || e.key === 'V') basculerBarres();
+  else if (e.key === 'c' || e.key === 'C') { ui.classement = !ui.classement; son.jouer('clic'); }
   else if (e.key === 'Escape') { ui.construction = null; ui.selection = null; ui.fantome = null; ui.pouvoir = null; ui.visee = null; ui.verrou = null; }
 });
 window.addEventListener('pointerdown', () => son.reveiller(), { once: true });

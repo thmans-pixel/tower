@@ -51,6 +51,7 @@ export class Vue {
     this.eclats = [];
     this.textes = [];
     this.anneaux = [];
+    this.couronnes = [];   // couronne au-dessus de la tour de la vague (spec 017)
     this.eclairs = [];
     this.bandeau = null;
     this.secousse = 0;
@@ -83,7 +84,7 @@ export class Vue {
   preparer(carte, decors) {
     this.carte = carte;
     this.decors = decors;
-    this.eclats = []; this.textes = []; this.anneaux = []; this.eclairs = []; this.bandeau = null;
+    this.eclats = []; this.textes = []; this.anneaux = []; this.couronnes = []; this.eclairs = []; this.bandeau = null;
     const f = document.createElement('canvas');
     f.width = W; f.height = H;
     const g = f.getContext('2d');
@@ -247,6 +248,11 @@ export class Vue {
         case 'prevusAppliques': this.bandeau = { texte: 'Travaux terminés', sous: 'Le labyrinthe est à jour', t: 0, vie: 1.6 }; break;
         case 'fuite': this.secousse = 0.25; this.texte((this.carte.chateau.c + 0.5) * T, this.carte.chateau.r * T + 20, '−' + e.vies + ' ♥', '#ff6b5a'); break;
         case 'vague': this.bandeau = { texte: 'Vague ' + e.vague, sous: '', t: 0, vie: 2 }; break;
+        case 'tourDeLaVague':
+          this.bandeau = { texte: 'Tour de la vague : ' + e.nom, sous: '+' + e.or + ' or · vague ' + e.vague + ' terminée', t: 0, vie: 2.4 };
+          this.couronnes.push({ x: e.x, y: e.y, t: 0, vie: 4 });
+          this.texte(e.x, e.y - 36, '+' + e.or, '#f2c14e');
+          break;
         case 'finVague': this.bandeau = { texte: 'Vague ' + e.vague + ' terminée', sous: '+' + e.or + ' or', t: 0, vie: 1.8 }; break;
         case 'bonusAppel': this.texte(W - 120, H - 30, '+' + e.or + ' or', '#f2c14e'); break;
         default:
@@ -421,6 +427,7 @@ export class Vue {
       if (!fantome.ok) { g.strokeStyle = '#ff5a4a'; g.lineWidth = 3; g.strokeRect(fantome.c * T + 3, fantome.r * T + 3, T - 6, T - 6); }
       if (fantome.raison === 'bouche') this.etiquette(fantome.c * T + T / 2, fantome.r * T - 14, 'Le passage serait bouché', '#ff8a7a');
     }
+    this.dessinerCouronnes(dt);
     this.dessinerBandeau(dt);
   }
 
@@ -856,6 +863,20 @@ export class Vue {
     g.globalAlpha = 1;
   }
 
+  /** Petite couronne en pixels qui flotte au-dessus de la tour de la vague. */
+  dessinerCouronnes(dt) {
+    this.couronnes = this.couronnes.filter((c) => (c.t += dt) < c.vie);
+    const g = this.g;
+    for (const c of this.couronnes) {
+      const a = Math.min(1, (c.vie - c.t) * 2), x = Math.round(c.x) - 8, y = Math.round(c.y - 44 + Math.sin(c.t * 4) * 2);
+      g.globalAlpha = a;
+      g.fillStyle = '#1a1420'; g.fillRect(x - 2, y - 2, 20, 14);
+      g.fillStyle = '#f2c14e'; g.fillRect(x, y + 4, 16, 6); g.fillRect(x, y, 3, 5); g.fillRect(x + 6, y - 1, 4, 6); g.fillRect(x + 13, y, 3, 5);
+      g.fillStyle = '#c0392b'; g.fillRect(x + 7, y + 6, 2, 2);
+    }
+    g.globalAlpha = 1;
+  }
+
   dessinerBandeau(dt) {
     const b = this.bandeau;
     if (!b) return;
@@ -871,7 +892,9 @@ export class Vue {
     g.fillStyle = 'rgba(26,20,32,.72)'; g.fillRect(0, H / 2 - 44, W, b.sous ? 88 : 70);
     g.fillStyle = b.alerte ? 'rgba(255,138,122,.8)' : 'rgba(242,193,78,.8)'; g.fillRect(0, H / 2 - 44, W, 2); g.fillRect(0, H / 2 - 44 + (b.sous ? 88 : 70) - 2, W, 2);
     g.textAlign = 'center';
-    g.font = `700 ${b.texte.length > 26 ? 32 : 40}px ${POLICE}`; g.fillStyle = b.alerte ? '#ff8a7a' : '#f2c14e'; g.fillText(b.texte, W / 2, H / 2 + 6);
+    let taille = 40;
+    for (; taille > 20; taille -= 2) { g.font = `700 ${taille}px ${POLICE}`; if (g.measureText(b.texte).width < W - 60) break; }
+    g.font = `700 ${taille}px ${POLICE}`; g.fillStyle = b.alerte ? '#ff8a7a' : '#f2c14e'; g.fillText(b.texte, W / 2, H / 2 + 6);
     if (b.sous) { g.font = `600 18px ${POLICE}`; g.fillStyle = '#fdf6e3'; g.fillText(b.sous, W / 2, H / 2 + 32); }
     g.restore();
     g.globalAlpha = 1;
