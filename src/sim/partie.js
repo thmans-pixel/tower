@@ -8,20 +8,28 @@ import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 import { DIFFICULTES } from '../data/difficultes.js';
 import { genererVague } from '../data/vagues.js';
+import { LABYRINTHE } from '../data/labyrinthe.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
+import { genererLabyrinthe, carteLabyrinthe, majChemin, cheminLabyrinthe, zoneMonstre, zoneTour, cle } from './labyrinthe.js';
 
-/** `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées). */
+/**
+ * `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées).
+ * `idCarte === 'labyrinthe'` : mode labyrinthe (spec 016), terrain tiré de `options.graine`.
+ */
 export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', options = {}) {
   // Une carte de la campagne par son nom, ou une carte aléatoire déjà décrite (src/sim/generateur.js).
-  const def = typeof idCarte === 'object' ? idCarte : CARTES[idCarte];
+  const maze = idCarte === 'labyrinthe';
+  const carteMaze = maze ? carteLabyrinthe(genererLabyrinthe(options.graine || 1)) : null;
+  const def = maze ? carteMaze.def : typeof idCarte === 'object' ? idCarte : CARTES[idCarte];
   if (!def || !def.ouverte) throw new Error('Carte indisponible : ' + idCarte);
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
-  return {
+  const s = {
     difficulte, multPV: diff.pv, pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
-    carte: construireCarte(def),
+    carte: maze ? carteMaze : construireCarte(def),
+    labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [] } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
-    vague: 0, nbVagues: options.infini ? Infinity : def.vagues.length, infini: !!options.infini,
+    vague: 0, nbVagues: options.infini || maze ? Infinity : def.vagues.length, infini: !!options.infini,
     temps: 0,
     tours: [], ennemis: [], projectiles: [],
     lancement: null,          // vague en train d'arriver : { vague, file: [{ sorte, a }], t }
@@ -38,29 +46,164 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
     prochainId: 1,
     evenements: [],
   };
+  if (maze) recalculerChemin(s);
+  return s;
 }
 
 const ev = (s, type, donnees = {}) => s.evenements.push({ type, ...donnees });
 
 // ---------------------------------------------------------------- commandes du joueur
 
-export function peutPoser(s, c, r) {
-  return s.carte.etat(c, r) === LIBRE && !s.tours.some((t) => t.c === c && t.r === r);
+/** Pourquoi on ne peut pas construire en (c, r) : 'place', 'bouche' (labyrinthe : plus de passage), ou null. */
+export function raisonPose(s, c, r) {
+  if (s.carte.etat(c, r) !== LIBRE || s.tours.some((t) => t.c === c && t.r === r)) return 'place';
+  const l = s.labyrinthe;
+  if (!l) return null;
+  if (l.prevus.some((p) => p.c === c && p.r === r && p.type.startsWith('pose'))) return 'place';
+  const b = bloquesPrevus(s);
+  b.add(cle(c, r));
+  return cheminLabyrinthe(s.carte.lab, b) ? null : 'bouche';
+}
+
+export const peutPoser = (s, c, r) => raisonPose(s, c, r) === null;
+
+function construireTour(s, sorte, c, r, prix) {
+  const t = {
+    id: s.prochainId++, sorte, niveau: 0, c, r, x: centre(c), y: centre(r),
+    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: prix, angle: 0, tir: 0, variante: null,
+  };
+  s.tours.push(t);
+  ev(s, 'pose', { tour: t.id, x: t.x, y: t.y });
+  return t;
 }
 
 export function poser(s, sorte, c, r) {
   const d = TOURS[sorte];
   if (!d || s.fin) return { ok: false, raison: 'impossible' };
-  if (!peutPoser(s, c, r)) return { ok: false, raison: 'place' };
+  if (s.labyrinthe && !enVague(s)) appliquerPrevus(s);
+  const raison = raisonPose(s, c, r);
+  if (raison) return { ok: false, raison };
   if (s.or < d.prix) return { ok: false, raison: 'or' };
   s.or -= d.prix;
-  const t = {
-    id: s.prochainId++, sorte, niveau: 0, c, r, x: centre(c), y: centre(r),
-    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: d.prix, angle: 0, tir: 0, variante: null,
-  };
-  s.tours.push(t);
-  ev(s, 'pose', { tour: t.id, x: t.x, y: t.y });
+  if (s.labyrinthe && enVague(s)) {
+    s.labyrinthe.prevus.push({ type: 'poseTour', sorte, c, r, prix: d.prix });
+    ev(s, 'prevu', { x: centre(c), y: centre(r) });
+    return { ok: true, prevu: true };
+  }
+  const t = construireTour(s, sorte, c, r, d.prix);
+  if (s.labyrinthe) recalculerChemin(s);
   return { ok: true, tour: t };
+}
+
+// ---------------------------------------------------------------- labyrinthe (spec 016)
+
+/** Une vague est en cours : des monstres arrivent ou sont encore sur la carte. */
+export const enVague = (s) => !!s.lancement || s.ennemis.length > 0;
+
+/** Cases fermées (murs et tours construits). */
+function bloquesActuels(s) {
+  const b = new Set(s.labyrinthe.murs);
+  for (const t of s.tours) b.add(cle(t.c, t.r));
+  return b;
+}
+
+/** Cases fermées une fois tout ce qui est prévu appliqué. */
+function bloquesPrevus(s) {
+  const b = bloquesActuels(s);
+  for (const p of s.labyrinthe.prevus) {
+    if (p.type === 'poseMur' || p.type === 'poseTour') b.add(cle(p.c, p.r));
+    else b.delete(cle(p.c, p.r));
+  }
+  return b;
+}
+
+function recalculerChemin(s) {
+  return majChemin(s.carte, bloquesActuels(s));
+}
+
+/** Construit d'un coup ce qui était prévu pendant la vague (ventes d'abord, puis poses). */
+export function appliquerPrevus(s) {
+  const l = s.labyrinthe;
+  if (!l || !l.prevus.length) return;
+  const liste = l.prevus;
+  l.prevus = [];
+  for (const p of liste) {
+    if (p.type === 'venteTour') {
+      const i = s.tours.findIndex((t) => t.id === p.id);
+      if (i < 0) continue;
+      const t = s.tours[i], gain = prixRevente(t);
+      s.or += gain;
+      s.tours.splice(i, 1);
+      ev(s, 'vente', { x: t.x, y: t.y, or: gain });
+    } else if (p.type === 'venteMur') {
+      l.murs.delete(cle(p.c, p.r));
+      s.or += LABYRINTHE.prixMur;
+      ev(s, 'venteMur', { x: centre(p.c), y: centre(p.r), or: LABYRINTHE.prixMur });
+    }
+  }
+  for (const p of liste) {
+    if (p.type === 'poseMur') { l.murs.add(cle(p.c, p.r)); ev(s, 'poseMur', { x: centre(p.c), y: centre(p.r) }); }
+    else if (p.type === 'poseTour') construireTour(s, p.sorte, p.c, p.r, p.prix);
+  }
+  recalculerChemin(s);
+  ev(s, 'prevusAppliques', { n: liste.length });
+}
+
+/** Construit un mur (labyrinthe seulement). Pendant une vague, le mur est seulement prévu. */
+export function poserMur(s, c, r) {
+  if (!s.labyrinthe || s.fin) return { ok: false, raison: 'impossible' };
+  if (!enVague(s)) appliquerPrevus(s);
+  const raison = raisonPose(s, c, r);
+  if (raison) return { ok: false, raison };
+  if (s.or < LABYRINTHE.prixMur) return { ok: false, raison: 'or' };
+  s.or -= LABYRINTHE.prixMur;
+  if (enVague(s)) {
+    s.labyrinthe.prevus.push({ type: 'poseMur', c, r, prix: LABYRINTHE.prixMur });
+    ev(s, 'prevu', { x: centre(c), y: centre(r) });
+    return { ok: true, prevu: true };
+  }
+  s.labyrinthe.murs.add(cle(c, r));
+  ev(s, 'poseMur', { x: centre(c), y: centre(r) });
+  recalculerChemin(s);
+  return { ok: true };
+}
+
+/** Vend un mur : rend tout son prix (à la fin de la vague si l'on est en pleine vague). */
+export function vendreMur(s, c, r) {
+  const l = s.labyrinthe;
+  if (!l || s.fin || !l.murs.has(cle(c, r))) return { ok: false, raison: 'impossible' };
+  if (!enVague(s)) appliquerPrevus(s);
+  if (l.prevus.some((p) => p.type === 'venteMur' && p.c === c && p.r === r)) return { ok: false, raison: 'deja' };
+  if (enVague(s)) {
+    l.prevus.push({ type: 'venteMur', c, r });
+    ev(s, 'prevu', { x: centre(c), y: centre(r) });
+    return { ok: true, prevu: true, or: LABYRINTHE.prixMur };
+  }
+  l.murs.delete(cle(c, r));
+  s.or += LABYRINTHE.prixMur;
+  ev(s, 'venteMur', { x: centre(c), y: centre(r), or: LABYRINTHE.prixMur });
+  recalculerChemin(s);
+  return { ok: true, or: LABYRINTHE.prixMur };
+}
+
+/** Annule ce qui était prévu en (c, r) : rend l'or d'une pose, garde ce qu'on voulait vendre. */
+export function annulerPrevu(s, c, r) {
+  const l = s.labyrinthe;
+  const i = l ? l.prevus.findIndex((p) => p.c === c && p.r === r) : -1;
+  if (i < 0) return { ok: false, raison: 'impossible' };
+  const p = l.prevus[i];
+  if (p.type === 'venteMur' || p.type === 'venteTour') {
+    // Garder ce qu'on voulait vendre referme la case : il faut qu'un passage reste.
+    const b = bloquesPrevus(s);
+    b.add(cle(c, r));
+    if (!cheminLabyrinthe(s.carte.lab, b)) return { ok: false, raison: 'bouche' };
+    const t = p.type === 'venteTour' && s.tours.find((x) => x.id === p.id);
+    if (t) t.aRetirer = false;
+  } else {
+    s.or += p.prix;
+  }
+  l.prevus.splice(i, 1);
+  return { ok: true };
 }
 
 export function prixAmelioration(t) {
@@ -87,13 +230,22 @@ export function ameliorer(s, id, variante) {
 export const prixRevente = (t) => Math.floor(t.depense * REVENTE);
 
 export function vendre(s, id) {
+  if (s.labyrinthe && !enVague(s)) appliquerPrevus(s);
   const i = s.tours.findIndex((x) => x.id === id);
   if (i < 0 || s.fin) return { ok: false, raison: 'impossible' };
   const t = s.tours[i];
   const gain = prixRevente(t);
+  if (s.labyrinthe && enVague(s)) {
+    if (t.aRetirer) return { ok: false, raison: 'deja' };
+    t.aRetirer = true;
+    s.labyrinthe.prevus.push({ type: 'venteTour', id: t.id, c: t.c, r: t.r });
+    ev(s, 'prevu', { x: t.x, y: t.y });
+    return { ok: true, prevu: true, or: gain };
+  }
   s.or += gain;
   s.tours.splice(i, 1);
   ev(s, 'vente', { x: t.x, y: t.y, or: gain });
+  if (s.labyrinthe) recalculerChemin(s);
   return { ok: true, or: gain };
 }
 
@@ -105,13 +257,14 @@ export function cibler(s, id, mode) {
 }
 
 /** La vague suivante peut-elle être lancée maintenant ? */
-export const peutAppeler = (s) => !s.fin && !s.lancement && s.vague < s.nbVagues;
+export const peutAppeler = (s) => !s.fin && !s.lancement && s.vague < s.nbVagues && (!s.labyrinthe || s.ennemis.length === 0);
 
 /** Bonus d'or si l'on appelle la vague suivante maintenant. */
 export const bonusAppel = (s) => (s.compte !== null ? Math.ceil(s.compte) * BONUS_AVANCE : 0);
 
 export function appelerVague(s) {
   if (!peutAppeler(s)) return { ok: false };
+  appliquerPrevus(s);
   const bonus = bonusAppel(s);
   if (bonus > 0) { s.or += bonus; s.orGagne += bonus; ev(s, 'bonusAppel', { or: bonus }); }
   s.vague++;
@@ -130,7 +283,7 @@ export function appelerVague(s) {
 
 /** Groupes de la vague n : ceux de la carte, ou tirés au hasard (à graine) en mode infini. */
 function vagueN(s, n) {
-  return s.infini ? genererVague(s.carte.def.graine, n) : s.carte.def.vagues[n - 1];
+  return s.infini || s.labyrinthe ? genererVague(s.carte.def.graine, n) : s.carte.def.vagues[n - 1];
 }
 
 /** Score du mode infini : nombre de vagues entièrement repoussées (lancées, et plus aucun de leurs ennemis). */
@@ -179,8 +332,11 @@ function lancer(s, dt) {
     if (!l.file.length) {
       s.finies[l.vague] = true;
       s.lancement = null;
-      if (s.vague < s.nbVagues) s.compte = s.compteVague;
+      // Labyrinthe : la pause ne commence que quand tous les monstres de la vague sont sortis.
+      if (!s.labyrinthe && s.vague < s.nbVagues) s.compte = s.compteVague;
     }
+  } else if (s.labyrinthe && s.compte === null) {
+    if (s.vague > 0 && s.ennemis.length === 0) { appliquerPrevus(s); s.compte = s.compteVague; }
   } else if (s.compte !== null) {
     s.compte -= dt;
     if (s.compte <= 0) { s.compte = 0; appelerVague(s); }
@@ -217,7 +373,8 @@ function deplacer(s, dt) {
     if (e.ralenti > 0) { e.ralenti -= dt; if (e.ralenti <= 0) e.ralFacteur = 0; }
     if (e.gel > 0) e.gel -= dt;
     if (e.rage > 0) e.rage -= dt;
-    const v = e.gel > 0 ? 0 : d.vitesse * s.multVitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1);
+    const zone = s.labyrinthe && !e.vol ? zoneMonstre(s.carte, e) : null;
+    const v = e.gel > 0 ? 0 : d.vitesse * s.multVitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1) * (zone && zone.vitesse ? zone.vitesse : 1);
     // Renforts : un ennemi au sol s'arrête devant les soldats (sauf le boss, qui les écrase).
     e.bloque = null;
     if (!e.vol) for (const g of s.renforts) {
@@ -241,6 +398,8 @@ function deplacer(s, dt) {
     }
     const p = positionSur(tr, e.d);
     e.x = p.x; e.y = p.y; e.dx = p.dx; e.dy = p.dy;
+    if (zone && zone.soin) e.pv = Math.min(e.pvMax, e.pv + zone.soin * e.pvMax * dt);
+    if (zone && zone.degats) blesser(s, e, zone.degats * e.pvMax * dt, 'magique', null, 0, true);
   }
 }
 
@@ -304,7 +463,8 @@ export function lancerMeteores(s, x, y) {
 /** Renforts sur une case du chemin. */
 export function appelerRenforts(s, c, r) {
   if (!pouvoirPret(s, 'renforts')) return { ok: false, raison: 'recharge' };
-  if (s.carte.etat(c, r) !== CHEMIN) return { ok: false, raison: 'place' };
+  const surChemin = s.labyrinthe ? s.carte.cheminCases.some(([i, j]) => i === c && j === r) : s.carte.etat(c, r) === CHEMIN;
+  if (!surChemin) return { ok: false, raison: 'place' };
   const p = POUVOIRS.renforts;
   // Distance des soldats sur chaque route qui passe par cette case (deux routes sur un tronçon commun).
   const ds = {};
@@ -325,6 +485,7 @@ export function appelerRenforts(s, c, r) {
 function distanceSurTrajet(tr, x, y) {
   let best = 0, dmin = Infinity;
   for (const sg of tr.segs) {
+    if (sg.saut) continue;
     const ux = (sg.b.x - sg.a.x) / sg.l, uy = (sg.b.y - sg.a.y) / sg.l;
     const t = Math.max(0, Math.min(sg.l, (x - sg.a.x) * ux + (y - sg.a.y) * uy));
     const px = sg.a.x + ux * t, py = sg.a.y + uy * t;
@@ -367,8 +528,23 @@ function pouvoirsJoueur(s, dt) {
 /** Avancement d'un ennemi sur son trajet, de 0 à 1 (sert aux ciblages premier et dernier). */
 const avance = (s, e) => e.d / trajetDe(s, e).longueur;
 
-export function choisirCible(s, t) {
+/** Caractéristiques d'une tour, avec l'effet de la zone sur laquelle elle est construite (labyrinthe). */
+export function statsEffectives(s, t) {
   const n = statsTour(t);
+  const z = s.labyrinthe ? zoneTour(s.carte, t) : null;
+  if (!z) return n;
+  const r = { ...n };
+  if (z.portee) r.portee = n.portee * z.portee;
+  if (z.degats) {
+    r.degats = n.degats * z.degats;
+    if (n.brulure) r.brulure = { ...n.brulure, dps: n.brulure.dps * z.degats };
+  }
+  if (z.cadence) r.cadence = n.cadence / z.cadence;
+  return r;
+}
+
+export function choisirCible(s, t) {
+  const n = statsEffectives(s, t);
   let best = null, score = -Infinity;
   for (const e of s.ennemis) {
     if (e.vol && !n.volants) continue;
@@ -394,7 +570,7 @@ function tirer(s, dt) {
     t.recharge -= dt;
     if (t.tir > 0) t.tir -= dt;
     if (t.recharge > 0) continue;
-    const n = statsTour(t);
+    const n = statsEffectives(s, t);
     if (n.aura) { auraTour(s, t, n); continue; }
     const cible = choisirCible(s, t);
     if (!cible) continue;
@@ -556,6 +732,7 @@ export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
   e.pv -= reel;
   if (tour) tour.degats += Math.min(reel, avant);
   if (e.pv > 0) return;
+  if (s.labyrinthe) { metAterre(s, e, tour); return; }
   const i = s.ennemis.indexOf(e);
   if (i >= 0) s.ennemis.splice(i, 1);
   s.vivants[e.vague]--;
@@ -566,6 +743,23 @@ export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
   ev(s, 'mort', { id: e.id, sorte: e.sorte, x: e.x, y: e.y, dx: e.dx, dy: e.dy, or: gain, vol: e.vol, boss: !!ENNEMIS[e.sorte].boss });
   const div = ENNEMIS[e.sorte].division;
   if (div) for (let k = 0; k < div.nombre; k++) apparaitre(s, div.sorte, e.vague, Math.max(0, e.d + (k - (div.nombre - 1) / 2) * 14), e.route);
+}
+
+/**
+ * Labyrinthe : un monstre dont les PV tombent à zéro n'est pas retiré. Il rapporte une vie et la moitié de son or,
+ * puis repart de là où il est avec tous ses PV.
+ */
+function metAterre(s, e, tour) {
+  const d = ENNEMIS[e.sorte];
+  e.pv = e.pvMax;
+  e.brule = null;
+  const gain = Math.ceil(d.or * LABYRINTHE.partOr);
+  s.or += gain; s.orGagne += gain;
+  s.abattus++;
+  if (tour) tour.abattus++;
+  s.vies++;
+  ev(s, 'aTerre', { id: e.id, sorte: e.sorte, x: e.x, y: e.y, or: gain, vol: e.vol, boss: !!d.boss });
+  if (s.vies >= s.labyrinthe.objectif && !s.fin) { s.fin = 'victoire'; ev(s, 'victoire'); }
 }
 
 function bilanVagues(s) {

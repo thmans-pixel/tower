@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (lot 1, la logique, fait). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -88,6 +88,12 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   `boutArme` ; `Vue.tirer` (lueurs additives `Vue.lueurs`, cône du Lance-flammes), `Vue.crateres`, `Vue.colonnes`.
 - Spec 013 : `TAILLE_MONSTRES` (vue.js), liseré par `silhouette(..., couleur)`, chemin teinté et bords en dégradé dans
   `Vue.preparer`, ombres du décor allégées dans `decors.js` (`alleger`), mise en page `etroit` dans main.js.
+- Mode labyrinthe (spec 016) : `nouvellePartie('labyrinthe', diff, { graine })` ; `src/sim/labyrinthe.js` (`genererLabyrinthe`,
+  `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, un téléporteur est un saut gratuit et forcé ;
+  `majChemin`, zones), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
+  `vendreMur`, `annulerPrevu` ; pendant une vague (`enVague`) poses et ventes sont « prévues » et appliquées d'un coup
+  par `appliquerPrevus` à la fin ; mise à terre dans `metAterre` (événement `aTerre`, pas `mort`) ; tours lues par
+  `statsEffectives(s, t)` (effet de zone). Dans les trajets, un point `saut: true` est l'arrivée d'un téléporteur.
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
 - Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour

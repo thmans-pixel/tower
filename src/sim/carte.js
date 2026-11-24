@@ -84,19 +84,21 @@ export function construireCarte(def) {
   };
 }
 
-function trajet(points) {
+/** Un point marqué `saut: true` est l'arrivée d'un téléporteur : le segment qui y mène a une longueur nulle. */
+export function trajet(points) {
   const segs = [];
   let total = 0;
   for (let i = 0; i + 1 < points.length; i++) {
     const a = points[i], b = points[i + 1];
-    const l = Math.hypot(b.x - a.x, b.y - a.y);
-    segs.push({ a, b, l, debut: total });
+    const l = b.saut ? 0 : Math.hypot(b.x - a.x, b.y - a.y);
+    segs.push({ a, b, l, debut: total, saut: !!b.saut });
     total += l;
   }
   return { points, segs, longueur: total };
 }
 
-/** Position à la distance `d` le long d'un trajet, avec la direction du mouvement. */
+/** Position à la distance `d` le long d'un trajet, avec la direction du mouvement. Les sauts (de longueur nulle)
+ *  sont franchis sans glisser : une distance au-delà de l'entrée du téléporteur tombe déjà après sa sortie. */
 export function positionSur(tr, d) {
   if (d <= 0) { const s = tr.segs[0]; return { x: s.a.x, y: s.a.y, dx: (s.b.x - s.a.x) / s.l, dy: (s.b.y - s.a.y) / s.l }; }
   for (const s of tr.segs) {
