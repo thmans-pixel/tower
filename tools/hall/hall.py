@@ -8,7 +8,8 @@ version des règles. Jamais d'adresse IP sur le disque (la limite d'envois se fa
     python3 hall.py serveur            écoute 127.0.0.1:8029
     python3 hall.py liste [classement] numérote les entrées (pour retirer)
     python3 hall.py retirer <n>        retire l'entrée n
-    python3 hall.py vider <classement> vide tout un classement (tour, labyrinthe, infini, campagne)
+    python3 hall.py retirer-pseudo <p> retire toutes les lignes d'un pseudo
+    python3 hall.py vider <classement> --oui  vide tout un classement (tour, labyrinthe, infini, campagne)
 
 Variables : HALL_DB (défaut /var/lib/tower/hall/hall.db), HALL_PORT (défaut 8029).
 """
@@ -56,12 +57,14 @@ def contient_interdit(pseudo):
     n = normaliser(pseudo)
     jetons = [j for j in re.split(r'[^a-z]+', n) if j]
     colle = ''.join(jetons)
+    if any(normaliser(m) in colle for m in REGLES['sousChaines']):
+        return True
     for mot in REGLES['motsInterdits']:
         m = normaliser(mot)
-        if len(m) >= 5:
+        if len(m) >= 6:
             if m in colle:
                 return True
-        elif m in jetons:
+        elif m in jetons or m == colle:   # « c u l » : lettres écartées
             return True
     return False
 
@@ -70,7 +73,11 @@ def pseudo_adulte_ok(p):
     r = REGLES['pseudo']
     if not isinstance(p, str) or not (r['min'] <= len(p) <= r['max']):
         return False
-    if not re.fullmatch(r"[^\W_](?:[^\W_]|[ \-])*[^\W_]", p):
+    # lettres latines seulement (pas de cyrillique qui imite le latin), chiffres, espaces, tirets
+    lettre = r'[A-Za-z0-9À-ÖØ-öø-ÿ]'
+    if not re.fullmatch(rf'{lettre}(?:{lettre}|[ \-])*{lettre}', p):
+        return False
+    if pseudo_enfant_ok(p):   # la forme « Animal Couleur nombre » est réservée aux enfants
         return False
     if '  ' in p or '--' in p or ' -' in p or '- ' in p:
         return False
@@ -301,6 +308,13 @@ class Hall:
         finally:
             c.close()
 
+    def retirer_pseudo(self, texte):
+        c = self.base()
+        try:
+            return c.execute('DELETE FROM entrees WHERE cle=?', (texte.casefold(),)).rowcount
+        finally:
+            c.close()
+
     def vider(self, classement):
         c = self.base()
         try:
@@ -334,6 +348,8 @@ def fabriquer_gestionnaire(hall):
             ip = self.client_address[0]
             if ip == '127.0.0.1':  # nginx : c'est lui qui connaît le vrai visiteur
                 ip = self.headers.get('X-Real-IP', ip)[:64]
+            if ':' in ip:   # IPv6 : tout un foyer partage un préfixe /64
+                ip = ':'.join(ip.split(':')[:4])
             return ip
 
         def traiter(self, f):
@@ -397,8 +413,13 @@ def principal(argv):
     elif cmd == 'retirer' and len(argv) == 3 and argv[2].isdigit():
         n = Hall(base).retirer(int(argv[2]))
         print('Entrée retirée.' if n else 'Aucune entrée avec ce numéro.')
-    elif cmd == 'vider' and len(argv) == 3 and argv[2] in CLASSEMENTS:
+    elif cmd == 'retirer-pseudo' and len(argv) == 3:
+        print(f'{Hall(base).retirer_pseudo(argv[2])} entrée(s) retirée(s).')
+    elif cmd == 'vider' and len(argv) == 4 and argv[2] in CLASSEMENTS and argv[3] == '--oui':
         print(f'{Hall(base).vider(argv[2])} entrée(s) retirée(s).')
+    elif cmd == 'vider' and len(argv) == 3 and argv[2] in CLASSEMENTS:
+        print(f'Cela efface tout le classement « {argv[2]} » (adultes et enfants), sans retour possible.')
+        print(f'Pour confirmer : vider {argv[2]} --oui')
     else:
         print(__doc__)
         return 2

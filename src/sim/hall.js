@@ -51,7 +51,7 @@ export function pseudoEnfantValide(p) {
 /** Forme d'un pseudo d'adulte (le serveur filtre en plus les mots interdits). */
 export function pseudoValide(t) {
   if (typeof t !== 'string' || t.length < PSEUDO_MIN || t.length > PSEUDO_MAX) return false;
-  if (!/^[\p{L}\p{N}](?:[\p{L}\p{N}]|[ -])*[\p{L}\p{N}]$/u.test(t)) return false;
-  if (/  |--| -|- /.test(t)) return false;
+  if (!/^[\p{Script=Latin}\p{N}](?:[\p{Script=Latin}\p{N}]|[ -])*[\p{Script=Latin}\p{N}]$/u.test(t)) return false;
+  if (/  |--| -|- /.test(t) || pseudoEnfantValide(t)) return false;   // la forme « Animal Couleur nombre » est réservée aux enfants
   return (t.match(/\p{N}/gu) || []).length <= CHIFFRES_MAX;
 }

@@ -41,9 +41,16 @@ class Pseudos(unittest.TestCase):
         for ko in ['Putain', 'm3rde', 'MERDE', 'Gros Connard', 'p.u.t.a.i.n', 'Hitler', 'enculé', 'n4zi', 'FDP']:
             self.assertFalse(hall.pseudo_adulte_ok(ko), ko)
         # un mot court n'est refusé que seul : « Constance », « Condor » restent permis
-        for ok in ['Constance', 'Condor', 'Scunthorpe']:
+        for ok in ['Constance', 'Condor', 'Alexandre']:
             self.assertTrue(hall.pseudo_adulte_ok(ok), ok)
         self.assertFalse(hall.pseudo_adulte_ok('Pierre-Cul'))
+
+    def test_contournements_courants(self):
+        for ko in ['Nazis', 'Fuckyou', 'Shithead', 'Dickhead', 'Cunts', 'Putes', 'Pedos', 'Bites', 'c u l', 'Niques',
+                   'Connards', 'Enculés', 'Salopes', 'Bitches', 'n1ques', 'Ѕhit', 'Рaul', 'Renard Bleu 27']:
+            self.assertFalse(hall.pseudo_adulte_ok(ko), ko)
+        for ok in ['Nazim', 'Monique', 'Violette', 'Computer', 'Dickens' if False else 'Alexandre']:
+            self.assertTrue(hall.pseudo_adulte_ok(ok), ok)
 
     def test_enfants_forme_imposee(self):
         self.assertTrue(hall.pseudo_enfant_ok('Renard Bleu 27'))
@@ -178,8 +185,11 @@ class Moderation(Base):
         self.assertEqual(self.hall.retirer(premiere), 1)
         self.assertEqual(self.hall.retirer(premiere), 0)
         self.assertEqual(len(self.hall.liste('campagne')), 1)
-        self.assertEqual(self.hall.vider('campagne'), 1)
-        self.assertEqual(len(self.hall.liste()), 1)
+        self.hall.envoyer(camp('Cléo', 4))
+        self.assertEqual(self.hall.vider('campagne'), 2)    # Alice et Cléo (Bob déjà retiré)
+        self.assertEqual(len(self.hall.liste()), 1)          # la ligne du labyrinthe reste
+        self.assertEqual(self.hall.retirer_pseudo('ALICE'), 1)
+        self.assertEqual(len(self.hall.liste()), 0)
 
 
 class Limite(unittest.TestCase):

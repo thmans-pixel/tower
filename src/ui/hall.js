@@ -54,6 +54,9 @@ export class HallUi {
     $('b-hall-cartes').onclick = () => this.ouvrir();
     $('b-fermer-hall').onclick = () => { $('hall').hidden = true; };
     $('b-envoyer-hall').onclick = () => this.envoyer();
+    const repondre = (enfant) => () => { this.a.retenir({ enfant, ageRepondu: true }); this.a.son('clic'); if (this.partie) this.proposer(...this.partie); };
+    $('b-age-oui').onclick = repondre(true);
+    $('b-age-non').onclick = repondre(false);
     $('b-autre-pseudo').onclick = () => { this.envoi.pseudoEnfant = pseudoEnfant(Math.floor(Math.random() * 2 ** 31)); this.montrerPseudo(); this.a.son('clic'); };
     $('pseudo-hall').oninput = () => { $('hall-message').textContent = ''; };
     $('pseudo-hall').onkeydown = (e) => { if (e.key === 'Enter') this.envoyer(); };
@@ -132,7 +135,10 @@ export class HallUi {
     if (!resultats.length) { this.envoi = null; return; }
     const prog = this.a.progression();
     this.envoi = { resultats, enfant: !!prog.enfant, pseudoEnfant: prog.pseudoEnfant || pseudoEnfant(Math.floor(Math.random() * 2 ** 31)) };
-    $('hall-envoi').hidden = false;
+    this.partie = [s, idCarte];
+    // Tant qu'on ne sait pas si c'est un enfant, pas de champ libre : on demande d'abord l'âge.
+    $('hall-age').hidden = !!prog.ageRepondu;
+    $('hall-envoi').hidden = !prog.ageRepondu;
     $('b-envoyer-hall').disabled = false;
     $('hall-pseudo-enfant').hidden = !this.envoi.enfant;
     $('hall-pseudo-adulte').hidden = this.envoi.enfant;

@@ -2,7 +2,7 @@
 numero: 018
 titre: Hall of fame en ligne, avec un classement enfants à part
 depot: autre (thmans-pixel/tower)
-statut: en cours
+statut: livrée
 date: 2026-11-24
 ---
 
@@ -68,7 +68,7 @@ pour que les enfants aient leur propre classement, séparé de celui des adultes
   par vague) et Thibault peut retirer une entrée. Pas de vérification par rejeu de la partie.
 
 ### Modération
-- Par une **commande sur thnas** : `sudo python3 /var/lib/tower/source/tools/hall/hall.py
+- Par une **commande sur thnas** : `sudo tower-hall
   liste` (dernières entrées), `… retirer <numéro>`, `… vider <classement>` (après un changement de règles). Pas de page
   d'administration sur Internet.
 
@@ -82,30 +82,30 @@ pour que les enfants aient leur propre classement, séparé de celui des adultes
 - Sauvegarde de la base sur un autre disque (à ajouter au plan de sauvegarde de thnas, hors de ce dépôt).
 
 ## Critères d'acceptation
-1. [ ] `scoreHall(s)` (pur, `src/sim/hall.js`) donne, pour une partie finie, les résultats classables : meilleure tour
+1. [x] `scoreHall(s)` (pur, `src/sim/hall.js`) donne, pour une partie finie, les résultats classables : meilleure tour
    (dégâts, nom), labyrinthe (vagues, si victoire), infini (vagues), campagne (vies, si victoire sur Prairie, Désert ou
    Montagne) ; rien pour une carte aléatoire. — *Vérification :* tests Node, une partie par cas.
-2. [ ] La case « Je suis un enfant » est sur l'écran du choix des cartes, retenue après rechargement de la page, et
+2. [x] La case « Je suis un enfant » est sur l'écran du choix des cartes, retenue après rechargement de la page, et
    portée par le code de transfert. — *Vérification :* test de `relire` / `codeProgression` + essai navigateur.
-3. [ ] Envoi : `POST /api/hall` enregistre une entrée valide et renvoie sa place ; un pseudo n'a qu'une ligne par liste
+3. [x] Envoi : `POST /api/hall` enregistre une entrée valide et renvoie sa place ; un pseudo n'a qu'une ligne par liste
    (son meilleur) ; égalité → premier arrivé devant. — *Vérification :* tests du serveur (`python3 -m unittest`).
-4. [ ] Le serveur refuse (code 400, rien d'enregistré) : pseudo adulte hors règles ou contenant un mot interdit, pseudo
+4. [x] Le serveur refuse (code 400, rien d'enregistré) : pseudo adulte hors règles ou contenant un mot interdit, pseudo
    enfant qui n'est pas de la forme proposée, liste inconnue, valeur impossible, champ en trop. — *Vérification :* tests.
-5. [ ] Au-delà de 20 envois par heure depuis une même adresse : refus 429 ; aucune adresse n'est écrite sur le disque.
+5. [x] Au-delà de 20 envois par heure depuis une même adresse : refus 429 ; aucune adresse n'est écrite sur le disque.
    — *Vérification :* test + lecture du schéma de la base.
-6. [ ] `GET /api/hall?…` renvoie les 20 premiers d'une liste, adultes et enfants séparés ; un enfant n'apparaît jamais
+6. [x] `GET /api/hall?…` renvoie les 20 premiers d'une liste, adultes et enfants séparés ; un enfant n'apparaît jamais
    chez les adultes, et l'inverse. — *Vérification :* tests.
-7. [ ] Écran « Hall of fame » (bouton dans le menu) : onglets Adultes / Enfants, choix du classement, de la carte et de
+7. [x] Écran « Hall of fame » (bouton dans le menu) : onglets Adultes / Enfants, choix du classement, de la carte et de
    la difficulté, sa propre ligne surlignée ; lisible sur téléphone. — *Vérification :* essai navigateur (bureau et
    `?mobile=1`).
-8. [ ] Écran de fin : bouton « Envoyer au hall of fame » seulement si la partie donne un résultat classable ; pseudo
+8. [x] Écran de fin : bouton « Envoyer au hall of fame » seulement si la partie donne un résultat classable ; pseudo
    enfant choisi dans les propositions (« Un autre »), pseudo adulte saisi ; la place s'affiche après l'envoi ; serveur
    absent → message, sans blocage. — *Vérification :* essai navigateur, serveur arrêté puis lancé.
-9. [ ] Commandes de modération `liste`, `retirer`, `vider` sur thnas. — *Vérification :* tests du script.
+9. [x] Commandes de modération `liste`, `retirer`, `vider` sur thnas. — *Vérification :* tests du script.
 10. [ ] Installation : un script `tools/hall/installer.sh` met en place le service (systemd, écoute locale seulement) et
     le renvoi `/api/` dans nginx au niveau du domaine (comme `tower-cache.conf`) ; `mettre-a-jour.sh` redémarre le service
     s'il est installé. — *Vérification :* relecture + installation guidée pas à pas sur thnas.
-11. [ ] Relecture par l'agent `gardien-enfants` de la spec puis de la PR, sans point bloquant. — *Vérification :* son
+11. [x] Relecture par l'agent `gardien-enfants` de la spec puis de la PR, sans point bloquant. — *Vérification :* son
     rapport dans la PR.
 
 ## Conception
@@ -163,6 +163,20 @@ pour que les enfants aient leur propre classement, séparé de celui des adultes
 - Pseudo des enfants : choisi parmi des pseudos proposés (animal + couleur + nombre, bouton « Un autre »).
 - Triche : bornes de vraisemblance côté serveur et retrait par Thibault ; pas de rejeu.
 - Modération : commande sur thnas, pas de page d'administration en ligne.
+
+## Livraison
+Fait : serveur `tools/hall/` (25 essais Python), jeu (`scoreHall`, pseudos, case enfant, écran, envoi ; 101 essais Node), essais navigateur
+sur ordinateur et `?mobile=1` (envoi adulte et enfant, refus d'un mot interdit, serveur absent, écran des classements).
+Relecture `gardien-enfants` : deux points bloquants, corrigés — (1) l'écran de fin demande d'abord « moins de 15 ans ? » tant que
+l'âge n'est pas répondu (pas de champ libre avant), « Effacer la progression » garde la réponse ; (2) filtre des mots interdits renforcé
+(compositions, pluriels, lettres hors alphabet latin refusées, forme « Animal Couleur nombre » interdite aux adultes). Ajoutés :
+`retirer-pseudo`, `vider … --oui`, limite d'envois par préfixe IPv6 /64, `installer.sh` retire son fichier nginx si `nginx -t` échoue,
+mention « demande à un parent » chez les enfants.
+Écarts : les mots interdits ne sont que dans `regles.json` (le jeu ne les lit pas) ; le pseudo ne voyage pas dans le code de transfert
+(seule la case enfant y est) ; plafonds de dégâts par vague : 20 000 (campagne), 30 000 (labyrinthe), 100 000 (infini), le joueur
+automatique faisant au mieux ~2 700.
+**Reste à faire à la main** : critère 10 — installation sur thnas, une commande à la fois (`installer.sh`), puis essai depuis tower.izicraft.fr ;
+contrôler `sudo tower-hall liste` de temps en temps ; ajouter `/var/lib/tower/hall` au plan de sauvegarde. Pas de durée de conservation prévue.
 
 ## Questions ouvertes
 (aucune)

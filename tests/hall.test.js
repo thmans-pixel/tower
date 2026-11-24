@@ -108,3 +108,15 @@ test('pseudos retenus : on ne garde que ceux de la bonne forme', () => {
   const q = relire({ pseudo: '<script>', pseudoEnfant: 'Léa' });
   assert.deepEqual([q.pseudo, q.pseudoEnfant], ['', '']);
 });
+
+test('pseudo d\'adulte : pas de lettres hors alphabet latin, pas la forme réservée aux enfants', () => {
+  for (const ko of ['Ѕhit', 'Рaul', 'Renard Bleu 27']) assert.equal(pseudoValide(ko), false, ko);
+  assert.ok(pseudoValide('Zoé'));
+});
+
+test('l\'âge répondu est retenu ; une case cochée vaut réponse', () => {
+  assert.equal(progressionVide().ageRepondu, false);
+  assert.equal(relire({ ageRepondu: true }).ageRepondu, true);
+  assert.equal(relire({ enfant: true }).ageRepondu, true);
+  assert.equal(relire({ enfant: false }).ageRepondu, false);
+});

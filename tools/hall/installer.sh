@@ -22,7 +22,7 @@ fi
 
 id tower-hall >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin tower-hall
 install -d -o tower-hall -g tower-hall -m 750 /var/lib/tower/hall
-python3 -m unittest discover -s "$ICI" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 -I -B -m unittest discover -s "$ICI" >/dev/null
 
 install -m 644 "$ICI/tower-hall.service" /etc/systemd/system/tower-hall.service
 install -m 644 "$ICI/tower-hall.conf" "$NGINX_DIR/tower-hall.conf"
@@ -34,13 +34,18 @@ exec sudo -u tower-hall env HALL_DB=/var/lib/tower/hall/hall.db python3 -I /var/
 SCRIPT
 chmod 755 /usr/local/bin/tower-hall
 
+# Si nginx refuse la configuration, on retire notre fichier : YunoHost ne doit jamais se retrouver avec un nginx cassé.
+if ! nginx -t; then
+  rm -f "$NGINX_DIR/tower-hall.conf"
+  echo "nginx refuse la configuration : fichier tower-hall.conf retiré, rien n'a été rechargé." >&2
+  exit 1
+fi
 systemctl daemon-reload
 systemctl enable --now tower-hall
 systemctl restart tower-hall
-nginx -t
 systemctl reload nginx
 
 sleep 1
 curl -fsS "http://127.0.0.1:8029/api/hall?classement=tour" >/dev/null
 echo "Hall of fame en service (127.0.0.1:8029, base /var/lib/tower/hall/hall.db)."
-echo "Modération : sudo tower-hall liste   |   sudo tower-hall retirer <n>   |   sudo tower-hall vider <classement>"
+echo "Modération : sudo tower-hall liste   |   sudo tower-hall retirer <n>   |   sudo tower-hall retirer-pseudo <pseudo>   |   sudo tower-hall vider <classement> --oui"

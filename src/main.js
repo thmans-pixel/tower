@@ -75,7 +75,7 @@ const interfaceJeu = new Interface({
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte, true)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
-  enfant: (v) => { progression.enfant = v; enregistrer(progression); son.jouer('clic'); },
+  enfant: (v) => { progression.enfant = v; progression.ageRepondu = true; enregistrer(progression); son.jouer('clic'); },
   difficulte: (d) => { progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   mode: (m) => { mode = m; afficherCartes(); son.jouer('clic'); },
   alea: async (changement) => {
@@ -90,7 +90,7 @@ const interfaceJeu = new Interface({
   autreLabyrinthe: () => { laby.vignette = null; afficherCartes(); son.jouer('clic'); },
   progression: () => progression,
   reunir: (q) => { progression = fusionner(progression, q); enregistrer(progression); afficherCartes(); son.jouer('clic'); },
-  effacer: () => { effacer(); progression = progressionVide(); mode = 'campagne'; son.actif = true; afficherCartes(); },
+  effacer: () => { const { enfant, ageRepondu } = progression; effacer(); progression = { ...progressionVide(), enfant, ageRepondu }; mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
   classement: () => { ui.classement = !ui.classement; son.jouer('clic'); },
   choisirTour: (id) => { ui.selection = id; ui.construction = null; son.jouer('clic'); },
