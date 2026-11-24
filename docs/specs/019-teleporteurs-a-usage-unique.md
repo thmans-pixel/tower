@@ -2,7 +2,7 @@
 numero: 019
 titre: Téléporteurs à usage unique (labyrinthe)
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: livrée
 date: 2026-11-24
 ---
 
@@ -43,21 +43,21 @@ téléporte plus. Ainsi on ne peut plus s'appuyer sur lui toute la partie pour r
 - Modèles Blender (tout reste dessiné en code).
 
 ## Critères d'acceptation
-1. [ ] Un monstre franchit un téléporteur pendant une vague : les autres monstres de la vague l'empruntent aussi ; à la
+1. [x] Un monstre franchit un téléporteur pendant une vague : les autres monstres de la vague l'empruntent aussi ; à la
    fin de la vague la paire est marquée usée (`tp.use`), un événement `tpUse` est émis une fois, et le nouveau trajet ne
    comporte plus de saut par elle. — *Vérification :* test (`partieSur` avec une paire sur la ligne droite).
-2. [ ] Le chemin passe sur l'entrée mais aucun monstre ne l'atteint (tous mis à terre en continu avant) : la paire n'est
+2. [x] Le chemin passe sur l'entrée mais aucun monstre ne l'atteint (tous mis à terre en continu avant) : la paire n'est
    pas usée. — *Vérification :* test.
-3. [ ] Un chemin qui passe deux fois sur la même entrée n'est téléporté qu'à la première. — *Vérification :* test sur un
+3. [x] Un chemin qui passe deux fois sur la même entrée n'est téléporté qu'à la première. — *Vérification :* test sur un
    terrain construit à la main (checkpoints de part et d'autre de l'entrée).
-4. [ ] Une paire usée est une case ordinaire : on marche dessus sans saut, on ne construit pas dessus. — *Vérification :* test.
-5. [ ] Une pose qui ne laisserait de passage que par un téléporteur est refusée (`raison: 'bouche'`), pendant ou entre les
+4. [x] Une paire usée est une case ordinaire : on marche dessus sans saut, on ne construit pas dessus. — *Vérification :* test.
+5. [x] Une pose qui ne laisserait de passage que par un téléporteur est refusée (`raison: 'bouche'`), pendant ou entre les
    vagues, prévus compris. — *Vérification :* test (colonne murée sauf le téléporteur).
-6. [ ] L'état « usé » ne change jamais en pleine vague : le trajet affiché et celui des monstres restent ceux du début de
+6. [x] L'état « usé » ne change jamais en pleine vague : le trajet affiché et celui des monstres restent ceux du début de
    la vague. — *Vérification :* test (trajet identique avant et après le premier saut, jusqu'à la fin de la vague).
-7. [ ] À l'écran : paire usée en gris, sans animation ; bandeau ou texte « Téléporteur usé » à la fin de la vague ; la
+7. [x] À l'écran : paire usée en gris, sans animation ; bandeau ou texte « Téléporteur usé » à la fin de la vague ; la
    bulle d'aide dit « Ne sert qu'une fois » (et « Usé » une fois grisé). — *Vérification :* essai dans le navigateur.
-8. [ ] Le joueur automatique (`node tests/simulate.js labyrinthe`) donne des repères proches de ceux du CLAUDE.md
+8. [x] Le joueur automatique (`node tests/simulate.js labyrinthe`) donne des repères proches de ceux du CLAUDE.md
    (Normal : la plupart des terrains gagnés) ; chiffres remesurés et notés. — *Vérification :* lancer la commande.
 
 ## Conception
@@ -101,3 +101,16 @@ téléporte plus. Ainsi on ne peut plus s'appuyer sur lui toute la partie pour r
 
 ## Questions ouvertes
 (aucune)
+
+## Livraison
+Fait : `tp.use` (paire usée), `s.labyrinthe.tpPris` (paires franchies pendant la vague, notées dans `deplacer`), usure et
+recalcul du trajet à la fin de la vague (`usureTp`, appelée par `appliquerPrevus`), événement `tpUse` ; une entrée n'est prise
+qu'une fois par parcours (ensemble `pris` partagé entre les tronçons) ; `passageAPied` : toute pose (et l'annulation d'une
+vente prévue) qui ne laisserait de passage que par un téléporteur est refusée (`bouche`) ; téléporteur gris sans animation,
+bandeau « Téléporteur usé », son, bulle d'aide (« usage unique », « usé »). 4 tests ajoutés dans `tests/labyrinthe.test.js`
+(critères 1 à 6) ; essai dans le navigateur sur le terrain 12 (une paire usée en gris après la vague, l'autre intacte).
+
+- Équilibre (10 terrains) : Normal 9 gagnés sur 10 en 5 à 20 vagues, sans mur 8 sur 10, Facile 10 sur 10, Difficile 8 sur 10 :
+  quasiment inchangé (le joueur automatique n'utilise pas les téléporteurs).
+- Le test « seul passage forcé par les murs » de la spec 016 a été remplacé : on ne peut plus murer ainsi.
+- À vérifier à la main : le gris du téléporteur et le bandeau en pleine partie.

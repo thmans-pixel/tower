@@ -147,8 +147,15 @@ function forme(g, nom, x, y, r) {
 }
 
 /** Téléporteur : entrée bleue, sortie rouge, même forme pour une paire. */
-export function teleporteur(g, p, nom, sortie, t) {
+export function teleporteur(g, p, nom, sortie, t, use = false) {
   const x = p.c * T + T / 2, y = p.r * T + T / 2;
+  if (use) {   // usé (spec 019) : gris, sans animation
+    g.fillStyle = 'rgba(70,70,76,.5)'; forme(g, nom, x, y, 17); g.fill();
+    g.lineWidth = 6; g.strokeStyle = '#1a1420'; forme(g, nom, x, y, 15); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = '#8a8a92'; g.stroke();
+    g.fillStyle = '#6a6a72'; forme(g, nom, x, y, 4); g.fill();
+    return;
+  }
   const [vif, clair, sombre] = sortie ? ['#e5533d', '#ffb0a0', '120,30,20'] : ['#3d8be5', '#a8d4ff', '20,50,120'];
   const pouls = 0.5 + 0.5 * Math.sin(t * 4 + (sortie ? 2 : 0));
   g.fillStyle = `rgba(${sombre},.55)`; forme(g, nom, x, y, 17); g.fill();
@@ -225,7 +232,8 @@ export function aideCase(lab, c, r) {
   const p = lab.cp.find(ici);
   if (p) return { titre: 'Checkpoint ' + p.n, texte: `Les monstres passent par les checkpoints dans l’ordre, de 1 à ${lab.cp.length}, avant d’aller à la sortie.`, pour: 'Passage obligé' };
   for (const t of lab.tp) {
-    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Un monstre dont le chemin passe sur cette case est téléporté : il ressort par le téléporteur rouge de la même forme. Les monstres ne le cherchent jamais : c’est à vous de placer vos murs pour les y mener, ou pour les en écarter.', pour: 'Sens unique' };
+    if (t.use && (ici(t.a) || ici(t.b))) return { titre: 'Téléporteur usé', texte: 'Il a servi : il ne téléporte plus. On marche dessus comme sur une case ordinaire, mais on ne peut pas construire dessus.', pour: 'Usé' };
+    if (ici(t.a)) return { titre: 'Téléporteur : entrée', texte: 'Un monstre dont le chemin passe sur cette case est téléporté : il ressort par le téléporteur rouge de la même forme. Les monstres ne le cherchent jamais : c’est à vous de placer vos murs pour les y mener, ou pour les en écarter. Il ne sert qu’une fois : après la vague où un monstre l’a pris, il est grisé.', pour: 'Sens unique, usage unique' };
     if (ici(t.b)) return { titre: 'Téléporteur : sortie', texte: 'Les monstres entrés par le téléporteur bleu de la même forme réapparaissent ici.', pour: 'Sens unique' };
   }
   if (ici(lab.entree)) return { titre: 'Entrée', texte: 'Les monstres arrivent par ici.', pour: '' };

@@ -248,6 +248,10 @@ export class Vue {
         case 'prevusAppliques': this.bandeau = { texte: 'Travaux terminés', sous: 'Le labyrinthe est à jour', t: 0, vie: 1.6 }; break;
         case 'fuite': this.secousse = 0.25; this.texte((this.carte.chateau.c + 0.5) * T, this.carte.chateau.r * T + 20, '−' + e.vies + ' ♥', '#ff6b5a'); break;
         case 'vague': this.bandeau = { texte: 'Vague ' + e.vague, sous: '', t: 0, vie: 2 }; break;
+        case 'tpUse':
+          this.bandeau = { texte: 'Téléporteur usé', sous: 'Il ne téléporte plus : le trajet est recalculé', t: 0, vie: 2.2 };
+          this.anneaux.push({ x: e.x, y: e.y, r: 4, max: 36, vie: 0.6, t: 0, col: '160,160,170' }, { x: e.x2, y: e.y2, r: 4, max: 36, vie: 0.6, t: 0, col: '160,160,170' });
+          break;
         case 'tourDeLaVague':
           this.bandeau = { texte: 'Tour de la vague : ' + e.nom, sous: '+' + e.or + ' or · vague ' + e.vague + ' terminée', t: 0, vie: 2.4 };
           this.couronnes.push({ x: e.x, y: e.y, t: 0, vie: 4 });
@@ -454,13 +458,13 @@ export class Vue {
     const vise = fantome && !fantome.raison ? fantome : null;
     let futur = null;
     if (s.labyrinthe.prevus.length || vise) {
-      const cle = s.labyrinthe.prevus.map((p) => p.type + p.c + ',' + p.r).join(';') + '|' + s.tours.length + '|' + s.labyrinthe.murs.size + '|' + (vise ? vise.c + ',' + vise.r : '');
+      const cle = s.labyrinthe.prevus.map((p) => p.type + p.c + ',' + p.r).join(';') + '|' + s.tours.length + '|' + s.labyrinthe.murs.size + '|' + (vise ? vise.c + ',' + vise.r : '') + '|' + lab.tp.map((x) => (x.use ? 1 : 0)).join('');
       if (this.apercuTrajet.cle !== cle) this.apercuTrajet = { cle, trajet: vise ? trajetPrevu(s, vise.c, vise.r) : trajetPrevu(s) };
       futur = this.apercuTrajet.trajet;
     }
     if (s.carte.sol) Laby.tracer(g, s.carte.sol, t, 'cours', futur ? 0.4 : vague ? 0.55 : 1);
     if (futur) Laby.tracer(g, futur, t, 'futur', 1);
-    for (const tp of lab.tp) { Laby.teleporteur(g, tp.a, tp.forme, false, t); Laby.teleporteur(g, tp.b, tp.forme, true, t); }
+    for (const tp of lab.tp) { Laby.teleporteur(g, tp.a, tp.forme, false, t, tp.use); Laby.teleporteur(g, tp.b, tp.forme, true, t, tp.use); }
   }
 
   /** Labyrinthe, objets debout triés par profondeur : entrée, sortie, checkpoints, murs, travaux prévus. */
