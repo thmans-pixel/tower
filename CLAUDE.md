@@ -89,7 +89,8 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
 - Spec 013 : `TAILLE_MONSTRES` (vue.js), liseré par `silhouette(..., couleur)`, chemin teinté et bords en dégradé dans
   `Vue.preparer`, ombres du décor allégées dans `decors.js` (`alleger`), mise en page `etroit` dans main.js.
 - Mode labyrinthe (spec 016) : `nouvellePartie('labyrinthe', diff, { graine })` ; `src/sim/labyrinthe.js` (`genererLabyrinthe`,
-  `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, un téléporteur est un saut gratuit et forcé ;
+  `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, à pied d'abord ; un téléporteur n'est pris (saut
+  gratuit) que si les murs ne laissent aucun chemin à pied sur le tronçon ;
   `majChemin`, zones), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
   `vendreMur`, `annulerPrevu` ; pendant une vague (`enVague`) poses et ventes sont « prévues » et appliquées d'un coup
   par `appliquerPrevus` à la fin ; mise à terre dans `metAterre` (événement `aTerre`, pas `mort`) ; tours lues par

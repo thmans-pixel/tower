@@ -57,11 +57,12 @@ const VOISINS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 /**
  * Plus court chemin de `de` à `vers` en cases voisines (sans diagonale), en évitant les cases `bloques`.
- * Marcher sur l'entrée d'un téléporteur mène aussitôt à sa sortie, sans coût. Renvoie la suite de cases
- * [{ c, r, saut? }] (`saut` : arrivée d'un téléporteur), ou null s'il n'y a aucun chemin.
+ * `avecTp` : marcher sur l'entrée d'un téléporteur mène aussitôt à sa sortie, sans coût ; sinon les téléporteurs
+ * sont des cases ordinaires. Renvoie la suite de cases [{ c, r, saut? }] (`saut` : arrivée d'un téléporteur),
+ * ou null s'il n'y a aucun chemin.
  */
-function plusCourt(lab, bloques, de, vers) {
-  const entrees = new Map(lab.tp.map((t) => [cle(t.a.c, t.a.r), t.b]));
+function plusCourt(lab, bloques, de, vers, avecTp) {
+  const entrees = new Map(avecTp ? lab.tp.map((t) => [cle(t.a.c, t.a.r), t.b]) : []);
   const but = cle(vers.c, vers.r);
   const avant = new Map([[cle(de.c, de.r), null]]);   // case -> { depuis, via } ; via = entrée de TP empruntée
   const file = [cle(de.c, de.r)];
@@ -93,12 +94,15 @@ function plusCourt(lab, bloques, de, vers) {
 /**
  * Chemin complet des monstres au sol : entrée, checkpoints 1 à n dans l'ordre, sortie. `bloques` : cases fermées
  * (murs, tours). Renvoie la suite de cases, ou null si le passage est bouché.
+ * Les téléporteurs ne sont jamais pris d'eux-mêmes : sur chaque tronçon, les monstres marchent (et passent sur
+ * l'entrée d'un téléporteur sans l'emprunter) tant qu'un chemin à pied existe. Ils ne prennent un téléporteur que
+ * lorsque les murs du joueur ne leur laissent pas d'autre passage : c'est au joueur de les y obliger.
  */
 export function cheminLabyrinthe(lab, bloques) {
   const etapes = [lab.entree, ...lab.cp, lab.sortie];
   const tout = [];
   for (let i = 0; i + 1 < etapes.length; i++) {
-    const morceau = plusCourt(lab, bloques, etapes[i], etapes[i + 1]);
+    const morceau = plusCourt(lab, bloques, etapes[i], etapes[i + 1], false) || plusCourt(lab, bloques, etapes[i], etapes[i + 1], true);
     if (!morceau) return null;
     tout.push(...(i === 0 ? morceau : morceau.slice(1)));
   }
