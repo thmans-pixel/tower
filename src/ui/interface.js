@@ -87,6 +87,7 @@ export class Interface {
     $('b-menu').onclick = () => actions.menu();
     $('b-jouer').onclick = () => actions.ecran('cartes');
     $('b-retour').onclick = () => actions.ecran('titre');
+    $('case-enfant').onchange = (e) => actions.enfant(e.target.checked);
     $('b-effacer').onclick = () => this.question('Effacer toute la progression (cartes débloquées, étoiles, scores) ?', () => actions.effacer());
     $('b-rejouer').onclick = () => actions.rejouer();
     $('b-fin-cartes').onclick = () => actions.ecran('cartes');
@@ -267,6 +268,7 @@ export class Interface {
   /** `mode` : 'campagne', 'aleatoire' ou 'infini' ; `alea` : réglages et vignette de la carte aléatoire. */
   listeCartes(cartes, vignette, prog, mode = 'campagne', alea = null, laby = null) {
     const diff = prog.difficulte;
+    $('case-enfant').checked = !!prog.enfant;
     const infini = mode === 'infini';
     const modes = $('choix-mode');
     const offerts = [['campagne', 'Campagne', 'cartes à gagner'],

@@ -6,6 +6,7 @@ le jeu tourne alors avec un mélange de versions. Ici, chaque fichier est redema
 
 Usage, depuis le dossier du jeu : python3 tools/serveur.py [port]   (8028 par défaut)
 """
+import http.client
 import os
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -20,6 +21,35 @@ class SansCache(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass
+
+    # /api/ : renvoyé vers le hall of fame local (tools/hall/hall.py serveur, port 8029), comme le fait nginx en ligne.
+    def api(self):
+        taille = int(self.headers.get("Content-Length") or 0)
+        corps = self.rfile.read(taille) if taille else None
+        try:
+            c = http.client.HTTPConnection("127.0.0.1", 8029, timeout=5)
+            c.request(self.command, self.path, body=corps, headers={"Content-Type": "application/json"})
+            r = c.getresponse()
+            data = r.read()
+            self.send_response(r.status)
+            self.send_header("Content-Type", r.getheader("Content-Type", "application/json"))
+        except OSError:
+            data = b"{}"
+            self.send_response(502)
+            self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self):
+        if self.path.startswith("/api/"):
+            return self.api()
+        super().do_GET()
+
+    def do_POST(self):
+        if self.path.startswith("/api/"):
+            return self.api()
+        self.send_error(405)
 
 
 if __name__ == "__main__":
