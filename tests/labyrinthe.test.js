@@ -5,7 +5,7 @@ import {
   nouvellePartie, avancer, appelerVague, peutAppeler, poser, vendre, poserMur, vendreMur, annulerPrevu, blesser,
   enVague, statsEffectives, trajetPrevu, caseLibre, peutPoser,
 } from '../src/sim/partie.js';
-import { genererLabyrinthe, carteLabyrinthe, majChemin, cle } from '../src/sim/labyrinthe.js';
+import { genererLabyrinthe, carteLabyrinthe, majChemin, cle, cheminLabyrinthe } from '../src/sim/labyrinthe.js';
 import { positionSur, centre } from '../src/sim/carte.js';
 import { ENNEMIS } from '../src/data/ennemis.js';
 import { statsTour } from '../src/data/tours.js';
@@ -380,4 +380,20 @@ test('joueur automatique du labyrinthe : rejouable, dessine un serpentin qui all
   const droit = jouerLabyrinthe({ graine: 3, maxVagues: 8, murs: false });
   assert.equal(droit.murs, 0);
   assert.ok(a.trajet > droit.trajet, `${a.trajet} > ${droit.trajet}`);
+});
+
+test('aller et retour entre deux mêmes points : le même chemin, dans les deux sens', () => {
+  for (let g = 1; g <= 30; g++) {
+    const lab = genererLabyrinthe(g);
+    const a = lab.cp[0];
+    // checkpoint 1 puis 2 à la même place que 1 : le retour doit repasser exactement par l'aller
+    const l2 = { ...lab, cp: [a, lab.cp[1] || a, a] };
+    const chemin = cheminLabyrinthe(l2, new Set());
+    const cases = chemin.map((p) => cle(p.c, p.r));
+    const i1 = cases.indexOf(cle(a.c, a.r));
+    const i2 = cases.lastIndexOf(cle(a.c, a.r));
+    const iMilieu = cases.indexOf(cle((lab.cp[1] || a).c, (lab.cp[1] || a).r), i1);
+    const aller = cases.slice(i1, iMilieu + 1), retour = cases.slice(iMilieu, i2 + 1).reverse();
+    assert.deepEqual(retour, aller, 'graine ' + g);
+  }
 });

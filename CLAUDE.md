@@ -91,7 +91,7 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
 - Mode labyrinthe (spec 016) : `nouvellePartie('labyrinthe', diff, { graine })` ; `src/sim/labyrinthe.js` (`genererLabyrinthe`,
   `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, à pied d'abord ; un téléporteur n'est pris (saut
   gratuit) que si les murs ne laissent aucun chemin à pied sur le tronçon ;
-  `majChemin`, zones), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
+  `majChemin`, zones ; l'aller et le retour entre deux mêmes points suivent le même chemin à pied), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
   `vendreMur`, `annulerPrevu` ; pendant une vague (`enVague`) poses et ventes sont « prévues » et appliquées d'un coup
   par `appliquerPrevus` à la fin ; mise à terre dans `metAterre` (événement `aTerre`, pas `mort`) ; tours lues par
   `statsEffectives(s, t)` (effet de zone). Dans les trajets, un point `saut: true` est l'arrivée d'un téléporteur.
