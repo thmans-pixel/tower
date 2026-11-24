@@ -26,14 +26,11 @@ export function genererLabyrinthe(graine = 1) {
   const entree = { c: 0, r: entier(2, ROWS - 3) }; pris.add(cle(entree.c, entree.r));
   const sortie = { c: COLS - 1, r: entier(2, ROWS - 3) }; pris.add(cle(sortie.c, sortie.r));
 
-  // Checkpoints répartis de gauche à droite : chacun dans sa tranche de colonnes.
+  // Checkpoints n'importe où sur la carte, dans le désordre : le 1 peut être loin de l'entrée, le 2 à côté du 3,
+  // le dernier près de l'entrée… Les monstres doivent alors traverser la carte en tous sens.
   const nbCp = entier(...LABYRINTHE.checkpoints);
-  const largeur = (COLS - 4) / nbCp;
   const cp = [];
-  for (let i = 0; i < nbCp; i++) {
-    const c0 = 2 + Math.floor(i * largeur), c1 = 2 + Math.floor((i + 1) * largeur) - 1;
-    cp.push({ n: i + 1, ...place(c0, Math.max(c0, c1)) });
-  }
+  for (let i = 0; i < nbCp; i++) cp.push({ n: i + 1, ...place(1, COLS - 2) });
 
   const nbTp = entier(...LABYRINTHE.paires);
   const tp = [];
