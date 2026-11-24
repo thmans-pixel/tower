@@ -35,6 +35,7 @@
         </div>
       </span>
       <button id="b-effets" class="petit" title="Effets complets ou réduits (tablettes lentes)">Effets</button>
+      <button id="b-classement" class="petit" title="Classement des tours (C)">Classement</button>
       <button id="b-barres" class="petit" title="Barres de vie de tous les monstres (V)">Barres de vie</button>
       <button id="b-pause" class="petit" title="Pause (Espace)">Pause</button>
       <button id="b-vitesse" class="petit" title="Vitesse (F)">×1</button>
@@ -47,6 +48,7 @@
     <div id="cadre">
       <canvas id="toile" width="960" height="640"></canvas>
       <aside id="panneau" hidden></aside>
+      <aside id="classement" hidden></aside>
       <div id="pause" hidden>Pause</div>
       <div id="aide-case" role="tooltip" hidden></div>
       <div id="barre-boss" hidden><span id="nom-boss"></span><div class="jauge"><i id="jauge-boss"></i></div></div>
@@ -102,6 +104,7 @@
     <h2 id="fin-titre">Victoire !</h2>
     <div id="fin-etoiles" class="etoiles-fin" hidden></div>
     <dl id="fin-bilan" class="bilan"></dl>
+    <div id="fin-podium" hidden></div>
     <p id="fin-nouveau" class="nouveau" hidden></p>
     <div class="rangee">
       <button id="b-rejouer" class="grand">Rejouer</button>

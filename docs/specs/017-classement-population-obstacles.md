@@ -2,7 +2,7 @@
 numero: 017
 titre: Classement des tours, population maximale et obstacles du labyrinthe
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: en cours
 date: 2026-11-24
 ---
 
@@ -34,7 +34,7 @@ sans fin.
 - Chaque tour garde son nombre de **couronnes** : le nombre de vagues qu'elle a remportées.
 - **Compensation** (choix de Thibault) : pour que la difficulté ne bouge pas, l'or des monstres et le bonus de fin de
   vague sont multipliés par **0,8** dans tous les modes ; avec le bonus de 1/4, l'or total d'une vague reste le même
-  (0,8 × 1,25 = 1). Le bonus d'appel anticipé et l'or de départ ne changent pas.
+  (0,8 × 1,25 = 1). *Réglage mesuré au lot 1 : 0,78 (voir Livraison).* Le bonus d'appel anticipé et l'or de départ ne changent pas.
 
 ### D. Records du labyrinthe
 - Les records du labyrinthe faits avant cette spec sont **effacés** (choix de Thibault) : les règles changent et ils
@@ -62,22 +62,22 @@ sans fin.
 
 ## Critères d'acceptation
 Classement (logique, `npm test`) :
-1. [ ] Chaque tour compte ses dégâts par vague de monstre touché ; la somme sur les vagues égale ses dégâts totaux.
+1. [x] Chaque tour compte ses dégâts par vague de monstre touché ; la somme sur les vagues égale ses dégâts totaux.
    — *Vérification :* test avec deux tours et deux vagues qui se chevauchent.
-2. [ ] À la fin d'une vague, la tour qui a fait le plus de dégâts à ses monstres rapporte `ceil(1/4 × (or des
+2. [x] À la fin d'une vague, la tour qui a fait le plus de dégâts à ses monstres rapporte `ceil(1/4 × (or des
    monstres de la vague + bonus de fin de vague))`, une seule fois ; événement `tourDeLaVague` (tour, vague, or) ;
    sa couronne est comptée. — *Vérification :* test avec `combattre` sur des monstres immobiles.
-3. [ ] Égalité : la plus ancienne gagne. Tour vendue avant la fin : le bonus est versé quand même. Aucune tour n'a
+3. [x] Égalité : la plus ancienne gagne. Tour vendue avant la fin : le bonus est versé quand même. Aucune tour n'a
    touché la vague : pas de bonus. — *Vérification :* tests.
-4. [ ] Dans le labyrinthe, l'or des mises à terre compte comme l'or de la vague. — *Vérification :* test.
+4. [x] Dans le labyrinthe, l'or des mises à terre compte comme l'or de la vague. — *Vérification :* test.
 
 Classement (écran) :
-5. [ ] Bouton « Classement » (touche **C**, et dans le menu ☰ sur téléphone) : liste des tours de la plus forte à la
+5. [x] Bouton « Classement » (touche **C**, et dans le menu ☰ sur téléphone) : liste des tours de la plus forte à la
    plus faible (rang, image, nom et niveau, dégâts totaux, couronnes) ; cliquer une ligne sélectionne la tour.
-6. [ ] Le panneau d'une tour affiche son rang (« 2e sur 9 ») et ses couronnes.
-7. [ ] À chaque fin de vague : bandeau « Tour de la vague : Mage (+18 or) », couronne au-dessus de la tour pendant
+6. [x] Le panneau d'une tour affiche son rang (« 2e sur 9 ») et ses couronnes.
+7. [x] À chaque fin de vague : bandeau « Tour de la vague : Mage (+18 or) », couronne au-dessus de la tour pendant
    quelques secondes, son de récompense.
-8. [ ] L'écran de fin montre le podium (3 premières tours).
+8. [x] L'écran de fin montre le podium (3 premières tours).
 
 Population (labyrinthe) :
 9. [ ] Plafond 40 ou 50 selon la graine, toujours le même pour une graine ; les deux valeurs sortent sur 50 graines.
@@ -96,7 +96,7 @@ Obstacles (labyrinthe) :
 Équilibre :
 15. [ ] Le joueur automatique du labyrinthe respecte la population ; repères remesurés et notés dans le CLAUDE.md ;
     en Normal il gagne la plupart des terrains en 12 à 25 vagues. — *Vérification :* `node tests/simulate.js labyrinthe`.
-16. [ ] Avec la compensation (or × 0,8), `npm run simulate` redonne à peu près les repères actuels du CLAUDE.md
+16. [x] Avec la compensation (or × 0,8), `npm run simulate` redonne à peu près les repères actuels du CLAUDE.md
     (vies restantes à ± 3, vague de défaite à ± 2) ; les chiffres mesurés y sont notés.
 
 Records :
@@ -152,3 +152,17 @@ Records :
 
 ## Questions ouvertes
 (aucune)
+
+## Livraison — lot 1 (classement des tours, tous les modes)
+Fait : dégâts et or par vague, tour de la vague (prime de 1/4, arrondie au-dessus, égalité à la plus ancienne, tour
+vendue payée quand même), couronnes, événement `tourDeLaVague`, `classement(s)`, bouton et touche C, rang et couronnes
+dans le panneau d'une tour, bandeau + couronne + son à chaque fin de vague, podium de fin. 9 tests dans
+`tests/classement.test.js` (critères 1 à 4) ; essai dans le navigateur pour l'écran (critères 5 à 8).
+
+- **Compensation réglée à 0,78 et non 0,8** : avec 0,8 exactement, le joueur automatique gagnait la Prairie avec 9 vies
+  (repère : 3) et le « pressé » tenait jusqu'à la vague 15 (repère : 10), donc trop facile. Les restes d'arrondi sont
+  reportés d'une mort à l'autre pour ne rien perdre. Mesures avec 0,78 (Normal) : Prairie posé 3 vies, pressé perd
+  vague 10, Désert 7 vies (repère 8), Montagne 7 vies (repère 2, hors des ± 3 : un peu plus facile) ; Difficile
+  inchangé (perd aux vagues 18, 8 et 17). Le réglage est chaotique d'une valeur à l'autre (0,76 donne des résultats très différents) : à revérifier si les chiffres des ennemis bougent.
+- À vérifier à la main : le bandeau et la couronne en pleine partie, le menu ☰ sur téléphone.
+- Reste : lot 2 (population, obstacles, records du labyrinthe remis à zéro, critères 9 à 15 et 17).

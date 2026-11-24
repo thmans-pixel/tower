@@ -10,6 +10,7 @@ import { positionSur, centre } from '../src/sim/carte.js';
 import { ENNEMIS } from '../src/data/ennemis.js';
 import { statsTour } from '../src/data/tours.js';
 import { LABYRINTHE } from '../src/data/labyrinthe.js';
+import { COMPENSATION_OR } from '../src/sim/const.js';
 import { COLS, ROWS, T, DT } from '../src/sim/const.js';
 import { progressionVide, enregistrerLabyrinthe, relire } from '../src/sim/progression.js';
 import { codeProgression, lireCode, fusionner } from '../src/sim/transfert.js';
@@ -220,7 +221,7 @@ test('mise à terre : +1 vie, la moitié de l\'or, le monstre reste sur place av
   const { x, y, d } = e, vies = s.vies, or = s.or, vivants = s.vivants[e.vague];
   blesser(s, e, 1e6, 'physique', null);
   assert.equal(s.vies, vies + 1);
-  assert.equal(s.or, or + Math.ceil(ENNEMIS.gob.or / 2));
+  assert.equal(s.or, or + Math.floor(Math.ceil(ENNEMIS.gob.or * LABYRINTHE.partOr) * COMPENSATION_OR + 1e-9));
   assert.ok(s.ennemis.includes(e));
   assert.equal(e.pv, e.pvMax);
   assert.ok(Math.abs(e.pvMax - pvAvant * (1 + LABYRINTHE.renfort)) < 1e-9, 'il revient plus fort');
