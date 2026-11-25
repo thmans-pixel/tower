@@ -261,7 +261,7 @@ export class Interface {
   montrerEcran(nom) {
     $('ecran-titre').hidden = nom !== 'titre';
     $('ecran-cartes').hidden = nom !== 'cartes';
-    if (nom !== 'jeu') { $('fin').hidden = true; $('question').hidden = true; }
+    $('fin').hidden = true; $('question').hidden = true;   // aussi en entrant en jeu : « Rejouer » ne doit pas laisser le voile de fin
   }
 
   /** Écran des cartes : difficulté, puis une carte par case, avec ses étoiles ou son cadenas. */
