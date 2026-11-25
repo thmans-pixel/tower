@@ -5,7 +5,7 @@ import { ANIMAUX, COULEURS, NOMBRE_MAX, PSEUDO_MIN, PSEUDO_MAX, CHIFFRES_MAX } f
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, reglesLaby: 2, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, barresVie: false, infiniOuvert: false, enfant: false, ageRepondu: false, pseudo: '', pseudoEnfant: '' };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, reglesLaby: 2, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, vivaldi: false, barresVie: false, infiniOuvert: false, enfant: false, ageRepondu: false, pseudo: '', pseudoEnfant: '' };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -87,6 +87,7 @@ export function relire(brut) {
   if (typeof brut.son === 'boolean') p.son = brut.son;
   if (typeof brut.effetsReduits === 'boolean') p.effetsReduits = brut.effetsReduits;
   if (typeof brut.barresVie === 'boolean') p.barresVie = brut.barresVie;
+  if (typeof brut.vivaldi === 'boolean') p.vivaldi = brut.vivaldi;
   for (const k of ['volMusique', 'volEffets']) if (typeof brut[k] === 'number' && brut[k] >= 0 && brut[k] <= 1) p[k] = brut[k];
   p.infiniOuvert = brut.infiniOuvert === true;
   // Hall of fame (spec 018) : la case « enfant » et les pseudos retenus (même forme que celle que le serveur accepte).

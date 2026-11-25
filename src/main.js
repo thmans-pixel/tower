@@ -50,6 +50,7 @@ let progression = charger();   // cartes débloquées, étoiles, difficulté cho
 son.actif = progression.son;
 son.volMusique = progression.volMusique;
 son.volEffets = progression.volEffets;
+musique.vivaldi = progression.vivaldi;
 vue.reduits = progression.effetsReduits;
 vue.barres = progression.barresVie;
 let ecran = 'titre';
@@ -72,6 +73,7 @@ const interfaceJeu = new Interface({
   volumes: () => ({ musique: son.volMusique, effets: son.volEffets }),
   volume: (voie, v) => { if (voie === 'musique') son.volMusique = progression.volMusique = v; else son.volEffets = progression.volEffets = v; son.appliquer(); enregistrer(progression); },
   essaiSon: () => son.jouer('piece'),
+  vivaldi: () => { progression.vivaldi = !progression.vivaldi; musique.regler(progression.vivaldi); enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   recommencer: () => partie && interfaceJeu.question('Recommencer la partie depuis la vague 1 ?', () => commencer(idCarte, true)),
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
@@ -140,6 +142,7 @@ function afficherCartes() {
     vignetteLabyrinthe().then((v) => { laby.vignette = v; afficherCartes(); });
   }
   interfaceJeu.listeCartes(CARTES, vignette, progression, mode, alea, laby);
+  interfaceJeu.majVivaldi(progression.vivaldi);
 }
 
 function numeroAuHasard() {
@@ -456,6 +459,8 @@ observateur.observe(app);
 
 /** Air et intensité selon l'écran et la partie (spec 014, partie 2). L'air d'une partie est tiré au hasard. */
 let airPartie = { partie: null, air: null };
+/** Thème de décor d'une carte (le labyrinthe se joue sur la Prairie ; une carte aléatoire porte celui qu'on a choisi). */
+const themeDe = (id) => (id === 'labyrinthe' ? 'prairie' : typeof id === 'object' ? id.id : id);
 function majMusique() {
   let air = null, intensite = 0;
   if (!document.hidden && son.ac && son.volMusique > 0) {
@@ -465,13 +470,13 @@ function majMusique() {
         const autres = AIRS_DE_PARTIE.filter((a) => a !== airPartie.air);   // pas deux fois le même air de suite
         airPartie = { partie, air: autres[Math.floor(Math.random() * autres.length)] };
       }
-      air = airPartie.air;
+      air = progression.vivaldi ? themeDe(idCarte) : airPartie.air;   // Vivaldi : un enregistrement par thème de carte
       if (partie.ennemis.some((e) => ENNEMIS[e.sorte].boss)) air = 'boss';
       const enVague = partie.lancement || partie.ennemis.length > 0;
       intensite = enVague ? (Number.isFinite(partie.nbVagues) && partie.vague >= partie.nbVagues * 0.75 ? 2 : 1) : 0;
     }
   }
-  if (air && son.ac && !musique.minuterie) musique.nom = null;   // le son vient d'être réveillé : on relance
+  if (air && son.ac && !musique.enMarche()) musique.nom = null;   // le son vient d'être réveillé : on relance
   musique.jouer(air);
   musique.intensite = intensite;
 }
