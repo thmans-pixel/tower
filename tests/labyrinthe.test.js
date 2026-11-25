@@ -191,10 +191,8 @@ test('téléporteur : jamais cherché, mais pris dès que le chemin pose le pied
   const loin = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 12 }, b: { c: 18, r: 12 } }] });
   assert.ok(!loin.carte.sol.points.some((p) => p.saut), 'pas de saut si le chemin ne touche pas l\'entrée');
   assert.equal(loin.carte.sol.longueur, 23 * T);
-  // Le joueur ferme la colonne 10 : le seul passage est le téléporteur.
-  const s = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } }] });
-  for (let r = 0; r < ROWS; r++) assert.ok(poserMur(s, 10, r).ok);
-  assert.ok(s.carte.sol.points.some((p) => p.saut), 'le téléporteur est le seul passage');
+  // Un monstre qui suit ce chemin saute vraiment, de l'entrée à la sortie, sans glisser.
+  const s = libre;
   const e = premierMonstre(s);
   let saut = null, prec = { x: e.x, y: e.y };
   for (let i = 0; i < 60 * 60 && s.ennemis.includes(e); i++) {
@@ -207,13 +205,69 @@ test('téléporteur : jamais cherché, mais pris dès que le chemin pose le pied
   assert.ok(saut, 'un saut a eu lieu');
   assert.ok(Math.abs(saut.avant.x - centre(5)) < 2 && Math.abs(saut.avant.y - centre(5)) < 2, 'part de l\'entrée');
   assert.ok(Math.abs(saut.apres.x - centre(18)) < 2 && Math.abs(saut.apres.y - centre(5)) < 2, 'arrive à la sortie');
-  // Détour : (10, 12) -> (14, 12) hors de la ligne droite, puis un mur ferme toute la colonne 12 : passage obligé.
-  const t = partieSur({ tp: [{ forme: 'rond', a: { c: 10, r: 12 }, b: { c: 14, r: 12 } }] });
-  assert.ok(!t.carte.sol.points.some((p) => p.saut));
-  // Passage obligé : un mur ferme toute la colonne 12 ; le téléporteur passe par-dessus, même s'il rallonge.
-  for (let r = 0; r < ROWS; r++) assert.ok(poserMur(t, 12, r).ok);
-  assert.ok(t.carte.sol.points.some((p) => p.saut), 'le téléporteur est le seul passage');
-  assert.ok(t.carte.sol.longueur > 23 * T);
+});
+
+const TP_DROIT = { forme: 'rond', a: { c: 5, r: 5 }, b: { c: 18, r: 5 } };
+
+test('spec 019 : le premier monstre qui franchit le téléporteur l\'use à la fin de la vague, pas avant ; le trajet ne bouge pas en pleine vague', () => {
+  const s = partieSur({ tp: [{ ...TP_DROIT }] });
+  const trajetAvant = s.carte.sol;
+  const e = premierMonstre(s);
+  assert.equal(s.carte.lab.tp[0].use, undefined);
+  for (let i = 0; i < 60 * 60 && s.labyrinthe.tpPris.size === 0; i++) avancer(s);
+  assert.equal(s.labyrinthe.tpPris.size, 1, 'le saut est noté');
+  assert.equal(s.carte.sol, trajetAvant, 'le trajet est inchangé en pleine vague');
+  assert.ok(!s.carte.lab.tp[0].use, 'pas encore usé');
+  finirVague(s);
+  assert.equal(s.carte.lab.tp[0].use, true, 'usé à la fin de la vague');
+  assert.equal(s.evenements.filter((v) => v.type === 'tpUse').length, 1, 'événement émis une fois');
+  assert.ok(!s.carte.sol.points.some((p) => p.saut), 'le nouveau trajet n\'a plus de saut');
+  assert.equal(s.labyrinthe.tpPris.size, 0);
+  // Une paire usée est une case ordinaire : on marche dessus, on ne construit pas dessus.
+  assert.ok(s.carte.cheminCases.some(([c, r]) => c === 5 && r === 5), 'le chemin passe sur l\'entrée grise');
+  assert.equal(poserMur(s, 5, 5).raison, 'place');
+  assert.equal(poser(s, 'archers', 18, 5).raison, 'place');
+});
+
+test('spec 019 : un téléporteur dont aucun monstre n\'a franchi l\'entrée n\'est pas usé', () => {
+  const s = partieSur({ tp: [{ ...TP_DROIT }] });
+  s.vies = 50;
+  appelerVague(s);
+  while (!s.ennemis.length) avancer(s);
+  for (let i = 0; i < 20 && enVague(s); i++) avancer(s);   // les premiers monstres n'ont pas atteint la colonne 5
+  assert.equal(s.labyrinthe.tpPris.size, 0);
+  // Tous mis à terre (restent sur place) puis la vague est interrompue : on vide la vague sans qu'ils aient avancé.
+  s.lancement = null;
+  for (const m of s.ennemis) { m.d = 0; }
+  s.ennemis.length = 0;
+  for (const k of Object.keys(s.vivants)) s.vivants[k] = 0;
+  avancer(s); avancer(s);
+  assert.ok(!s.carte.lab.tp[0].use, 'personne ne l\'a franchi : pas usé');
+});
+
+test('spec 019 : un chemin qui repasse sur la même entrée n\'est téléporté qu\'une fois', () => {
+  // Checkpoints de part et d'autre de l'entrée (5, 5) : le parcours la croise à l'aller, puis au retour vers le 2.
+  const lab = { ...vide, cp: [{ n: 1, c: 8, r: 5 }, { n: 2, c: 3, r: 5 }], tp: [{ ...TP_DROIT }] };
+  const chemin = cheminLabyrinthe({ ...lab }, new Set());
+  const sauts = chemin.filter((p) => p.saut).length;
+  assert.equal(sauts, 1, 'un seul saut sur tout le parcours');
+  const l2 = { ...lab, tp: [{ ...TP_DROIT, use: true }] };
+  assert.equal(cheminLabyrinthe(l2, new Set()).filter((p) => p.saut).length, 0, 'une paire usée ne saute plus');
+});
+
+test('spec 019 : murer de façon à ne laisser que le téléporteur est refusé (bouche), prévus compris', () => {
+  const s = partieSur({ tp: [{ forme: 'rond', a: { c: 5, r: 12 }, b: { c: 18, r: 12 } }] });
+  s.or = 1e6;
+  // Colonne 10 fermée sauf une case : la dernière pose boucherait le passage à pied.
+  for (let r = 0; r < ROWS - 1; r++) assert.ok(poserMur(s, 10, r).ok);
+  const or = s.or;
+  assert.equal(poserMur(s, 10, ROWS - 1).raison, 'bouche', 'la dernière pose ne laisserait que le téléporteur');
+  assert.equal(s.or, or);
+  assert.equal(poser(s, 'archers', 10, ROWS - 1).raison, 'bouche');
+  // Pendant une vague, les poses prévues comptent : même refus.
+  s.vies = 50;
+  appelerVague(s);
+  assert.equal(poserMur(s, 10, ROWS - 1).raison, 'bouche');
 });
 
 test('mise à terre : +1 vie, la moitié de l\'or, le monstre reste sur place avec tous ses PV', () => {

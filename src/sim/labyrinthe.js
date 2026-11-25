@@ -99,7 +99,7 @@ const VOISINS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
  * ou null s'il n'y a aucun chemin.
  */
 function plusCourt(lab, bloques, de, vers, avecTp) {
-  const entrees = new Map(avecTp ? lab.tp.map((t) => [cle(t.a.c, t.a.r), t.b]) : []);
+  const entrees = new Map(avecTp ? lab.tp.filter((t) => !t.use).map((t) => [cle(t.a.c, t.a.r), t.b]) : []);
   const but = cle(vers.c, vers.r);
   const avant = new Map([[cle(de.c, de.r), null]]);   // case -> { depuis, via } ; via = entrée de TP empruntée
   const file = [cle(de.c, de.r)];
@@ -131,11 +131,11 @@ function plusCourt(lab, bloques, de, vers, avecTp) {
 /**
  * Tronçon à pied où les téléporteurs agissent : la recherche ne les cherche jamais, mais un monstre dont le chemin
  * pose le pied sur une entrée est téléporté à la sortie, puis repart de là vers `vers`. C'est au joueur de placer ses
- * murs pour y faire passer le chemin (ou l'en écarter). Une entrée déjà prise sur ce tronçon n'est pas reprise.
+ * murs pour y faire passer le chemin (ou l'en écarter). Une entrée déjà prise sur le parcours (`pris`, partagé entre les
+ * tronçons) n'est pas reprise, et une paire usée (`use`, spec 019) est une case ordinaire.
  */
-function troncon(lab, bloques, de, vers, pied, evites = new Set()) {
-  const entrees = new Map(lab.tp.map((t) => [cle(t.a.c, t.a.r), t.b]));
-  const pris = new Set();
+function troncon(lab, bloques, de, vers, pied, pris = new Set(), evites = new Set()) {
+  const entrees = new Map(lab.tp.filter((t) => !t.use).map((t) => [cle(t.a.c, t.a.r), t.b]));
   const sortie = [];
   let chemin = pied;
   for (let tour = 0; tour <= lab.tp.length; tour++) {
@@ -150,7 +150,7 @@ function troncon(lab, bloques, de, vers, pied, evites = new Set()) {
     if (!chemin) {   // la sortie est murée : on contourne cette entrée si l'on peut
       evites.add(k);
       const autre = plusCourt(lab, new Set([...bloques, ...evites]), de, vers, false);
-      return autre ? troncon(lab, bloques, de, vers, autre, evites) : null;
+      return autre ? troncon(lab, bloques, de, vers, autre, pris, evites) : null;
     }
   }
   return sortie;
@@ -166,6 +166,7 @@ export function cheminLabyrinthe(lab, bloques) {
   if (lab.obstacles && lab.obstacles.length) bloques = new Set([...bloques, ...casesObstacles(lab)]);
   const etapes = [lab.entree, ...lab.cp, lab.sortie];
   const tout = [];
+  const pris = new Set();   // entrées de téléporteur déjà prises sur ce parcours : une seule fois chacune
   const vus = new Map();   // tronçon à pied déjà calculé, par couple de points : l'aller et le retour suivent le même chemin
   for (let i = 0; i + 1 < etapes.length; i++) {
     const de = etapes[i], vers = etapes[i + 1];
@@ -177,11 +178,22 @@ export function cheminLabyrinthe(lab, bloques) {
       pied = sens ? plusCourt(lab, bloques, de, vers, false) : plusCourt(lab, bloques, vers, de, false);   // toujours calculé dans le même sens
       vus.set(kc, pied);
     }
-    const morceau = (pied && troncon(lab, bloques, de, vers, sens ? pied : [...pied].reverse())) || plusCourt(lab, bloques, de, vers, true);
+    const morceau = (pied && troncon(lab, bloques, de, vers, sens ? pied : [...pied].reverse(), pris)) || plusCourt(lab, bloques, de, vers, true);
     if (!morceau) return null;
     tout.push(...(i === 0 ? morceau : morceau.slice(1)));
   }
   return tout;
+}
+
+/**
+ * Reste-t-il un chemin à pied, sans aucun téléporteur, par tous les checkpoints ? (spec 019) Les murs ne doivent jamais
+ * ne laisser qu'un téléporteur : il s'use, et le labyrinthe serait alors bouché.
+ */
+export function passageAPied(lab, bloques) {
+  if (lab.obstacles && lab.obstacles.length) bloques = new Set([...bloques, ...casesObstacles(lab)]);
+  const etapes = [lab.entree, ...lab.cp, lab.sortie];
+  for (let i = 0; i + 1 < etapes.length; i++) if (!plusCourt(lab, bloques, etapes[i], etapes[i + 1], false)) return false;
+  return true;
 }
 
 /** Trajet au sol (au format de carte.js) d'un chemin de cases. */

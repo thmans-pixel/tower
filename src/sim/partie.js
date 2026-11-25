@@ -10,7 +10,7 @@ import { DIFFICULTES } from '../data/difficultes.js';
 import { genererVague } from '../data/vagues.js';
 import { LABYRINTHE } from '../data/labyrinthe.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
-import { genererLabyrinthe, carteLabyrinthe, majChemin, cheminLabyrinthe, trajetDeChemin, zoneMonstre, zoneTour, cle } from './labyrinthe.js';
+import { genererLabyrinthe, carteLabyrinthe, majChemin, cheminLabyrinthe, passageAPied, trajetDeChemin, zoneMonstre, zoneTour, cle } from './labyrinthe.js';
 
 /**
  * `options.infini` : mode infini (vagues générées sans fin, score = vagues terminées).
@@ -27,7 +27,7 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
   const s = {
     difficulte, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: maze ? carteMaze : construireCarte(def),
-    labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [], popMax: carteMaze.lab.popMax } : null,
+    labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [], popMax: carteMaze.lab.popMax, tpPris: new Set() } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
     vague: 0, nbVagues: options.infini || maze ? Infinity : def.vagues.length, infini: !!options.infini,
     temps: 0,
@@ -78,7 +78,7 @@ export function raisonPose(s, c, r) {
   if (populationLabyrinthe(s) >= s.labyrinthe.popMax) return 'population';
   const b = bloquesPrevus(s);
   b.add(cle(c, r));
-  return cheminLabyrinthe(s.carte.lab, b) ? null : 'bouche';
+  return passageAPied(s.carte.lab, b) ? null : 'bouche';
 }
 
 export const peutPoser = (s, c, r) => raisonPose(s, c, r) === null;
@@ -150,8 +150,26 @@ function recalculerChemin(s) {
 }
 
 /** Construit d'un coup ce qui était prévu pendant la vague (ventes d'abord, puis poses). */
+/**
+ * Fin de vague (spec 019) : les paires de téléporteurs qu'un monstre a franchies pendant la vague sont usées pour de bon ;
+ * le trajet est recalculé sans elles. Jamais en pleine vague : le trajet ne change pas sous les pieds des monstres.
+ */
+function usureTp(s) {
+  const l = s.labyrinthe;
+  if (!l || !l.tpPris.size) return;
+  const lab = s.carte.lab;
+  for (const i of l.tpPris) {
+    const t = lab.tp[i];
+    t.use = true;
+    ev(s, 'tpUse', { x: centre(t.a.c), y: centre(t.a.r), x2: centre(t.b.c), y2: centre(t.b.r) });
+  }
+  l.tpPris.clear();
+  recalculerChemin(s);
+}
+
 export function appliquerPrevus(s) {
   const l = s.labyrinthe;
+  usureTp(s);
   if (!l || !l.prevus.length) return;
   const liste = l.prevus;
   l.prevus = [];
@@ -226,7 +244,7 @@ export function annulerPrevu(s, c, r) {
     if (populationLabyrinthe(s) >= l.popMax) return { ok: false, raison: 'population' };
     const b = bloquesPrevus(s);
     b.add(cle(c, r));
-    if (!cheminLabyrinthe(s.carte.lab, b)) return { ok: false, raison: 'bouche' };
+    if (!passageAPied(s.carte.lab, b)) return { ok: false, raison: 'bouche' };
     const t = p.type === 'venteTour' && s.tours.find((x) => x.id === p.id);
     if (t) t.aRetirer = false;
   } else {
@@ -417,9 +435,11 @@ function deplacer(s, dt) {
       break;
     }
     const avance = e.bloque ? Math.max(0, Math.min(v * dt, s.renforts.find((g) => g.id === e.bloque).ds[e.route || 0] - 16 - e.d)) : v * dt;
+    const avant = e.d;
     e.d += avance;
     e.pas += avance;
     const tr = trajetDe(s, e);
+    if (s.labyrinthe && !e.vol) noterSauts(s, tr, avant, e.d);
     if (e.d >= tr.longueur) {
       s.ennemis.splice(i, 1);
       s.vivants[e.vague]--;
@@ -432,6 +452,15 @@ function deplacer(s, dt) {
     e.x = p.x; e.y = p.y; e.dx = p.dx; e.dy = p.dy;
     if (zone && zone.soin) e.pv = Math.min(e.pvMax, e.pv + zone.soin * e.pvMax * dt);
     if (zone && zone.degats) blesser(s, e, zone.degats * e.pvMax * dt, 'magique', null, 0, true);
+  }
+}
+
+/** Labyrinthe : note les téléporteurs franchis entre les distances `d0` et `d1` du trajet (ils s'useront à la fin de la vague). */
+function noterSauts(s, tr, d0, d1) {
+  for (const sg of tr.segs) {
+    if (!sg.saut || sg.debut < d0 || sg.debut >= d1) continue;
+    const i = s.carte.lab.tp.findIndex((t) => centre(t.b.c) === sg.b.x && centre(t.b.r) === sg.b.y);
+    if (i >= 0) s.labyrinthe.tpPris.add(i);
   }
 }
 
