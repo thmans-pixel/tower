@@ -173,6 +173,7 @@ h1 { margin: 0 0 8px; font-size: 52px; line-height: 1.05; color: var(--or); text
 h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 .accroche { margin: 0 auto 20px; max-width: 42ch; color: var(--doux); }
 .version { margin: 14px 0 0; font-size: 13px; color: var(--doux); opacity: .75; }
+.credits { margin: 6px auto 0; max-width: 34em; font-family: var(--texte-police); font-size: 13px; line-height: 1.35; color: var(--doux); opacity: .85; text-wrap: balance; }
 .aide { margin-top: 18px; text-align: left; color: var(--doux); font-size: 15px; }
 .aide summary { cursor: pointer; color: var(--texte); text-align: center; }
 .aide li { margin: 6px 0; }

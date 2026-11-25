@@ -11,11 +11,12 @@ class FauxAudio {
   play() { this.paused = false; return Promise.resolve(); }
   pause() { this.paused = true; }
   finir() { this.paused = true; this.ecoute.ended(); }
+  echouer() { this.paused = true; this.ecoute.error(); }
 }
 
 function musiqueVivaldi() {
   globalThis.Audio = FauxAudio;
-  const son = { ac: { createMediaElementSource: () => ({ connect() {} }) }, musique: {} };
+  const son = { ac: { currentTime: 0, createMediaElementSource: () => ({ connect() {} }) }, musique: {} };
   const m = new Musique(son);
   m.regler(true);
   return m;
@@ -82,16 +83,67 @@ test('un morceau déjà enchaîné reprend aussi après le boss', () => {
   assert.equal(second.currentTime, 7);
 });
 
-test('menu : l\'enchaînement joue aussi, et une nouvelle partie repart du morceau de la carte', () => {
+test('menu : son propre morceau, en boucle, puis la partie repart du morceau de la carte', () => {
   const m = musiqueVivaldi();
   m.jouer('menu', 'menu');
-  assert.equal(nomDe(m), 'prairie');
-  m.piste.finir();
-  assert.ok(['desert', 'montagne'].includes(nomDe(m)));
+  assert.equal(nomDe(m), 'menu');
+  assert.equal(m.piste.loop, true);
+  m.piste.finir();   // une boucle ne passe pas au suivant (le vrai navigateur ne déclenche pas « ended » avec loop)
+  assert.equal(nomDe(m), 'menu');
   m.jouer('montagne', {});   // la partie commence
   assert.equal(nomDe(m), 'montagne');
   assert.equal(m.piste.currentTime, 0);
   assert.equal(Object.values(m.pistes).filter((e) => !e.paused).length, 1);
+});
+
+test('pause : le menu joue, puis le morceau de la partie reprend là où il s\'était arrêté', () => {
+  const m = musiqueVivaldi();
+  const partie = {};
+  m.jouer('desert', partie);
+  m.piste.finir();
+  const morceau = m.piste;
+  morceau.currentTime = 21;
+  m.jouer('menu', partie);   // pause, même partie
+  assert.equal(nomDe(m), 'menu');
+  assert.equal(morceau.paused, true);
+  assert.equal(morceau.currentTime, 21);
+  m.jouer('desert', partie);   // fin de la pause
+  assert.equal(m.piste, morceau);
+  assert.equal(morceau.currentTime, 21);
+  assert.equal(morceau.paused, false);
+  assert.equal(m.pistes.menu.paused, true);
+  m.jouer('menu', partie);   // deuxième pause : le menu repart du début, le morceau reste en attente
+  m.jouer('boss', partie);
+  m.jouer('desert', partie);
+  assert.equal(m.piste, morceau);
+});
+
+test('repli : un fichier illisible est remplacé par l\'air synthétisé, et on s\'en souvient', () => {
+  const m = musiqueVivaldi();
+  m.jouer('menu', 'menu');
+  const el = m.piste;
+  el.echouer();
+  assert.equal(m.piste, null);
+  assert.ok(m.air, 'l\'air synthétisé du menu joue');
+  assert.equal(m.enMarche(), true);
+  m.jouer('boss', {});   // un autre thème n'est pas touché
+  assert.equal(m.pistes.boss.paused, false);
+  m.jouer('menu', {});
+  assert.equal(m.piste, null);
+  assert.ok(m.air);
+  assert.equal(el.paused, true, 'le fichier absent n\'est pas relancé');
+  m.jouer(null, {});
+  assert.equal(m.enMarche(), false);
+});
+
+test('repli en cours d\'enchaînement : le morceau suivant absent se joue en synthèse', () => {
+  const m = musiqueVivaldi();
+  m.jouer('prairie', {});
+  m.absentes.add('desert'); m.absentes.add('montagne');
+  m.piste.finir();
+  assert.equal(m.piste, null);
+  assert.ok(m.air);
+  m.jouer(null, {});
 });
 
 test('onglet caché ou fin de partie : le silence ne perd pas la place du morceau', () => {

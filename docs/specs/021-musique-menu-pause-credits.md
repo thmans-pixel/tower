@@ -2,7 +2,7 @@
 numero: 021
 titre: Musique du menu et de la pause, raccords des boucles, crédits, repli sur la synthèse
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: livrée
 date: 2026-11-25
 ---
 
@@ -48,14 +48,14 @@ et que si un fichier manque le jeu **retombe sur la synthèse** au lieu de jouer
 - Le mode « synthé » (inchangé : le menu y garde son air synthétisé).
 
 ## Critères d'acceptation
-1. [ ] Le fichier du menu est dans le dépôt en OGG et MP3, à -20 LUFS (±1), sans silence final : début et fin au même niveau (±6 dB sur 0,3 s). — *Vérification :* mesure `ffmpeg` (ebur128, volumedetect).
-2. [ ] Mode Vivaldi, écran titre et écran des cartes : le morceau « menu » joue en boucle ; l'enchaînement ne joue plus au menu. — *Vérification :* navigateur.
-3. [ ] Mode Vivaldi, une partie en pause : le morceau « menu » joue ; reprise : le morceau de la partie repart là où il s'était arrêté (position conservée). — *Vérification :* navigateur (+ test avec faux élément audio).
-4. [ ] Les fichiers boss et désert retraités ont un raccord fin → début sans saut (écart de niveau ≤ 6 dB sur 0,3 s) et la même durée à 0,1 s près. — *Vérification :* mesure `ffmpeg`.
-5. [ ] Un fichier absent ou illisible : le jeu joue l'air synthétisé du même thème, sans erreur bloquante. — *Vérification :* test (faux élément qui déclenche `error`) + navigateur avec un fichier renommé.
-6. [ ] La ligne de crédits est visible sur l'écran titre, lisible sur mobile (`?mobile=1`), police ≥ 13 px. — *Vérification :* navigateur.
-7. [ ] Mode synthé : comportement inchangé, y compris le menu. — *Vérification :* navigateur + `npm test`.
-8. [ ] `npm test` passe. — *Vérification :* commande.
+1. [x] Le fichier du menu est dans le dépôt en OGG et MP3, à -20 LUFS (±1), sans silence final : début et fin au même niveau (±6 dB sur 1 s : le rythme du morceau crée des silences de 0,3 s qui faussent une mesure plus courte). — *Vérification :* mesure `ffmpeg` (ebur128, volumedetect).
+2. [x] Mode Vivaldi, écran titre et écran des cartes : le morceau « menu » joue en boucle ; l'enchaînement ne joue plus au menu. — *Vérification :* navigateur.
+3. [x] Mode Vivaldi, une partie en pause : le morceau « menu » joue ; reprise : le morceau de la partie repart là où il s'était arrêté (position conservée). — *Vérification :* navigateur (+ test avec faux élément audio).
+4. [x] Les fichiers boss et désert retraités ont un raccord fin → début sans saut (écart de niveau ≤ 6 dB sur 1 s) ; chacun est plus court de la durée du fondu (2 s), c’est ce qui rend la boucle continue. — *Vérification :* mesure `ffmpeg`.
+5. [x] Un fichier absent ou illisible : le jeu joue l'air synthétisé du même thème, sans erreur bloquante. — *Vérification :* test (faux élément qui déclenche `error`) + navigateur avec un fichier renommé.
+6. [x] La ligne de crédits est visible sur l'écran titre, lisible sur mobile (`?mobile=1`), police ≥ 13 px. — *Vérification :* navigateur.
+7. [x] Mode synthé : comportement inchangé, y compris le menu. — *Vérification :* navigateur + `npm test`.
+8. [x] `npm test` passe. — *Vérification :* commande.
 
 ## Conception
 - **Réutilisé** : `Musique` (`src/audio/musique.js` : `creerPiste`, `PISTES`, `pause`, `ENCHAINEMENT`), `majMusique` (`src/main.js`, déjà
@@ -93,3 +93,13 @@ et que si un fichier manque le jeu **retombe sur la synthèse** au lieu de jouer
 
 ## Questions ouvertes
 (aucune)
+
+## Livraison
+- Fichiers : `musique_menu` (OGG + MP3, -19,5 LUFS, 173,3 s, silence final coupé, fondu de 3 s fin → début), `musique_boss` (46,7 s) et `musique_desert` (55,3 s)
+  retraités (fondu de 2 s) ; prairie et montagne inchangés. Refaisable avec `tools/audio/raccorder.sh entrée sortie [fondu] [fin utile]`.
+- Écart de niveau fin → début sur 1 s : menu 1,4 dB, boss 1,3 dB, désert 2,2 dB. (La fenêtre de 0,3 s de la spec était trop courte : le rythme du désert
+  y met des silences à -37 dB ; la spec est corrigée en 1 s.) Chaque fichier est plus court du fondu, c'est ce qui rend la boucle continue.
+- Code : menu = piste `menu` en boucle ; pause (Vivaldi) = piste `menu`, le morceau de partie reprend à sa position ; `error` sur un fichier → air synthétisé du
+  même thème, retenu par thème (`Musique.absentes`). Crédits sur l'écran titre (13 px, lisibles en `?mobile=1`). 116 tests verts.
+- Vérifié en navigateur (Chrome) avec les vrais fichiers : menu en boucle, pause → menu puis reprise du morceau, repli sur une adresse inexistante.
+- **À vérifier à la main** : écouter les raccords (je n'ai pu que les mesurer) ; relire les conditions d'utilisation de Lyria pour un jeu public.

@@ -65,7 +65,7 @@ export const AIRS_DE_PARTIE = ['prairie', 'desert', 'montagne', 'sorcier'];
 AIRS.menu = { ...AIRS.prairie, tempo: 112 };
 
 /** Mode « Vivaldi » : au lieu des airs synthétisés, les enregistrements de `musiques/musiques_vivaldi/` (un par thème). */
-export const PISTES = { prairie: 'prairie', menu: 'prairie', desert: 'desert', montagne: 'montagne', boss: 'boss' };
+export const PISTES = { prairie: 'prairie', menu: 'menu', desert: 'desert', montagne: 'montagne', boss: 'boss' };
 const DOSSIER_PISTES = 'musiques/musiques_vivaldi/';
 /** Spec 020 : en mode Vivaldi, ces trois morceaux s'enchaînent ; le boss n'en fait jamais partie (il ne joue qu'avec un boss). */
 export const ENCHAINEMENT = ['prairie', 'desert', 'montagne'];
@@ -89,6 +89,7 @@ export class Musique {
     this.piste = null;      // celui qui joue
     this.pause = null;      // morceau interrompu (boss, onglet caché, fin de partie) : il reprend là où il en était
     this.contexte = undefined;   // menu ou partie en cours : quand il change, un nouvel enchaînement commence
+    this.absentes = new Set();   // thèmes dont le fichier n'a pas pu être lu : on joue l'air synthétisé à la place (spec 021)
   }
 
   /** Bascule entre airs synthétisés et enregistrements ; l'air est relancé au prochain tour de boucle. */
@@ -103,24 +104,26 @@ export class Musique {
 
   /** Quelque chose joue-t-il (ou est-il prévu de jouer) ? Sert à relancer après le réveil du son. */
   enMarche() {
-    return this.vivaldi ? !!this.piste && !this.piste.paused : !!this.minuterie;
+    return this.vivaldi ? (!!this.piste && !this.piste.paused) || !!this.minuterie : !!this.minuterie;
   }
 
   /** Un enregistrement, branché sur la voie « musique » pour que le volume du réglage s'applique.
    *  Le boss tourne en boucle ; les autres passent au suivant quand ils finissent (spec 020). */
   creerPiste(theme) {
     const el = new Audio();
-    el.loop = theme === 'boss';
+    el.loop = theme === 'boss' || theme === 'menu';   // le menu et le boss tournent en boucle
     el.preload = 'auto';
     const ogg = el.canPlayType('audio/ogg; codecs="vorbis"');
     el.src = `${DOSSIER_PISTES}musique_${theme}.${ogg ? 'ogg' : 'mp3'}`;
     this.son.ac.createMediaElementSource(el).connect(this.son.musique);
     el.addEventListener('ended', () => this.finPiste(el));
+    el.addEventListener('error', () => this.fichierAbsent(theme, el));
     return el;
   }
 
   /** Lance l'enregistrement d'un thème, du début. */
   lancerPiste(theme) {
+    if (this.absentes.has(theme)) { this.piste = null; this.lancerAir(AIRS[theme]); return; }
     const el = this.pistes[theme] || (this.pistes[theme] = this.creerPiste(theme));
     el.currentTime = 0;
     this.reprendre(el);
@@ -132,9 +135,15 @@ export class Musique {
     el.play().catch(() => {});   // refusé tant que le joueur n'a rien touché : relancé par enMarche()/majMusique
   }
 
+  /** Spec 021 : le fichier d'un thème manque ou est illisible ; on s'en souvient et, s'il jouait, l'air synthétisé prend le relais. */
+  fichierAbsent(theme, el) {
+    this.absentes.add(theme);
+    if (this.piste === el && this.vivaldi) { this.piste = null; this.lancerPiste(theme); }
+  }
+
   /** Un morceau de l'enchaînement est fini : le suivant démarre aussitôt. */
   finPiste(el) {
-    if (!this.vivaldi || this.piste !== el || el === this.pistes.boss) return;
+    if (!this.vivaldi || this.piste !== el || el.loop) return;
     const theme = Object.keys(this.pistes).find((t) => this.pistes[t] === el);
     this.lancerPiste(pisteSuivante(theme, Math.random()));
   }
@@ -150,11 +159,11 @@ export class Musique {
     if (courant) {
       courant.pause();
       this.piste = null;
-      if (!nouveau && courant !== this.pistes.boss) this.pause = courant;
+      if (!nouveau && !courant.loop) this.pause = courant;   // le boss et le menu ne reprennent pas : ils repartent du début
     }
     if (nouveau) this.pause = null;
     if (!nom || !this.son.ac) return;
-    if (nom === 'boss') { this.lancerPiste('boss'); return; }
+    if (nom === 'boss' || nom === 'menu') { this.lancerPiste(nom); return; }   // le menu sert aussi pendant la pause : le morceau de la partie reste en attente
     if (this.pause) { const el = this.pause; this.pause = null; this.reprendre(el); return; }
     const theme = PISTES[nom];
     if (theme) this.lancerPiste(theme);
@@ -166,7 +175,12 @@ export class Musique {
     this.nom = nom;
     if (this.vivaldi) { this.jouerPiste(nom, contexte); return; }
     if (this.piste) { this.piste.pause(); this.piste = null; }
-    this.air = nom ? AIRS[nom] : null;
+    this.lancerAir(nom ? AIRS[nom] : null);
+  }
+
+  /** Joue un air synthétisé (ou rien). */
+  lancerAir(air) {
+    this.air = air || null;
     this.pas = 0; this.note = 0; this.resteNote = 0;
     if (!this.air) { clearInterval(this.minuterie); this.minuterie = null; return; }
     const ac = this.son.ac;
