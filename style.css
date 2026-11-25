@@ -399,3 +399,21 @@ body.mobile #classement { width: min(300px, 70%); font-size: 14px; }
 /* Population du labyrinthe (spec 017) */
 #compteur-pop[hidden] { display: none; }
 #compteur-pop.plein b { color: #ff6a5a; }
+
+/* Hall of fame (spec 018) */
+.case-enfant { display: block; margin: -2px auto 12px; padding: 8px 12px; max-width: 560px; border: 2px solid var(--bois3); border-radius: 4px; background: var(--nuit); cursor: pointer; text-align: left; }
+.case-enfant input { width: 22px; height: 22px; margin-right: 8px; vertical-align: middle; accent-color: var(--or); }
+.case-enfant small { display: block; margin-top: 2px; color: var(--doux); font: 14px var(--texte-police); }
+.hall-liste { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; text-align: left; max-height: 46vh; overflow: auto; }
+.hall-liste li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,.04); }
+.hall-liste li.moi { background: rgba(242,193,78,.28); outline: 2px solid var(--or); }
+.hall-liste b { color: var(--or); text-align: center; }
+.hall-liste .nom small { display: block; color: var(--doux); font: 14px var(--texte-police); }
+.hall-liste .val { font-weight: 700; }
+.fin-hall { margin: 12px 0 4px; padding: 10px 12px; border: 2px solid var(--bois3); border-radius: 4px; text-align: left; }
+.fin-hall[hidden], #hall-envoi[hidden], #hall-age[hidden], #hall-pseudo-enfant[hidden], #hall-pseudo-adulte[hidden] { display: none; }
+.fin-hall h3 { margin: 0 0 4px; font-size: 18px; color: var(--or); text-align: center; }
+.fin-hall .grand { display: block; margin: 8px auto 0; }
+.pseudo-propose { flex: 1; align-self: center; font-size: 20px; color: var(--or); }
+.hall-resultat { list-style: none; margin: 4px 0 0; padding: 0; font: 15px var(--texte-police); display: grid; gap: 3px; }
+body.mobile .hall-liste { max-height: 40vh; }

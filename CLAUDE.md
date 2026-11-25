@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Classement des tours, population et obstacles du labyrinthe : `docs/specs/017-classement-population-obstacles.md` (livrée). Téléporteurs à usage unique : `docs/specs/019-teleporteurs-a-usage-unique.md` (livrée). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Classement des tours, population et obstacles du labyrinthe : `docs/specs/017-classement-population-obstacles.md` (livrée). Hall of fame en ligne (classements communs, classement enfants à part) : `docs/specs/018-hall-of-fame.md`. Téléporteurs à usage unique : `docs/specs/019-teleporteurs-a-usage-unique.md` (livrée). Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -116,6 +116,18 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   (`tourDeLaVague`, couronnes). Or des monstres et bonus de fin × `COMPENSATION_OR` (0,78, `const.js`, restes reportés par
   `orCompense`). `classement(s)` alimente `#classement` (touche C) et le podium de fin. Repères Normal : Prairie posé 3 vies,
   pressé perd vague 10, Désert 7 vies, Montagne 7 vies (maxTours 30) ; Difficile inchangé.
+- Hall of fame (spec 018) : serveur Python sans dépendance dans `tools/hall/` (`hall.py` : `serveur`, `liste`, `retirer <n>`, `vider <classement>` ;
+  `regles.json` = cartes, difficultés, tours, bornes, mots interdits, pseudos d'enfants ; `python3 -m unittest discover -s tools/hall`).
+  Il écoute 127.0.0.1:8029, nginx renvoie `/api/` (`tower-hall.conf`), base `/var/lib/tower/hall/hall.db`, installé une fois par
+  `sudo bash /var/lib/tower/source/tools/hall/installer.sh` (crée la commande `sudo tower-hall …`) ; `mettre-a-jour.sh` le relance.
+  Il ne garde que pseudo, enfant/adulte, liste, valeur, détail, jour, version des règles (jamais d'IP : la limite de 20 envois par
+  heure est en mémoire). Côté jeu : `src/sim/hall.js` (`scoreHall(s, idCarte)`, `pseudoEnfant`, `pseudoValide`),
+  `src/data/pseudos.js` (mêmes listes que `regles.json`, un test le vérifie), `progression.enfant` / `pseudo` / `pseudoEnfant`
+  (la case « enfant » est portée par le code de transfert, bit 8 des drapeaux ; le pseudo reste sur l'appareil).
+  **Seul `src/ui/hall.js` fait des appels réseau** (`/api/hall`) et ce qui vient du serveur n'entre dans la page que par `textContent`.
+  Les enfants n'ont pas de texte libre : pseudo « Animal Couleur nombre » proposé par le jeu. Cartes aléatoires jamais classées.
+  `tools/serveur.py` renvoie `/api/` vers le port 8029 pour essayer en local (`HALL_DB=/tmp/h.db python3 tools/hall/hall.py serveur`).
+  Plafonds de dégâts par vague dans `regles.json` (le joueur automatique fait ~2 700 par vague au mieux, plafond 20 000).
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
   (`progression.effetsReduits`).
 - Mode mobile (`src/ui/mobile.js`, spec 015) : classes `mobile` / `paysage` / `portrait` sur `<body>` (`?mobile=1` pour

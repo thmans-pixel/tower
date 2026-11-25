@@ -61,6 +61,12 @@ principal() {
   # Les fichiers appartiennent au même compte que le dossier du site.
   chown -R --reference="$SITE" "$SITE"
 
+  # Le hall of fame (spec 018), s'il est installé : il tourne depuis la copie du dépôt, on le relance.
+  if systemctl cat tower-hall >/dev/null 2>&1; then
+    systemctl restart tower-hall
+    echo "Hall of fame relancé."
+  fi
+
   echo "En ligne : version $VERSION du $JOUR, dans $SITE"
 }
 principal "$@"

@@ -1,0 +1,35 @@
+# Service du hall of fame (spec 018) : /etc/systemd/system/tower-hall.service (posé par installer.sh)
+[Unit]
+Description=Hall of fame des Tours du Royaume
+After=network.target
+
+[Service]
+User=tower-hall
+Group=tower-hall
+Environment=HALL_DB=/var/lib/tower/hall/hall.db
+Environment=HALL_PORT=8029
+ExecStart=/usr/bin/python3 -I /var/lib/tower/source/tools/hall/hall.py serveur
+Restart=on-failure
+RestartSec=3
+
+# Verrouillage : le service n'écrit que dans /var/lib/tower/hall et ne parle qu'à 127.0.0.1.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/tower/hall
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

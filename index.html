@@ -72,6 +72,7 @@
     <h1>Les Tours du Royaume</h1>
     <p class="accroche">Les créatures sortent de la grotte. Bâtissez vos tours le long du chemin et tenez le château jusqu'à la dernière vague.</p>
     <button id="b-jouer" class="grand">Jouer</button>
+    <button id="b-hall" class="petit">Hall of fame</button>
     <p id="version" class="version">Version locale</p>
     <details class="aide">
       <summary>Comment jouer</summary>
@@ -89,11 +90,13 @@
 <section id="ecran-cartes" class="ecran" hidden>
   <div class="carton large">
     <h2>Choisissez une carte</h2>
+    <label class="case-enfant"><input type="checkbox" id="case-enfant"> Je suis un enfant (moins de 15 ans)<small>Tes résultats iront dans le classement des enfants, avec un pseudo choisi par le jeu.</small></label>
     <div id="choix-mode" class="difficultes" role="group" aria-label="Mode de jeu" hidden></div>
     <div id="choix-difficulte" class="difficultes" role="group" aria-label="Difficulté"></div>
     <div id="liste-cartes" class="cartes"></div>
     <div class="rangee">
       <button id="b-retour" class="petit">Retour</button>
+      <button id="b-hall-cartes" class="petit">Hall of fame</button>
       <button id="b-transfert" class="petit">Transférer ma progression</button>
       <button id="b-effacer" class="petit">Effacer la progression</button>
     </div>
@@ -107,10 +110,45 @@
     <dl id="fin-bilan" class="bilan"></dl>
     <div id="fin-podium" hidden></div>
     <p id="fin-nouveau" class="nouveau" hidden></p>
+    <div id="fin-hall" class="fin-hall" hidden>
+      <h3>Hall of fame</h3>
+      <p id="hall-resume" class="alea-note"></p>
+      <div id="hall-age" hidden>
+        <p>Tu as moins de 15 ans ? Les enfants ont leur propre classement et un pseudo choisi par le jeu.</p>
+        <div class="rangee"><button id="b-age-oui" class="grand">Oui, moins de 15 ans</button><button id="b-age-non" class="petit">Non, 15 ans ou plus</button></div>
+      </div>
+      <div id="hall-envoi">
+        <div id="hall-pseudo-enfant" hidden>
+          <div class="etiquette">Ton pseudo (demande à un parent avant d’envoyer)</div>
+          <div class="alea-numero"><b id="pseudo-propose" class="pseudo-propose"></b><button id="b-autre-pseudo" class="petit">Un autre</button></div>
+        </div>
+        <div id="hall-pseudo-adulte" hidden>
+          <label class="etiquette" for="pseudo-hall">Votre pseudo (3 à 16 caractères)</label>
+          <div class="alea-numero"><input id="pseudo-hall" autocomplete="off" spellcheck="false" maxlength="16"></div>
+        </div>
+        <p class="alea-note">Le pseudo, le résultat et le jour sont visibles de tous. Rien d’autre n’est gardé.</p>
+        <button id="b-envoyer-hall" class="grand">Envoyer au hall of fame</button>
+      </div>
+      <p id="hall-message" class="alea-note" aria-live="polite"></p>
+      <ul id="hall-resultat" class="hall-resultat"></ul>
+    </div>
     <div class="rangee">
       <button id="b-rejouer" class="grand">Rejouer</button>
       <button id="b-fin-cartes" class="petit">Cartes</button>
     </div>
+  </div>
+</div>
+
+<div id="hall" class="voile" hidden>
+  <div class="carton large hall">
+    <h2>Hall of fame</h2>
+    <div id="hall-onglets" class="difficultes" role="group" aria-label="Adultes ou enfants"></div>
+    <div id="hall-classements" class="difficultes" role="group" aria-label="Classement"></div>
+    <div id="hall-cartes" class="difficultes" role="group" aria-label="Carte" hidden></div>
+    <div id="hall-difficultes" class="difficultes" role="group" aria-label="Difficulté" hidden></div>
+    <p id="hall-note" class="alea-note" aria-live="polite"></p>
+    <ol id="hall-liste" class="hall-liste"></ol>
+    <div class="rangee"><button id="b-fermer-hall" class="petit">Fermer</button></div>
   </div>
 </div>
 
