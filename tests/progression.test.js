@@ -17,7 +17,7 @@ test('difficultés : vies, or de départ, PV des ennemis et compte à rebours', 
   assert.equal(f.compte, 24);
   assert.equal(d.compte, 15);
   assert.throws(() => nouvellePartie('prairie', 'extrême'));
-  assert.equal(Object.keys(DIFFICULTES).length, 3);
+  assert.equal(Object.keys(DIFFICULTES).filter((k) => !DIFFICULTES[k].prestige).length, 3);
 });
 
 test('étoiles : 3 à 90 % des vies, 2 à 50 %, 1 en dessous, 0 si perdue', () => {

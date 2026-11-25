@@ -184,6 +184,9 @@ h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.05; color: var(--or); }
 .difficultes { display: flex; justify-content: center; gap: 6px; margin: -4px 0 14px; flex-wrap: wrap; }
 .difficultes button { min-height: 40px; padding: 4px 16px; border: 2px solid var(--nuit); border-radius: 4px; background: var(--bois3); font-size: 16px; }
 .difficultes button.actif { background: var(--or); color: var(--nuit); font-weight: 700; }
+.difficultes button.prestige { border-color: #c8a2ff; }
+.difficultes button.prestige.actif { background: #c8a2ff; }
+.difficultes button:disabled { opacity: .55; cursor: not-allowed; }
 .difficultes small { display: block; font-size: 13px; opacity: .85; font-family: var(--texte-police); }
 .difficultes[hidden] { display: none; }
 .record { color: var(--or); font-weight: 700; font-size: 15px; }

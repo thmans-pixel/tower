@@ -1,11 +1,12 @@
 // Progression du joueur (spec 005) : cartes débloquées, étoiles, meilleurs scores du mode infini.
 // Données pures : la lecture et l'écriture dans le navigateur sont dans src/ui/sauvegarde.js.
+import { DIFFICULTES, NB_PRESTIGES, estPrestige } from '../data/difficultes.js';
 import { ANIMAUX, COULEURS, NOMBRE_MAX, PSEUDO_MIN, PSEUDO_MAX, CHIFFRES_MAX } from '../data/pseudos.js';
 
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
 export function progressionVide() {
-  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, reglesLaby: 2, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, vivaldi: false, barresVie: false, infiniOuvert: false, enfant: false, ageRepondu: false, pseudo: '', pseudoEnfant: '' };
+  return { version: 1, debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, reglesLaby: 2, difficulte: 'normal', son: true, volMusique: 0.6, volEffets: 0.8, effetsReduits: false, vivaldi: false, prestige: 0, barresVie: false, infiniOuvert: false, enfant: false, ageRepondu: false, pseudo: '', pseudoEnfant: '' };
 }
 
 /** Étoiles d'une partie gagnée : 3 à 90 % des vies ou plus, 2 à 50 % ou plus, 1 sinon ; 0 si perdue. */
@@ -17,6 +18,22 @@ export function etoilesPartie(s) {
 
 export const estDebloquee = (p, carte) => p.debloquees.includes(carte);
 
+/**
+ * Plus haut prestige ouvert (0 = aucun) : le 1er après une victoire en Difficile sur une carte, chaque suivant après
+ * avoir gagné le précédent (`p.prestige` = plus haut prestige gagné).
+ */
+export function prestigeOuvert(p) {
+  const difficileGagne = Object.values(p.etoiles).some((e) => e && e.difficile > 0);
+  if (!difficileGagne && !(p.prestige > 0)) return 0;
+  return Math.min(NB_PRESTIGES, Math.max(1, (p.prestige || 0) + 1));
+}
+
+/** Une difficulté est choisissable : les trois d'origine toujours, un prestige une fois ouvert. */
+export function difficulteOuverte(p, d) {
+  if (!DIFFICULTES[d]) return false;
+  return !estPrestige(d) || DIFFICULTES[d].prestige <= prestigeOuvert(p);
+}
+
 export const meilleuresEtoiles = (p, carte, difficulte) => (p.etoiles[carte] || {})[difficulte] || 0;
 
 /**
@@ -27,6 +44,7 @@ export function enregistrerVictoire(p, carte, difficulte, etoiles) {
   const q = structuredClone(p);
   q.etoiles[carte] = { ...(q.etoiles[carte] || {}) };
   q.etoiles[carte][difficulte] = Math.max(q.etoiles[carte][difficulte] || 0, etoiles);
+  if (estPrestige(difficulte) && etoiles > 0) q.prestige = Math.max(q.prestige || 0, DIFFICULTES[difficulte].prestige);
   const nouvelles = [];
   const suivante = ORDRE_CARTES[ORDRE_CARTES.indexOf(carte) + 1];
   if (suivante && !q.debloquees.includes(suivante)) { q.debloquees.push(suivante); nouvelles.push(suivante); }
@@ -76,16 +94,16 @@ export function relire(brut) {
   if (brut.etoiles && typeof brut.etoiles === 'object') {
     for (const c of ORDRE_CARTES) if (brut.etoiles[c]) {
       p.etoiles[c] = {};
-      for (const [d, n] of Object.entries(brut.etoiles[c])) if (Number.isInteger(n) && n >= 0 && n <= 3) p.etoiles[c][d] = n;
+      for (const [d, n] of Object.entries(brut.etoiles[c])) if (DIFFICULTES[d] && Number.isInteger(n) && n >= 0 && n <= 3) p.etoiles[c][d] = n;
     }
   }
   if (brut.infini && typeof brut.infini === 'object') for (const c of ORDRE_CARTES) if (Number.isInteger(brut.infini[c])) p.infini[c] = brut.infini[c];
-  if (['facile', 'normal', 'difficile'].includes(brut.difficulte)) p.difficulte = brut.difficulte;
   if (brut.aleatoires && typeof brut.aleatoires === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.aleatoires[d])) p.aleatoires[d] = brut.aleatoires[d];
   // Records du labyrinthe : seulement ceux faits avec les règles de la spec 017 (population, obstacles) ; les autres sont effacés.
   if (brut.reglesLaby === 2 && brut.labyrinthe && typeof brut.labyrinthe === 'object') for (const d of ['facile', 'normal', 'difficile']) if (Number.isInteger(brut.labyrinthe[d]) && brut.labyrinthe[d] > 0) p.labyrinthe[d] = brut.labyrinthe[d];
   if (typeof brut.son === 'boolean') p.son = brut.son;
   if (typeof brut.effetsReduits === 'boolean') p.effetsReduits = brut.effetsReduits;
+  if (Number.isInteger(brut.prestige) && brut.prestige >= 0) p.prestige = Math.min(NB_PRESTIGES, brut.prestige);
   if (typeof brut.barresVie === 'boolean') p.barresVie = brut.barresVie;
   if (typeof brut.vivaldi === 'boolean') p.vivaldi = brut.vivaldi;
   for (const k of ['volMusique', 'volEffets']) if (typeof brut[k] === 'number' && brut[k] >= 0 && brut[k] <= 1) p[k] = brut[k];
@@ -100,5 +118,6 @@ export function relire(brut) {
     const m = brut.pseudoEnfant.split(' ');
     if (m.length === 3 && ANIMAUX.includes(m[0]) && COULEURS.includes(m[1]) && /^[1-9][0-9]?$/.test(m[2]) && +m[2] <= NOMBRE_MAX) p.pseudoEnfant = brut.pseudoEnfant;
   }
+  if (difficulteOuverte(p, brut.difficulte)) p.difficulte = brut.difficulte;   // un prestige non ouvert retombe sur Normal
   return p;
 }
