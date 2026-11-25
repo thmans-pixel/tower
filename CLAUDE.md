@@ -139,4 +139,7 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   et `musique`, `son.appliquer()` après un changement de réglage ; `volMusique`, `volEffets` dans la progression).
   Musique : `src/audio/musique.js` (`AIRS` : prairie et désert originaux, montagne = Korobeiniki du domaine public,
   boss, menu, sorcier = L'Apprenti sorcier de Dukas, domaine public), pilotée par `majMusique` (main.js) ; l'air d'une
-  partie est tiré au hasard dans `AIRS_DE_PARTIE`. Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).
+  partie est tiré au hasard dans `AIRS_DE_PARTIE`. Mode « Vivaldi » (spec 020) : enregistrements de `musiques/musiques_vivaldi/` ; `ENCHAINEMENT` (prairie, désert, montagne) s'enchaîne au hasard
+  sans répétition (`pisteSuivante`, événement `ended`), le premier morceau est celui de la carte (menu : prairie), le boss joue seul en boucle
+  tant qu'un boss est en jeu puis le morceau interrompu reprend (`Musique.pause`) ; `jouer(nom, contexte)` : un nouveau contexte (menu, autre
+  partie) repart du morceau de départ. Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).

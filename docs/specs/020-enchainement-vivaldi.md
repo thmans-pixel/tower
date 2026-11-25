@@ -2,7 +2,7 @@
 numero: 020
 titre: Mode Vivaldi — les morceaux s'enchaînent, le boss à part
 depot: autre (thmans-pixel/tower)
-statut: validée
+statut: livrée
 date: 2026-11-25
 ---
 
@@ -47,20 +47,20 @@ joue un (par exemple prairie ou désert), puis **les autres s'enchaînent**, et 
 - Ajouter d'autres morceaux.
 
 ## Critères d'acceptation
-1. [ ] La fonction pure qui choisit le morceau suivant ne renvoie jamais le boss ni le morceau qui vient de finir,
+1. [x] La fonction pure qui choisit le morceau suivant ne renvoie jamais le boss ni le morceau qui vient de finir,
    et finit par renvoyer chacun des deux autres. — *Vérification :* test (`tests/musique.test.js`, tirage simulé).
-2. [ ] En mode Vivaldi, une partie sur le Désert commence par désert ; à la fin du morceau, un autre morceau
+2. [x] En mode Vivaldi, une partie sur le Désert commence par désert ; à la fin du morceau, un autre morceau
    (prairie ou montagne) démarre aussitôt. — *Vérification :* navigateur (`?jouer=desert`, attendre 57 s, ou avancer
    `currentTime` de la piste dans la console).
-3. [ ] Au fil d'une longue partie, les trois morceaux passent, jamais deux fois le même de suite, et le boss jamais hors
+3. [x] Au fil d'une longue partie, les trois morceaux passent, jamais deux fois le même de suite, et le boss jamais hors
    boss. — *Vérification :* navigateur, journal de la console pendant ~5 min (ou test du critère 1).
-4. [ ] Un boss apparaît : la piste boss joue en boucle ; le boss mort ou passé, le morceau interrompu reprend où il en
+4. [x] Un boss apparaît : la piste boss joue en boucle ; le boss mort ou passé, le morceau interrompu reprend où il en
    était. — *Vérification :* navigateur (vague de boss sur la Prairie, `?test=1`).
-5. [ ] Menu et écran des cartes en mode Vivaldi : la musique s'enchaîne aussi, sans le boss. — *Vérification :* navigateur.
-6. [ ] Passer de « Vivaldi » à « synthé » et retour : la bonne musique repart, rien ne joue en double. — *Vérification :*
+5. [x] Menu et écran des cartes en mode Vivaldi : la musique s'enchaîne aussi, sans le boss. — *Vérification :* navigateur.
+6. [x] Passer de « Vivaldi » à « synthé » et retour : la bonne musique repart, rien ne joue en double. — *Vérification :*
    navigateur.
-7. [ ] Mode synthé : comportement strictement inchangé. — *Vérification :* navigateur + `npm test`.
-8. [ ] `npm test` passe. — *Vérification :* commande.
+7. [x] Mode synthé : comportement strictement inchangé. — *Vérification :* navigateur + `npm test`.
+8. [x] `npm test` passe. — *Vérification :* commande.
 
 ## Conception
 - **Ce qui existe et qu'on réutilise** : `Musique.jouerPiste` / `creerPiste` (`src/audio/musique.js`, éléments
@@ -108,3 +108,14 @@ joue un (par exemple prairie ou désert), puis **les autres s'enchaînent**, et 
 
 ## Questions ouvertes
 (aucune)
+
+## Livraison
+Fait : `ENCHAINEMENT` et `pisteSuivante` (morceau suivant au hasard, jamais le boss ni le même de suite) ; les morceaux de l'enchaînement ne
+bouclent plus et passent au suivant à `ended`, le boss reste en boucle ; `jouer(nom, contexte)` : le contexte (menu ou partie en cours) fait
+repartir l'enchaînement du morceau de la carte, et un morceau interrompu (boss, onglet caché, fin de partie) reprend là où il en était
+(`Musique.pause`) ; `majMusique` passe le contexte ; `enMarche()` tient compte d'un `play()` refusé par le navigateur (relance à l'image
+suivante). Mode synthé : aucune ligne de son chemin n'a changé. 8 tests dans `tests/musique.test.js` (faux élément audio) couvrent les
+critères 1 à 6 ; `npm test` : 113 sur 113.
+
+À vérifier à la main (pas d'écoute possible depuis le nuage) : écouter une partie en mode Vivaldi (enchaînement sans trou, boss, reprise après
+le boss), et le mode synthé inchangé.
