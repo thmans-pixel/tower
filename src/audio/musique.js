@@ -64,6 +64,10 @@ AIRS.sorcier = {
 export const AIRS_DE_PARTIE = ['prairie', 'desert', 'montagne', 'sorcier'];
 AIRS.menu = { ...AIRS.prairie, tempo: 112 };
 
+/** Mode « Vivaldi » : au lieu des airs synthétisés, les enregistrements de `musiques/musiques_vivaldi/` (un par thème). */
+export const PISTES = { prairie: 'prairie', menu: 'prairie', desert: 'desert', montagne: 'montagne', boss: 'boss' };
+const DOSSIER_PISTES = 'musiques/musiques_vivaldi/';
+
 const FONDAMENTALE = (accord) => frequence(accord.replace('m', '').replace(/^([A-G][#b]?)$/, '$12'));
 const TIERCE = (accord) => (accord.endsWith('m') ? 3 : 4);
 
@@ -73,12 +77,51 @@ export class Musique {
     this.air = null;
     this.intensite = 0;
     this.minuterie = null;
+    this.vivaldi = false;   // true : on joue les fichiers (PISTES) et non plus les airs synthétisés
+    this.pistes = {};       // éléments audio déjà créés, par thème
+    this.piste = null;      // celui qui joue
+  }
+
+  /** Bascule entre airs synthétisés et enregistrements ; l'air est relancé au prochain tour de boucle. */
+  regler(vivaldi) {
+    if (vivaldi === this.vivaldi) return;
+    this.vivaldi = vivaldi;
+    this.jouer(null);
+    this.nom = undefined;
+  }
+
+  /** Quelque chose joue-t-il (ou est-il prévu de jouer) ? Sert à relancer après le réveil du son. */
+  enMarche() {
+    return this.vivaldi ? !!this.piste : !!this.minuterie;
+  }
+
+  /** Un enregistrement, branché sur la voie « musique » pour que le volume du réglage s'applique. */
+  creerPiste(theme) {
+    const el = new Audio();
+    el.loop = true;
+    el.preload = 'auto';
+    const ogg = el.canPlayType('audio/ogg; codecs="vorbis"');
+    el.src = `${DOSSIER_PISTES}musique_${theme}.${ogg ? 'ogg' : 'mp3'}`;
+    this.son.ac.createMediaElementSource(el).connect(this.son.musique);
+    return el;
+  }
+
+  jouerPiste(nom) {
+    clearInterval(this.minuterie); this.minuterie = null; this.air = null;
+    if (this.piste) { this.piste.pause(); this.piste = null; }
+    const theme = nom && PISTES[nom];
+    if (!theme || !this.son.ac) return;
+    const el = this.pistes[theme] || (this.pistes[theme] = this.creerPiste(theme));
+    this.piste = el;
+    el.play().catch(() => {});   // refusé tant que le joueur n'a rien touché : relancé par enMarche()/majMusique
   }
 
   /** Lance un air (nom de AIRS), ou rien si c'est déjà lui. `null` arrête. */
   jouer(nom) {
     if (nom === this.nom) return;
     this.nom = nom;
+    if (this.vivaldi) { this.jouerPiste(nom); return; }
+    if (this.piste) { this.piste.pause(); this.piste = null; }
     this.air = nom ? AIRS[nom] : null;
     this.pas = 0; this.note = 0; this.resteNote = 0;
     if (!this.air) { clearInterval(this.minuterie); this.minuterie = null; return; }

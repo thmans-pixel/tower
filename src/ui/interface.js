@@ -90,6 +90,7 @@ export class Interface {
     $('case-enfant').onchange = (e) => actions.enfant(e.target.checked);
     $('b-effacer').onclick = () => this.question('Effacer toute la progression (cartes débloquées, étoiles, scores) ?', () => actions.effacer());
     $('b-rejouer').onclick = () => actions.rejouer();
+    $('b-vivaldi').onclick = () => actions.vivaldi();
     $('b-fin-cartes').onclick = () => actions.ecran('cartes');
     $('b-non').onclick = () => { $('question').hidden = true; };
     this.preparerTransfert(actions);
@@ -392,6 +393,14 @@ export class Interface {
       $('b-reunir').hidden = true; lue = null;
       resultat('<b class="succes">Progressions réunies.</b> Votre code ci-dessus est à jour.');
     };
+  }
+
+  /** Bouton de l'écran des cartes : airs synthétisés ou Vivaldi. */
+  majVivaldi(actif) {
+    const b = $('b-vivaldi');
+    b.textContent = actif ? 'Musique : Vivaldi' : 'Musique : synthé';
+    b.setAttribute('aria-pressed', String(actif));
+    b.classList.toggle('actif', actif);
   }
 
   question(texte, oui) {

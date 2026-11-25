@@ -52,7 +52,7 @@ principal() {
   # Le jeu et rien d'autre. --checksum : un fichier inchangé n'est pas réécrit, le navigateur garde donc sa copie.
   rsync --recursive --checksum --delete --delete-excluded \
     --include='/index.html' --include='/style.css' \
-    --include='/src/***' --include='/assets/***' \
+    --include='/src/***' --include='/assets/***' --include='/musiques/***' \
     --exclude='*' \
     "$SOURCE/" "$SITE/"
 
