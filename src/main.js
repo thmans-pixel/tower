@@ -477,7 +477,7 @@ function majMusique() {
     }
   }
   if (air && son.ac && !musique.enMarche()) musique.nom = null;   // le son vient d'être réveillé : on relance
-  musique.jouer(air);
+  musique.jouer(air, ecran !== 'jeu' || !partie ? 'menu' : partie);   // le contexte sert au mode Vivaldi (spec 020)
   musique.intensite = intensite;
 }
 

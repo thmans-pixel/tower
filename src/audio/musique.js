@@ -67,6 +67,13 @@ AIRS.menu = { ...AIRS.prairie, tempo: 112 };
 /** Mode « Vivaldi » : au lieu des airs synthétisés, les enregistrements de `musiques/musiques_vivaldi/` (un par thème). */
 export const PISTES = { prairie: 'prairie', menu: 'prairie', desert: 'desert', montagne: 'montagne', boss: 'boss' };
 const DOSSIER_PISTES = 'musiques/musiques_vivaldi/';
+/** Spec 020 : en mode Vivaldi, ces trois morceaux s'enchaînent ; le boss n'en fait jamais partie (il ne joue qu'avec un boss). */
+export const ENCHAINEMENT = ['prairie', 'desert', 'montagne'];
+/** Morceau qui suit `derniere` : un des deux autres, choisi par `tirage` (entre 0 et 1). Jamais le boss, jamais deux fois le même. */
+export function pisteSuivante(derniere, tirage) {
+  const autres = ENCHAINEMENT.filter((t) => t !== derniere);
+  return autres[Math.min(autres.length - 1, Math.floor(tirage * autres.length))];
+}
 
 const FONDAMENTALE = (accord) => frequence(accord.replace('m', '').replace(/^([A-G][#b]?)$/, '$12'));
 const TIERCE = (accord) => (accord.endsWith('m') ? 3 : 4);
@@ -80,6 +87,8 @@ export class Musique {
     this.vivaldi = false;   // true : on joue les fichiers (PISTES) et non plus les airs synthétisés
     this.pistes = {};       // éléments audio déjà créés, par thème
     this.piste = null;      // celui qui joue
+    this.pause = null;      // morceau interrompu (boss, onglet caché, fin de partie) : il reprend là où il en était
+    this.contexte = undefined;   // menu ou partie en cours : quand il change, un nouvel enchaînement commence
   }
 
   /** Bascule entre airs synthétisés et enregistrements ; l'air est relancé au prochain tour de boucle. */
@@ -88,39 +97,74 @@ export class Musique {
     this.vivaldi = vivaldi;
     this.jouer(null);
     this.nom = undefined;
+    this.pause = null;
+    this.contexte = undefined;
   }
 
   /** Quelque chose joue-t-il (ou est-il prévu de jouer) ? Sert à relancer après le réveil du son. */
   enMarche() {
-    return this.vivaldi ? !!this.piste : !!this.minuterie;
+    return this.vivaldi ? !!this.piste && !this.piste.paused : !!this.minuterie;
   }
 
-  /** Un enregistrement, branché sur la voie « musique » pour que le volume du réglage s'applique. */
+  /** Un enregistrement, branché sur la voie « musique » pour que le volume du réglage s'applique.
+   *  Le boss tourne en boucle ; les autres passent au suivant quand ils finissent (spec 020). */
   creerPiste(theme) {
     const el = new Audio();
-    el.loop = true;
+    el.loop = theme === 'boss';
     el.preload = 'auto';
     const ogg = el.canPlayType('audio/ogg; codecs="vorbis"');
     el.src = `${DOSSIER_PISTES}musique_${theme}.${ogg ? 'ogg' : 'mp3'}`;
     this.son.ac.createMediaElementSource(el).connect(this.son.musique);
+    el.addEventListener('ended', () => this.finPiste(el));
     return el;
   }
 
-  jouerPiste(nom) {
-    clearInterval(this.minuterie); this.minuterie = null; this.air = null;
-    if (this.piste) { this.piste.pause(); this.piste = null; }
-    const theme = nom && PISTES[nom];
-    if (!theme || !this.son.ac) return;
+  /** Lance l'enregistrement d'un thème, du début. */
+  lancerPiste(theme) {
     const el = this.pistes[theme] || (this.pistes[theme] = this.creerPiste(theme));
+    el.currentTime = 0;
+    this.reprendre(el);
+  }
+
+  /** Joue (ou rejoue) cet enregistrement là où il en est. */
+  reprendre(el) {
     this.piste = el;
     el.play().catch(() => {});   // refusé tant que le joueur n'a rien touché : relancé par enMarche()/majMusique
   }
 
+  /** Un morceau de l'enchaînement est fini : le suivant démarre aussitôt. */
+  finPiste(el) {
+    if (!this.vivaldi || this.piste !== el || el === this.pistes.boss) return;
+    const theme = Object.keys(this.pistes).find((t) => this.pistes[t] === el);
+    this.lancerPiste(pisteSuivante(theme, Math.random()));
+  }
+
+  /** Mode Vivaldi. `nom` = 'boss', ou le thème par lequel commence un nouvel enchaînement ; `null` = silence.
+   *  `contexte` (le menu, ou la partie en cours) : s'il change, l'enchaînement repart du thème de départ ;
+   *  sinon un morceau interrompu (boss, onglet caché, fin de partie) reprend là où il en était. */
+  jouerPiste(nom, contexte) {
+    clearInterval(this.minuterie); this.minuterie = null; this.air = null;
+    const nouveau = contexte !== this.contexte;
+    this.contexte = contexte;
+    const courant = this.piste;
+    if (courant) {
+      courant.pause();
+      this.piste = null;
+      if (!nouveau && courant !== this.pistes.boss) this.pause = courant;
+    }
+    if (nouveau) this.pause = null;
+    if (!nom || !this.son.ac) return;
+    if (nom === 'boss') { this.lancerPiste('boss'); return; }
+    if (this.pause) { const el = this.pause; this.pause = null; this.reprendre(el); return; }
+    const theme = PISTES[nom];
+    if (theme) this.lancerPiste(theme);
+  }
+
   /** Lance un air (nom de AIRS), ou rien si c'est déjà lui. `null` arrête. */
-  jouer(nom) {
-    if (nom === this.nom) return;
+  jouer(nom, contexte) {
+    if (nom === this.nom && (!this.vivaldi || contexte === this.contexte)) return;
     this.nom = nom;
-    if (this.vivaldi) { this.jouerPiste(nom); return; }
+    if (this.vivaldi) { this.jouerPiste(nom, contexte); return; }
     if (this.piste) { this.piste.pause(); this.piste = null; }
     this.air = nom ? AIRS[nom] : null;
     this.pas = 0; this.note = 0; this.resteNote = 0;
