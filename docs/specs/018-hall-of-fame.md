@@ -2,7 +2,7 @@
 numero: 018
 titre: Hall of fame en ligne, avec un classement enfants à part
 depot: autre (thmans-pixel/tower)
-statut: livrée
+statut: avenant à valider
 date: 2026-11-24
 ---
 
@@ -180,3 +180,41 @@ contrôler `sudo tower-hall liste` de temps en temps ; ajouter `/var/lib/tower/h
 
 ## Questions ouvertes
 (aucune)
+
+## Avenant 1 — les enfants choisissent leur pseudo (demandé par Thibault le 2026-11-25)
+
+**Ce qui change.** Un enfant peut taper **son propre pseudo**, au lieu d'être limité à « Animal Couleur nombre ».
+La seule règle ajoutée pour lui : **aucun prénom ni nom de famille**. Cet avenant remplace la règle « pseudo des enfants
+imposé » (décision de la spec d'origine, et risque noté plus bas : « pseudo libre pour les enfants »).
+
+**Règles**
+- Pseudo d'un enfant : même forme que celui d'un adulte (3 à 16 caractères, lettres latines, chiffres, espaces, tirets).
+  Le pseudo proposé « Animal Couleur nombre » reste proposé par défaut (bouton « Un autre »), et l'enfant peut écrire le sien à la place.
+- **Prénoms et noms interdits** : le serveur refuse un pseudo d'enfant dont un mot est un prénom ou un nom de famille de sa
+  liste (`regles.json` : `prenoms`, `noms` ; quelques centaines de prénoms et de noms courants, dont ceux de la famille).
+  Comparaison sans accents ni majuscules, chiffres ignorés, mot par mot (espaces, tirets et majuscules internes :
+  « LemineurMasquer » = « Lemineur » + « Masquer » ; « Leo26 » = « Leo »). Message : « Pas de vrai prénom ni de nom. »
+- Le filtre des **insultes** reste le même que pour les adultes : c'est la seule autre règle (aucune autre restriction n'est ajoutée).
+- La règle ne vise que la catégorie **enfants** : les adultes ne changent pas.
+- Sous le champ, un rappel : « Ni vrai prénom, ni nom, ni école, ni ville. Demande à un parent avant d'envoyer. »
+- Modération inchangée : `sudo tower-hall retirer-pseudo <pseudo>`. La liste de noms sera forcément incomplète : un prénom rare ou
+  un nom d'école peut passer, d'où le rappel à l'écran et le contrôle de `liste` par Thibault.
+
+**Critères d'acceptation**
+12. [ ] Le serveur accepte un pseudo d'enfant libre bien formé (« LemineurMasquer », « Abracadabra26 »). — *Vérification :* tests Python.
+13. [ ] Le serveur refuse pour un enfant un pseudo contenant un prénom ou un nom de sa liste (« Léo », « Arthur26 », « LeoGamer »,
+    « Thibault », « Martin »), mais pas ceux qui n'en contiennent pas. — *Vérification :* tests Python, y compris accents et chiffres.
+14. [ ] Les adultes ne sont pas concernés par la liste de prénoms (« Daereck », « Thibault » restent acceptés). — *Vérification :* test.
+15. [ ] Écran de fin d'un enfant : pseudo proposé par défaut + champ libre ; le rappel est affiché ; un pseudo refusé montre
+    « Pas de vrai prénom ni de nom. » et rien n'est envoyé. — *Vérification :* essai navigateur (ordinateur et `?mobile=1`).
+16. [ ] Relecture `gardien-enfants` de l'avenant, sans point bloquant. — *Vérification :* son rapport.
+
+**Fichiers** : `tools/hall/regles.json` (`prenoms`, `noms`), `tools/hall/hall.py`, `tools/hall/test_hall.py`, `src/sim/hall.js`
+(forme d'un pseudo d'enfant libre), `src/ui/hall.js`, `index.html`, `style.css`, `tests/hall.test.js`, `CLAUDE.md`.
+
+**Risques** : un enfant peut publier du texte visible de tous (voir « Enfants / vie privée ») ; la liste de noms ne peut pas
+être complète ; aucun contrôle ne prouve que l'enfant demande à un parent. Mesures : liste de noms, rappel à l'écran, filtre
+d'insultes, envoi volontaire, modération par commande. → relecture `gardien-enfants`.
+
+**Questions ouvertes** : aucune.
+
