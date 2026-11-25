@@ -2,7 +2,7 @@
 numero: 018
 titre: Hall of fame en ligne, avec un classement enfants à part
 depot: autre (thmans-pixel/tower)
-statut: avenant à valider
+statut: livrée
 date: 2026-11-24
 ---
 
@@ -201,13 +201,13 @@ imposé » (décision de la spec d'origine, et risque noté plus bas : « pseudo
   un nom d'école peut passer, d'où le rappel à l'écran et le contrôle de `liste` par Thibault.
 
 **Critères d'acceptation**
-12. [ ] Le serveur accepte un pseudo d'enfant libre bien formé (« LemineurMasquer », « Abracadabra26 »). — *Vérification :* tests Python.
-13. [ ] Le serveur refuse pour un enfant un pseudo contenant un prénom ou un nom de sa liste (« Léo », « Arthur26 », « LeoGamer »,
+12. [x] Le serveur accepte un pseudo d'enfant libre bien formé (« LemineurMasquer », « Abracadabra26 »). — *Vérification :* tests Python.
+13. [x] Le serveur refuse pour un enfant un pseudo contenant un prénom ou un nom de sa liste (« Léo », « Arthur26 », « LeoGamer »,
     « Thibault », « Martin »), mais pas ceux qui n'en contiennent pas. — *Vérification :* tests Python, y compris accents et chiffres.
-14. [ ] Les adultes ne sont pas concernés par la liste de prénoms (« Daereck », « Thibault » restent acceptés). — *Vérification :* test.
-15. [ ] Écran de fin d'un enfant : pseudo proposé par défaut + champ libre ; le rappel est affiché ; un pseudo refusé montre
+14. [x] Les adultes ne sont pas concernés par la liste de prénoms (« Daereck », « Thibault » restent acceptés). — *Vérification :* test.
+15. [x] Écran de fin d'un enfant : pseudo proposé par défaut + champ libre ; le rappel est affiché ; un pseudo refusé montre
     « Pas de vrai prénom ni de nom. » et rien n'est envoyé. — *Vérification :* essai navigateur (ordinateur et `?mobile=1`).
-16. [ ] Relecture `gardien-enfants` de l'avenant, sans point bloquant. — *Vérification :* son rapport.
+16. [x] Relecture `gardien-enfants` de l'avenant, sans point bloquant. — *Vérification :* son rapport.
 
 **Fichiers** : `tools/hall/regles.json` (`prenoms`, `noms`), `tools/hall/hall.py`, `tools/hall/test_hall.py`, `src/sim/hall.js`
 (forme d'un pseudo d'enfant libre), `src/ui/hall.js`, `index.html`, `style.css`, `tests/hall.test.js`, `CLAUDE.md`.
@@ -218,3 +218,14 @@ d'insultes, envoi volontaire, modération par commande. → relecture `gardien-e
 
 **Questions ouvertes** : aucune.
 
+
+**Livraison de l'avenant 1**
+- Serveur (`hall.py`) : un enfant envoie soit le pseudo proposé, soit un pseudo libre de même forme que celui d'un adulte ; refus `prenom` (« Pas de vrai prénom ni de nom. ») si
+  un mot est dans `prenoms`/`noms` (342 prénoms, 158 noms ; les animaux et couleurs du jeu en sont exclus). Reprises après la relecture `gardien-enfants` : le prénom est aussi
+  repéré collé en minuscules (au début dès 3 lettres, à la fin dès 4, n'importe où dès 5 : « leogamer », « xXLucasXx »), avec chiffres lus comme lettres (« Th1bault ») et
+  lettres répétées (« Leooo ») ; `exceptionsNoms` (leopard, tomate, loup…) évite des faux refus ; `motsContact` refuse « Ajoute moi Snap », « Rejoins Discord »… pour les enfants.
+- Jeu : champ prérempli du pseudo proposé (« Un autre » en propose un nouveau), rappel sous le champ, message du serveur affiché. 117 tests Node et 33 tests Python verts.
+  Essai navigateur (ordinateur et `?mobile=1`) : « LeoGamer » refusé avec le message, « LemineurMasquer » accepté (1er chez les enfants).
+- **À surveiller** (vu par `gardien-enfants`, accepté par l'avenant) : la liste est forcément incomplète (« Marches », une école, un prénom rare passent) ; le serveur croit
+  la case « enfant » envoyée par le jeu, donc un adulte peut écrire dans la liste des enfants (même filtre) ; 20 envois par heure et par adresse. Regarder `sudo tower-hall liste`
+  souvent et retirer avec `sudo tower-hall retirer-pseudo <pseudo>`. Quelques vrais mots sont refusés (« Robinson » à cause de Robin).

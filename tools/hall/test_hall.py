@@ -52,11 +52,42 @@ class Pseudos(unittest.TestCase):
         for ok in ['Nazim', 'Monique', 'Violette', 'Computer', 'Dickens' if False else 'Alexandre']:
             self.assertTrue(hall.pseudo_adulte_ok(ok), ok)
 
-    def test_enfants_forme_imposee(self):
+    def test_enfants_forme_proposee(self):
         self.assertTrue(hall.pseudo_enfant_ok('Renard Bleu 27'))
-        for ko in ['Renard Bleu', 'Renard Bleu 0', 'Renard Bleu 100', 'Renard Bleu 07', 'Léa', 'Renard bleu 27',
-                   'Chat Bleu 27', 'Renard Bleu 27 ', 'Renard  Bleu 27']:
-            self.assertFalse(hall.pseudo_enfant_ok(ko), ko)
+        for ko in ['Renard Bleu 0', 'Renard Bleu 100', 'Renard Bleu 07']:
+            self.assertTrue(hall.pseudo_propose_ok(ko) is False, ko)
+
+    def test_enfants_pseudo_libre(self):
+        for ok in ['LemineurMasquer', 'Abracadabra26', 'Super Dragon', 'Ninja-42', 'Zorglub']:
+            self.assertTrue(hall.pseudo_enfant_ok(ok), ok)
+        for ko in ['ab', 'x' * 17, '<b>', 'a_b', ' Alice', 'Ѕhit', '12345678']:
+            self.assertEqual(hall.pseudo_enfant_erreur(ko), 'pseudo', ko)
+
+    def test_enfants_prenoms_et_noms_refuses(self):
+        for ko in ['Léo', 'leo', 'LÉO', 'Arthur26', 'LeoGamer', 'Thibault', 'Martin', 'Super-Lea', 'Gamer Hugo', 'thibaultlegrand',
+                   'Zoé', 'ZoeLaPro']:
+            self.assertEqual(hall.pseudo_enfant_erreur(ko), 'prenom', ko)
+
+    def test_enfants_astuces_refusees(self):
+        for ko in ['leogamer', 'leoplay', 'hugojoue', 'lucasgamer', 'gamerhugo', 'xXLucasXx', 'Th1bault', 'L3o', 'Leooo', 'L e o']:
+            self.assertEqual(hall.pseudo_enfant_erreur(ko), 'prenom', ko)
+
+    def test_enfants_mots_du_jeu_et_mots_courants_acceptes(self):
+        for ok in ['Le Dragon', 'Renard Rouge', 'Dragon Blanc', 'Super Renard', 'Loupgarou', 'Leopard', 'Tomate', 'Galaxie', 'Minecraft']:
+            self.assertIsNone(hall.pseudo_enfant_erreur(ok), ok)
+
+    def test_enfants_pas_d_invitation_a_contacter(self):
+        for ko in ['Ajoute moi Snap', 'Rejoins Discord', 'Insta Pierrot', 'Snapchat42']:
+            self.assertEqual(hall.pseudo_enfant_erreur(ko), 'pseudo', ko)
+        self.assertIsNone(hall.pseudo_enfant_erreur('Instantane'))
+
+    def test_enfants_insultes_refusees(self):
+        self.assertEqual(hall.pseudo_enfant_erreur('Putain'), 'pseudo')
+        self.assertEqual(hall.pseudo_enfant_erreur('Merde42'), 'pseudo')
+
+    def test_adultes_pas_concernes_par_les_prenoms(self):
+        for ok in ['Daereck', 'Thibault', 'Léo', 'Arthur26']:
+            self.assertTrue(hall.pseudo_adulte_ok(ok), ok)
 
 
 class Envois(Base):
@@ -163,7 +194,9 @@ class Bornes(Base):
 
     def test_pseudo_refuse(self):
         self.refus(camp('Putain'), 'pseudo')
-        self.refus({**camp('Léa'), 'enfant': True}, 'pseudo')   # un enfant ne choisit pas son pseudo
+        self.refus({**camp('Léa'), 'enfant': True}, 'prenom')   # un enfant ne peut pas prendre un prénom
+        self.refus({**camp('Putain'), 'enfant': True}, 'pseudo')
+        self.hall.envoyer({**camp('LemineurMasquer', 4), 'enfant': True})   # un pseudo libre sans prénom passe
 
     def test_injection_sql(self):
         self.refus(camp("x'); DROP TABLE entrees;--"), 'pseudo')
