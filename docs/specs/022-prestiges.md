@@ -5,7 +5,7 @@ augmentent à chaque fois le nombre et les PV des monstres, jusqu'à un niveau t
 
 ## Règles
 - `src/data/difficultes.js` : `prestige1` à `prestige10` (`NB_PRESTIGES`), générés par formule.
-  PV = 1,1 × 1,15^k ; effectif de chaque groupe × (1 + 0,1 k) ; vies = max(5, 10 − ⌊k/2⌋) ; attente entre vagues = max(8, 15 − k) s ;
+  PV = 1,1 × 1,18^k ; effectif de chaque groupe × (1 + 0,1 k) ; vies = max(5, 10 − ⌊k/2⌋) ; attente entre vagues = max(8, 15 − k) s ;
   or de départ inchangé ; l'or des monstres et des fins de vague × (1 + 0,25 k) (spec 023). Un boss reste seul. `ORDRE_DIFFICULTES` garde les trois d'origine (records, hall, labyrinthe).
 - Déblocage (`prestigeOuvert`, `difficulteOuverte`) : Prestige 1 après une victoire en Difficile sur une carte de la campagne ;
   Prestige k+1 après une victoire en Prestige k (`progression.prestige` = plus haut prestige gagné).
@@ -20,3 +20,7 @@ assez pour juger les niveaux hauts : à régler à la main en jouant (les chiffr
 ## À valider
 - Les chiffres ci-dessus et le nombre de niveaux (10).
 - Ouvrir un classement des prestiges au hall of fame (serveur + règles à étendre).
+
+## Réglage du 2026-11-26 (retour de Thibault : « les prestiges peuvent être plus durs »)
+PV × 1,18 par niveau au lieu de 1,15 (le reste inchangé). Joueur automatique, Prairie, 30 tours, avec l'or de la spec 023 :
+P1 perd vague 17, P2 vague 17, P3 vague 12, P4 gagne de justesse (2 vies), P5 et au-delà perdent aux vagues 2-4. Avant : P3 à P5 gagnés avec 4 à 8 vies.
