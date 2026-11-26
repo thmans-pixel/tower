@@ -8,7 +8,7 @@ export const DIFFICULTES = {
 /** Les trois difficultés d'origine : seules à avoir des records partagés (hall of fame, labyrinthe, code de transfert). */
 export const ORDRE_DIFFICULTES = ['facile', 'normal', 'difficile'];
 
-// Prestiges (spec 020) : après Difficile, chaque niveau gonfle les PV (× 1,15 par niveau) et l'effectif (+ 10 % par niveau),
+// Prestiges (spec 022) : après Difficile, chaque niveau gonfle les PV (× 1,15 par niveau) et l'effectif (+ 10 % par niveau),
 // retire des vies et raccourcit l'attente entre les vagues. Le dernier est « tout juste possible ».
 export const NB_PRESTIGES = 10;
 export const ORDRE_PRESTIGES = [];

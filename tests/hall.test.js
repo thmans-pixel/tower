@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { nouvellePartie, poser } from '../src/sim/partie.js';
-import { scoreHall, pseudoEnfant, pseudoEnfantValide, pseudoValide } from '../src/sim/hall.js';
+import { scoreHall, pseudoEnfant, pseudoEnfantValide, pseudoEnfantEnvoyable, pseudoValide } from '../src/sim/hall.js';
 import { ANIMAUX, COULEURS, NOMBRE_MAX } from '../src/data/pseudos.js';
 import { progressionVide, relire } from '../src/sim/progression.js';
 import { codeProgression, lireCode, fusionner } from '../src/sim/transfert.js';
@@ -105,7 +105,8 @@ test('la case enfant est retenue par la progression et portée par le code de tr
 test('pseudos retenus : on ne garde que ceux de la bonne forme', () => {
   const p = relire({ pseudo: 'Alice', pseudoEnfant: 'Renard Bleu 27' });
   assert.deepEqual([p.pseudo, p.pseudoEnfant], ['Alice', 'Renard Bleu 27']);
-  const q = relire({ pseudo: '<script>', pseudoEnfant: 'Léa' });
+  const q = relire({ pseudo: '<script>', pseudoEnfant: '<script>' });
+  assert.equal(relire({ pseudoEnfant: 'LemineurMasquer' }).pseudoEnfant, 'LemineurMasquer');   // avenant 1 : pseudo libre
   assert.deepEqual([q.pseudo, q.pseudoEnfant], ['', '']);
 });
 
@@ -119,4 +120,10 @@ test('l\'âge répondu est retenu ; une case cochée vaut réponse', () => {
   assert.equal(relire({ ageRepondu: true }).ageRepondu, true);
   assert.equal(relire({ enfant: true }).ageRepondu, true);
   assert.equal(relire({ enfant: false }).ageRepondu, false);
+});
+
+test('avenant 1 : un enfant peut envoyer le pseudo proposé ou un pseudo libre bien formé', () => {
+  for (const ok of ['Renard Bleu 27', 'LemineurMasquer', 'Abracadabra26']) assert.ok(pseudoEnfantEnvoyable(ok), ok);
+  for (const ko of ['ab', 'x'.repeat(17), '<b>', 'a_b', ' Alice', 'Ѕhit', '', null]) assert.equal(pseudoEnfantEnvoyable(ko), false, String(ko));
+  assert.equal(pseudoValide('Renard Bleu 27'), false);   // inchangé : cette forme reste celle des enfants
 });

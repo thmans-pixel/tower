@@ -1,7 +1,7 @@
 // Hall of fame (spec 018) : écran des classements et envoi d'un résultat depuis l'écran de fin.
 // C'est le SEUL fichier du jeu qui fait des appels réseau (`fetch('/api/hall')`). Tout ce qui vient du serveur
 // (pseudos, valeurs) est mis dans la page avec textContent, jamais en HTML.
-import { scoreHall, pseudoEnfant, pseudoEnfantValide, pseudoValide } from '../sim/hall.js';
+import { scoreHall, pseudoEnfant, pseudoEnfantEnvoyable, pseudoValide } from '../sim/hall.js';
 import { PSEUDO_MIN, PSEUDO_MAX } from '../data/pseudos.js';
 import { ORDRE_CARTES } from '../sim/progression.js';
 import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
@@ -57,8 +57,10 @@ export class HallUi {
     const repondre = (enfant) => () => { this.a.retenir({ enfant, ageRepondu: true }); this.a.son('clic'); if (this.partie) this.proposer(...this.partie); };
     $('b-age-oui').onclick = repondre(true);
     $('b-age-non').onclick = repondre(false);
-    $('b-autre-pseudo').onclick = () => { this.envoi.pseudoEnfant = pseudoEnfant(Math.floor(Math.random() * 2 ** 31)); this.montrerPseudo(); this.a.son('clic'); };
+    $('b-autre-pseudo').onclick = () => { $('pseudo-enfant').value = pseudoEnfant(Math.floor(Math.random() * 2 ** 31)); $('hall-message').textContent = ''; this.a.son('clic'); };
     $('pseudo-hall').oninput = () => { $('hall-message').textContent = ''; };
+    $('pseudo-enfant').oninput = () => { $('hall-message').textContent = ''; };
+    $('pseudo-enfant').onkeydown = (e) => { if (e.key === 'Enter') this.envoyer(); };
     $('pseudo-hall').onkeydown = (e) => { if (e.key === 'Enter') this.envoyer(); };
   }
 
@@ -143,7 +145,7 @@ export class HallUi {
     $('hall-pseudo-enfant').hidden = !this.envoi.enfant;
     $('hall-pseudo-adulte').hidden = this.envoi.enfant;
     $('hall-resume').textContent = resultats.map((r) => this.phrase(r)).join(' · ');
-    if (this.envoi.enfant) this.montrerPseudo();
+    if (this.envoi.enfant) { $('pseudo-enfant').value = this.envoi.pseudoEnfant; $('pseudo-enfant').minLength = PSEUDO_MIN; $('pseudo-enfant').maxLength = PSEUDO_MAX; }
     else { $('pseudo-hall').value = prog.pseudo || ''; $('pseudo-hall').minLength = PSEUDO_MIN; $('pseudo-hall').maxLength = PSEUDO_MAX; }
   }
 
@@ -152,18 +154,14 @@ export class HallUi {
     return r.classement === 'tour' ? `${nomC} (${TOURS[r.tour]?.nom}) : ${nb(r.valeur)} dégâts` : `${nomC} : ${nb(r.valeur)}`;
   }
 
-  montrerPseudo() {
-    $('pseudo-propose').textContent = this.envoi.pseudoEnfant;
-  }
-
   async envoyer() {
     const e = this.envoi;
     if (!e) return;
     const message = $('hall-message');
     let pseudo;
     if (e.enfant) {
-      pseudo = e.pseudoEnfant;
-      if (!pseudoEnfantValide(pseudo)) return;
+      pseudo = $('pseudo-enfant').value.trim();
+      if (!pseudoEnfantEnvoyable(pseudo)) { message.textContent = `Le pseudo doit avoir de ${PSEUDO_MIN} à ${PSEUDO_MAX} caractères : lettres, chiffres, espaces ou tirets.`; return; }
     } else {
       pseudo = $('pseudo-hall').value.trim();
       if (!pseudoValide(pseudo)) { message.textContent = `Le pseudo doit avoir de ${PSEUDO_MIN} à ${PSEUDO_MAX} caractères : lettres, chiffres, espaces ou tirets.`; return; }

@@ -1,5 +1,5 @@
 // Hall of fame (spec 018) : ce que la logique sait dire d'une partie finie, et les pseudos. Pur : aucun réseau.
-import { ANIMAUX, COULEURS, NOMBRE_MAX, PSEUDO_MIN, PSEUDO_MAX, CHIFFRES_MAX } from '../data/pseudos.js';
+import { ANIMAUX, COULEURS, NOMBRE_MAX, formePseudo } from '../data/pseudos.js';
 import { scoreInfini, classement } from './partie.js';
 import { hasard } from './hasard.js';
 import { ORDRE_DIFFICULTES } from '../data/difficultes.js';
@@ -43,17 +43,19 @@ export function pseudoEnfant(graine) {
   return `${pick(ANIMAUX)} ${pick(COULEURS)} ${1 + Math.floor(h() * NOMBRE_MAX) % NOMBRE_MAX}`;
 }
 
-/** Un pseudo d'enfant est valable seulement s'il a la forme proposée par le jeu. */
+/** Le pseudo proposé par le jeu : « Animal Couleur nombre ». */
 export function pseudoEnfantValide(p) {
   if (typeof p !== 'string') return false;
   const m = p.split(' ');
   return m.length === 3 && ANIMAUX.includes(m[0]) && COULEURS.includes(m[1]) && /^[1-9][0-9]?$/.test(m[2]) && +m[2] <= NOMBRE_MAX;
 }
 
+/** Pseudo d'enfant que le jeu veut bien envoyer : celui qu'il propose, ou un pseudo libre bien formé (le serveur refuse les prénoms et les noms). */
+export function pseudoEnfantEnvoyable(p) {
+  return pseudoEnfantValide(p) || formePseudo(p);
+}
+
 /** Forme d'un pseudo d'adulte (le serveur filtre en plus les mots interdits). */
 export function pseudoValide(t) {
-  if (typeof t !== 'string' || t.length < PSEUDO_MIN || t.length > PSEUDO_MAX) return false;
-  if (!/^[\p{Script=Latin}\p{N}](?:[\p{Script=Latin}\p{N}]|[ -])*[\p{Script=Latin}\p{N}]$/u.test(t)) return false;
-  if (/  |--| -|- /.test(t) || pseudoEnfantValide(t)) return false;   // la forme « Animal Couleur nombre » est réservée aux enfants
-  return (t.match(/\p{N}/gu) || []).length <= CHIFFRES_MAX;
+  return formePseudo(t) && !pseudoEnfantValide(t);   // la forme « Animal Couleur nombre » est réservée aux enfants
 }

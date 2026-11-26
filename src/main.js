@@ -472,12 +472,13 @@ function majMusique() {
       }
       air = progression.vivaldi ? themeDe(idCarte) : airPartie.air;   // Vivaldi : un enregistrement par thème de carte
       if (partie.ennemis.some((e) => ENNEMIS[e.sorte].boss)) air = 'boss';
+      if (enPause && progression.vivaldi) air = 'menu';   // spec 021 : pendant la pause, le morceau du menu ; celui de la partie reprend après
       const enVague = partie.lancement || partie.ennemis.length > 0;
       intensite = enVague ? (Number.isFinite(partie.nbVagues) && partie.vague >= partie.nbVagues * 0.75 ? 2 : 1) : 0;
     }
   }
   if (air && son.ac && !musique.enMarche()) musique.nom = null;   // le son vient d'être réveillé : on relance
-  musique.jouer(air);
+  musique.jouer(air, ecran !== 'jeu' || !partie ? 'menu' : partie);   // le contexte sert au mode Vivaldi (spec 020)
   musique.intensite = intensite;
 }
 

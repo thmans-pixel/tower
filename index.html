@@ -74,6 +74,7 @@
     <button id="b-jouer" class="grand">Jouer</button>
     <button id="b-hall" class="petit">Hall of fame</button>
     <p id="version" class="version">Version locale</p>
+    <p class="credits">Musiques : interprétations générées avec Google Lyria 3.5 d'après <i>Les Quatre Saisons</i> d'Antonio Vivaldi (domaine public).</p>
     <details class="aide">
       <summary>Comment jouer</summary>
       <ul>
@@ -90,7 +91,7 @@
 <section id="ecran-cartes" class="ecran" hidden>
   <div class="carton large">
     <h2>Choisissez une carte</h2>
-    <label class="case-enfant"><input type="checkbox" id="case-enfant"> Je suis un enfant (moins de 15 ans)<small>Tes résultats iront dans le classement des enfants, avec un pseudo choisi par le jeu.</small></label>
+    <label class="case-enfant"><input type="checkbox" id="case-enfant"> Je suis un enfant (moins de 15 ans)<small>Tes résultats iront dans le classement des enfants. Tu choisis ton pseudo, sans vrai prénom ni nom.</small></label>
     <div id="choix-mode" class="difficultes" role="group" aria-label="Mode de jeu" hidden></div>
     <div id="choix-difficulte" class="difficultes" role="group" aria-label="Difficulté"></div>
     <div id="liste-cartes" class="cartes"></div>
@@ -115,13 +116,14 @@
       <h3>Hall of fame</h3>
       <p id="hall-resume" class="alea-note"></p>
       <div id="hall-age" hidden>
-        <p>Tu as moins de 15 ans ? Les enfants ont leur propre classement et un pseudo choisi par le jeu.</p>
+        <p>Tu as moins de 15 ans ? Les enfants ont leur propre classement. Tu choisis ton pseudo, sans vrai prénom ni nom.</p>
         <div class="rangee"><button id="b-age-oui" class="grand">Oui, moins de 15 ans</button><button id="b-age-non" class="petit">Non, 15 ans ou plus</button></div>
       </div>
       <div id="hall-envoi">
         <div id="hall-pseudo-enfant" hidden>
-          <div class="etiquette">Ton pseudo (demande à un parent avant d’envoyer)</div>
-          <div class="alea-numero"><b id="pseudo-propose" class="pseudo-propose"></b><button id="b-autre-pseudo" class="petit">Un autre</button></div>
+          <label class="etiquette" for="pseudo-enfant">Ton pseudo (3 à 16 caractères)</label>
+          <div class="alea-numero"><input id="pseudo-enfant" autocomplete="off" spellcheck="false" maxlength="16"><button id="b-autre-pseudo" class="petit">Un autre</button></div>
+          <p class="alea-note">Ni vrai prénom, ni nom, ni école, ni ville. Demande à un parent avant d’envoyer.</p>
         </div>
         <div id="hall-pseudo-adulte" hidden>
           <label class="etiquette" for="pseudo-hall">Votre pseudo (3 à 16 caractères)</label>

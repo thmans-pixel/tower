@@ -69,7 +69,8 @@ def contient_interdit(pseudo):
     return False
 
 
-def pseudo_adulte_ok(p):
+def forme_ok(p):
+    """Forme d'un pseudo libre (adulte ou enfant) : 3 à 16 caractères, lettres latines, chiffres, espaces, tirets."""
     r = REGLES['pseudo']
     if not isinstance(p, str) or not (r['min'] <= len(p) <= r['max']):
         return False
@@ -77,17 +78,13 @@ def pseudo_adulte_ok(p):
     lettre = r'[A-Za-z0-9À-ÖØ-öø-ÿ]'
     if not re.fullmatch(rf'{lettre}(?:{lettre}|[ \-])*{lettre}', p):
         return False
-    if pseudo_enfant_ok(p):   # la forme « Animal Couleur nombre » est réservée aux enfants
-        return False
     if '  ' in p or '--' in p or ' -' in p or '- ' in p:
         return False
-    if sum(c.isdigit() for c in p) > r['chiffresMax']:
-        return False
-    return not contient_interdit(p)
+    return sum(c.isdigit() for c in p) <= r['chiffresMax']
 
 
-def pseudo_enfant_ok(p):
-    """Seulement la forme proposée par le jeu : « Animal Couleur nombre »."""
+def pseudo_propose_ok(p):
+    """La forme proposée par le jeu : « Animal Couleur nombre »."""
     if not isinstance(p, str):
         return False
     morceaux = p.split(' ')
@@ -97,6 +94,84 @@ def pseudo_enfant_ok(p):
     if animal not in REGLES['animaux'] or couleur not in REGLES['couleurs']:
         return False
     return bool(re.fullmatch(r'[1-9][0-9]?', nombre)) and 1 <= int(nombre) <= REGLES['nombreMax']
+
+
+def pseudo_adulte_ok(p):
+    if not forme_ok(p) or pseudo_propose_ok(p):   # la forme « Animal Couleur nombre » est réservée aux enfants
+        return False
+    return not contient_interdit(p)
+
+
+def sans_accent(texte):
+    t = unicodedata.normalize('NFKD', texte.casefold())
+    return ''.join(c for c in t if not unicodedata.combining(c))
+
+
+NOMS_PROPRES = None
+
+
+def reduire(t):
+    """Lettres répétées ramenées à une seule (« Leooo » = « Leo »)."""
+    return re.sub(r'(.)\1+', r'\1', t)
+
+
+def noms_propres():
+    global NOMS_PROPRES
+    if NOMS_PROPRES is None:
+        NOMS_PROPRES = {sans_accent(n).replace(' ', '') for n in REGLES['prenoms'] + REGLES['noms']}
+    return NOMS_PROPRES
+
+
+def contient_nom(p):
+    """Un prénom ou un nom de la liste se cache-t-il dans le pseudo ?
+    1. mot à mot : séparés par espaces, tirets, chiffres ou majuscules internes (« LeoGamer » = Leo + Gamer, « Arthur26 ») ;
+    2. tout collé, en minuscules, au début (dès 3 lettres), à la fin (dès 4) ou n'importe où (dès 5) : « leogamer », « gamerhugo », « xXLucasXx » ;
+       des mots courants (leopard, tomate…) font exception ;
+    3. mêmes contrôles avec les chiffres lus comme des lettres (« Th1bault », « L3o ») et les lettres répétées réduites (« Leooo »)."""
+    liste = noms_propres()
+    exceptions = REGLES['exceptionsNoms']
+    decoupe = re.sub(r'(?<=[a-zß-ÿ])(?=[A-ZÀ-ß])', ' ', p)
+    mots = [sans_accent(m) for m in re.split(r'[^A-Za-zÀ-ÿ]+', decoupe) if m]
+    if any(m in liste or reduire(m) in {reduire(n) for n in liste} for m in mots):
+        return True
+    colles = {''.join(mots), re.sub(r'[^a-z]', '', normaliser(p))}
+    for colle in list(colles):
+        colles.add(reduire(colle))
+    for colle in colles:
+        for n in liste:
+            if colle == n or colle == reduire(n):
+                return True
+            for nom in (n,):
+                if any(colle.startswith(e) for e in exceptions if e.startswith(nom)):
+                    continue
+                if len(nom) >= 3 and colle.startswith(nom):
+                    return True
+                if len(nom) >= 4 and colle.endswith(nom):
+                    return True
+                if len(nom) >= 5 and nom in colle:   # « xXLucasXx »
+                    return True
+    return False
+
+
+def invite_contact(p):
+    """Un enfant ne publie pas d'invitation à le contacter ailleurs (Snap, Discord…)."""
+    n = normaliser(p)
+    jetons = [j for j in re.split(r'[^a-z]+', n) if j]
+    colle = ''.join(jetons)
+    return any(m in jetons or (len(m) >= 6 and colle.startswith(m)) for m in REGLES['motsContact'])
+
+
+def pseudo_enfant_erreur(p):
+    """None si un enfant peut prendre ce pseudo, sinon 'prenom' (vrai prénom ou nom) ou 'pseudo' (autre refus)."""
+    if pseudo_propose_ok(p):
+        return None
+    if not forme_ok(p) or contient_interdit(p) or invite_contact(p):
+        return 'pseudo'
+    return 'prenom' if contient_nom(p) else None
+
+
+def pseudo_enfant_ok(p):
+    return pseudo_enfant_erreur(p) is None
 
 
 # ---------- validation ----------
@@ -135,7 +210,13 @@ def verifier_envoi(p):
     if not isinstance(enfant, bool):
         raise Refus(400, 'forme', 'Demande incorrecte.')
     pseudo = p.get('pseudo')
-    if not (pseudo_enfant_ok(pseudo) if enfant else pseudo_adulte_ok(pseudo)):
+    if enfant:
+        erreur = pseudo_enfant_erreur(pseudo)
+        if erreur == 'prenom':
+            raise Refus(400, 'prenom', 'Pas de vrai prénom ni de nom.')
+        if erreur:
+            raise Refus(400, 'pseudo', 'Ce pseudo n’est pas accepté.')
+    elif not pseudo_adulte_ok(pseudo):
         raise Refus(400, 'pseudo', 'Ce pseudo n’est pas accepté.')
     classement = dans(p.get('classement'), CLASSEMENTS, 'classement')
     diffs = REGLES['difficultes']

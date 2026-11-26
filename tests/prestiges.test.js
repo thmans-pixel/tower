@@ -1,4 +1,4 @@
-// Prestiges (spec 020) : de plus en plus de PV et de monstres, ouverts un à un, portés par le code de transfert.
+// Prestiges (spec 022) : de plus en plus de PV et de monstres, ouverts un à un, portés par le code de transfert.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { nouvellePartie, appelerVague, composition } from '../src/sim/partie.js';

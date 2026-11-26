@@ -5,7 +5,7 @@ import { ORDRE_CARTES, relire } from './progression.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const PREFIXE = 'TDR1';
-const PREFIXE_PRESTIGE = 'TDR3';   // codes qui portent aussi le plus haut prestige gagné (spec 020) ; ils portent toujours les trois records de labyrinthe
+const PREFIXE_PRESTIGE = 'TDR3';   // codes qui portent aussi le plus haut prestige gagné (spec 022) ; ils portent toujours les trois records de labyrinthe
 const PREFIXE_LABY = 'TDR2';   // codes qui portent des records de labyrinthe d'après la spec 017 (règles de population)
 const DIFFS = ['facile', 'normal', 'difficile'];
 
@@ -45,7 +45,7 @@ function nombres(p) {
   const base = [drapeaux, etoiles, ...ORDRE_CARTES.map((c) => p.infini[c] || 0), ...DIFFS.map((d) => p.aleatoires[d] || 0)];
   // Records du labyrinthe (spec 016) : ajoutés seulement s'il y en a, pour que les anciens codes ne changent pas.
   const laby = DIFFS.map((d) => (p.labyrinthe || {})[d] || 0);
-  if (p.prestige > 0) return [...base, ...laby, p.prestige];   // spec 020 : un seul nombre de plus
+  if (p.prestige > 0) return [...base, ...laby, p.prestige];   // spec 022 : un seul nombre de plus
   return laby.some(Boolean) ? [...base, ...laby] : base;
 }
 

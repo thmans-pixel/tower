@@ -5,7 +5,7 @@ avenants Blender : `docs/specs/002-decors-blender.md` (décor) et `docs/specs/00
 (tours, ennemis, boss) ; étape 2 : `docs/specs/004-etape-2.md` (lots 1 à 3) ;
 étape 3 : `docs/specs/005-etape-3.md` (lots 1 à 3 faits : progression, Désert, Montagne et mode infini). Mise en ligne : `docs/specs/006-mise-en-ligne.md` (https://tower.izicraft.fr,
 `tools/deploiement/`). Raccourcis, pose en série, cartes aléatoires : `docs/specs/007-raccourcis-serie-cartes-aleatoires.md` ; fiches des tours : `docs/specs/008-fiches-des-tours.md` ; police lisible : `docs/specs/009-police-lisible.md` ; transfert et Difficile : `docs/specs/010-transfert-et-difficile.md` ; monstres orientés : `docs/specs/011-monstres-orientes.md` ;
-effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Classement des tours, population et obstacles du labyrinthe : `docs/specs/017-classement-population-obstacles.md` (livrée). Hall of fame en ligne (classements communs, classement enfants à part) : `docs/specs/018-hall-of-fame.md`. Prestiges (10 niveaux après Difficile) : `docs/specs/020-prestiges.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
+effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C faits) ; lisibilité : `docs/specs/013-lisibilite-et-finition.md` ; musique et sons : `docs/specs/014-musique-et-sons.md` ; mode mobile : `docs/specs/015-mode-mobile.md`. Mode labyrinthe : `docs/specs/016-mode-labyrinthe.md` (les trois lots faits ; il reste la moitié du critère 19 : le joueur automatique gagne aussi sans mur, voir « Livraison »). Classement des tours, population et obstacles du labyrinthe : `docs/specs/017-classement-population-obstacles.md` (livrée). Hall of fame en ligne (classements communs, classement enfants à part ; avenant 1 : pseudo libre pour les enfants, sans prénom ni nom) : `docs/specs/018-hall-of-fame.md`. Téléporteurs à usage unique : `docs/specs/019-teleporteurs-a-usage-unique.md` (livrée). Musique du menu, pause, crédits et repli : `docs/specs/021-musique-menu-pause-credits.md` (livrée). Prestiges (10 niveaux après Difficile) : `docs/specs/022-prestiges.md`. Ne rien coder qui n'y figure pas sans le faire valider d'abord.
 
 ## Règles du dépôt
 
@@ -90,8 +90,9 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   `Vue.preparer`, ombres du décor allégées dans `decors.js` (`alleger`), mise en page `etroit` dans main.js.
 - Mode labyrinthe (spec 016) : `nouvellePartie('labyrinthe', diff, { graine })` ; `src/sim/labyrinthe.js` (`genererLabyrinthe`,
   `cheminLabyrinthe` = plus court chemin entrée → checkpoints → sortie, à pied d'abord ; la recherche ne cherche jamais un téléporteur,
-  mais un monstre dont le chemin pose le pied sur une entrée est téléporté (`troncon`, saut gratuit), et un téléporteur est aussi
-  pris si les murs ne laissent aucun chemin à pied ;
+  mais un monstre dont le chemin pose le pied sur une entrée est téléporté (`troncon`, saut gratuit), et une paire de téléporteurs ne sert
+  qu'une fois (spec 019 : `tp.use`, `s.labyrinthe.tpPris`, `usureTp` à la fin de la vague ; `passageAPied` refuse les poses qui ne
+  laisseraient que le téléporteur) ;
   `majChemin`, zones ; l'aller et le retour entre deux mêmes points suivent le même chemin à pied), chiffres dans `src/data/labyrinthe.js`. `s.labyrinthe` = { murs, prevus, objectif } ; `poserMur`,
   `vendreMur`, `annulerPrevu` ; pendant une vague (`enVague`) poses et ventes sont « prévues » et appliquées d'un coup
   par `appliquerPrevus` à la fin ; mise à terre dans `metAterre` (événement `aTerre`, pas `mort`) ; tours lues par
@@ -124,7 +125,7 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   `src/data/pseudos.js` (mêmes listes que `regles.json`, un test le vérifie), `progression.enfant` / `pseudo` / `pseudoEnfant`
   (la case « enfant » est portée par le code de transfert, bit 8 des drapeaux ; le pseudo reste sur l'appareil).
   **Seul `src/ui/hall.js` fait des appels réseau** (`/api/hall`) et ce qui vient du serveur n'entre dans la page que par `textContent`.
-  Les enfants n'ont pas de texte libre : pseudo « Animal Couleur nombre » proposé par le jeu. Cartes aléatoires jamais classées.
+  Les enfants peuvent écrire leur pseudo (avenant 1) : le jeu propose « Animal Couleur nombre », le serveur refuse tout prénom ou nom de `regles.json` (`prenoms`, `noms` ; `contient_nom` coupe sur espaces, tirets, chiffres et majuscules internes ; code `prenom`, message « Pas de vrai prénom ni de nom. ») et les insultes. Cartes aléatoires jamais classées.
   `tools/serveur.py` renvoie `/api/` vers le port 8029 pour essayer en local (`HALL_DB=/tmp/h.db python3 tools/hall/hall.py serveur`).
   Plafonds de dégâts par vague dans `regles.json` (le joueur automatique fait ~2 700 par vague au mieux, plafond 20 000).
 - Ambiance (`src/render/ambiance.js`, `Vue.ambiance`) par thème de carte ; `vue.reduits` = option « Effets »
@@ -138,4 +139,7 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   et `musique`, `son.appliquer()` après un changement de réglage ; `volMusique`, `volEffets` dans la progression).
   Musique : `src/audio/musique.js` (`AIRS` : prairie et désert originaux, montagne = Korobeiniki du domaine public,
   boss, menu, sorcier = L'Apprenti sorcier de Dukas, domaine public), pilotée par `majMusique` (main.js) ; l'air d'une
-  partie est tiré au hasard dans `AIRS_DE_PARTIE`. Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).
+  partie est tiré au hasard dans `AIRS_DE_PARTIE`. Mode « Vivaldi » (spec 020, 021) : enregistrements de `musiques/musiques_vivaldi/` (menu et boss en boucle ; le menu joue aussi pendant la pause, le morceau de la partie reprend après ; fichier illisible → air synthétisé du thème, `Musique.absentes` ; raccords refaits par `tools/audio/raccorder.sh` ; crédits Lyria/Vivaldi sur l'écran titre) ; `ENCHAINEMENT` (prairie, désert, montagne) s'enchaîne au hasard
+  sans répétition (`pisteSuivante`, événement `ended`), le premier morceau est celui de la carte (menu : prairie), le boss joue seul en boucle
+  tant qu'un boss est en jeu puis le morceau interrompu reprend (`Musique.pause`) ; `jouer(nom, contexte)` : un nouveau contexte (menu, autre
+  partie) repart du morceau de départ. Ne pas reprendre de musique protégée (Arkanoid et Game of Thrones refusés : airs originaux « dans l'esprit »).

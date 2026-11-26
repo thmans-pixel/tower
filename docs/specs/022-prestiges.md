@@ -1,4 +1,4 @@
-# Spec 020 — Prestiges
+# Spec 022 — Prestiges
 
 Demande de Thibault (2026-11-25) : après Facile, Normal et Difficile, des niveaux « prestige » 1, 2, 3… qui
 augmentent à chaque fois le nombre et les PV des monstres, jusqu'à un niveau tout juste possible mais très compliqué.

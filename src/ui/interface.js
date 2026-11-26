@@ -262,7 +262,7 @@ export class Interface {
   montrerEcran(nom) {
     $('ecran-titre').hidden = nom !== 'titre';
     $('ecran-cartes').hidden = nom !== 'cartes';
-    if (nom !== 'jeu') { $('fin').hidden = true; $('question').hidden = true; }
+    $('fin').hidden = true; $('question').hidden = true;   // aussi en entrant en jeu : « Rejouer » ne doit pas laisser le voile de fin
   }
 
   /** Écran des cartes : difficulté, puis une carte par case, avec ses étoiles ou son cadenas. */
@@ -280,7 +280,7 @@ export class Interface {
     modes.innerHTML = offerts.map(([m, nom, sous]) =>
       `<button data-mode="${m}" class="${m === mode ? 'actif' : ''}" aria-pressed="${m === mode}">${nom}<small>${sous}</small></button>`).join('');
     for (const b of modes.querySelectorAll('button')) b.onclick = () => this.a.mode(b.dataset.mode);
-    // Facile, Normal, Difficile, puis les prestiges ouverts et le prochain, grisé (spec 020).
+    // Facile, Normal, Difficile, puis les prestiges ouverts et le prochain, grisé (spec 022).
     const offertes = [...ORDRE_DIFFICULTES, ...ORDRE_PRESTIGES.filter((d) => difficulteOuverte(prog, d) || difficulteOuverte(prog, ORDRE_PRESTIGES[ORDRE_PRESTIGES.indexOf(d) - 1] || 'normal'))];
     $('choix-difficulte').innerHTML = offertes.map((d) => {
       const x = DIFFICULTES[d], ouverte = difficulteOuverte(prog, d);
