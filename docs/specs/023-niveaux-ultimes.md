@@ -69,8 +69,10 @@ halo doré et 4ᵉ pastille, `tests/ultimes.test.js`. Pas encore fait : classeme
 Écarts : « transperce 2 ennemis » = 60 px derrière la cible ; « aucune chance aux invisibles » (Foudre sacrée) sans objet : le Mage voit déjà les invisibles.
 **Constat d'équilibre** : le joueur automatique perd avant d'avoir de quoi payer un ultime (Prairie, or gagné en tout avant la défaite :
 Difficile 4 023 ; P1 2 057 ; P2 765 ; P3 565 ; P5 232), il n'en achète donc aucun et ses repères ne bougent pas (P1 12, P2-P3 7, P5 4, P10 2).
-Les ultimes ne servent que si le joueur tient assez longtemps pour les payer : il faut décider d'une aide économique en prestige
-(or de départ, bonus de fin de vague ou prix plus bas) — voir la question posée à Thibault.
+**Aide économique (choix de Thibault, 2026-11-26)** : l'or des monstres et le bonus de fin de vague sont multipliés par `gain` = 1 + 0,25 k au
+prestige k (`DIFFICULTES.prestigek.gain`, `s.multGain`, lu par `orCompense`). Joueur automatique, Prairie, 30 tours au plus : P1 perd vague 17,
+P2 vague 18, P3 gagne (4 vies), P4 et P5 gagnent (8 vies) ; P6 à P10 perdent aux vagues 2-3 (le joueur automatique n'a pas de quoi poser
+plus de 2 tours avant la 3ᵉ vague : à juger à la main). Avec ×1,5 par niveau, P2 à P5 étaient gagnés avec 9 vies : trop généreux.
 
 ## À valider
 - Rien : les effets sont validés.

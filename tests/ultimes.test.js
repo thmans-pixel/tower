@@ -151,3 +151,9 @@ test('Colère divine : étourdit aussi le boss', () => {
   assert.ok(normal.gel >= 1.4);
   assert.ok(boss.gel >= 0.5);
 });
+
+test("l'or des monstres est plus généreux en prestige (× 1 + 0,25 k)", () => {
+  const or = (diff) => { const s = nouvellePartie('prairie', diff); return [s.multGain, s]; };
+  assert.equal(or('difficile')[0], 1);
+  assert.equal(or('prestige4')[0], 2);
+});

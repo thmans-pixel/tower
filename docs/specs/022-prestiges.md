@@ -6,7 +6,7 @@ augmentent à chaque fois le nombre et les PV des monstres, jusqu'à un niveau t
 ## Règles
 - `src/data/difficultes.js` : `prestige1` à `prestige10` (`NB_PRESTIGES`), générés par formule.
   PV = 1,1 × 1,15^k ; effectif de chaque groupe × (1 + 0,1 k) ; vies = max(5, 10 − ⌊k/2⌋) ; attente entre vagues = max(8, 15 − k) s ;
-  or de départ inchangé. Un boss reste seul. `ORDRE_DIFFICULTES` garde les trois d'origine (records, hall, labyrinthe).
+  or de départ inchangé ; l'or des monstres et des fins de vague × (1 + 0,25 k) (spec 023). Un boss reste seul. `ORDRE_DIFFICULTES` garde les trois d'origine (records, hall, labyrinthe).
 - Déblocage (`prestigeOuvert`, `difficulteOuverte`) : Prestige 1 après une victoire en Difficile sur une carte de la campagne ;
   Prestige k+1 après une victoire en Prestige k (`progression.prestige` = plus haut prestige gagné).
 - Écran des cartes : les prestiges ouverts et le prochain (grisé, cadenas) suivent Difficile.

@@ -25,7 +25,7 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
   const s = {
-    difficulte, multNombre: diff.nombre || 1, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
+    difficulte, multNombre: diff.nombre || 1, multGain: diff.gain || 1, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: maze ? carteMaze : construireCarte(def),
     labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [], popMax: carteMaze.lab.popMax, tpPris: new Set() } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
@@ -875,7 +875,7 @@ function metAterre(s, e, tour) {
 
 /** Or des monstres et bonus de fin de vague, × 0,8 : compense la prime de la meilleure tour (0,8 × 1,25 = 1). Les restes s'additionnent. */
 function orCompense(s, base) {
-  const total = base * COMPENSATION_OR + s.resteOr;
+  const total = base * COMPENSATION_OR * s.multGain + s.resteOr;   // `multGain` : or des monstres et bonus de fin, plus généreux en prestige (spec 023)
   const gain = Math.floor(total + 1e-9);
   s.resteOr = total - gain;
   return gain;
