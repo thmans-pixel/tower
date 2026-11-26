@@ -1,6 +1,6 @@
 // Progression du joueur (spec 005) : cartes débloquées, étoiles, meilleurs scores du mode infini.
 // Données pures : la lecture et l'écriture dans le navigateur sont dans src/ui/sauvegarde.js.
-import { ANIMAUX, COULEURS, NOMBRE_MAX, PSEUDO_MIN, PSEUDO_MAX, CHIFFRES_MAX } from '../data/pseudos.js';
+import { formePseudo } from '../data/pseudos.js';
 
 export const ORDRE_CARTES = ['prairie', 'desert', 'montagne'];
 
@@ -93,12 +93,7 @@ export function relire(brut) {
   // Hall of fame (spec 018) : la case « enfant » et les pseudos retenus (même forme que celle que le serveur accepte).
   p.enfant = brut.enfant === true;
   p.ageRepondu = p.enfant || brut.ageRepondu === true;   // l'écran de fin ne propose le pseudo libre qu'après avoir demandé l'âge
-  if (typeof brut.pseudo === 'string' && brut.pseudo.length >= PSEUDO_MIN && brut.pseudo.length <= PSEUDO_MAX
-      && /^[\p{Script=Latin}\p{N}](?:[\p{Script=Latin}\p{N}]|[ -])*[\p{Script=Latin}\p{N}]$/u.test(brut.pseudo) && !/  |--| -|- /.test(brut.pseudo)
-      && (brut.pseudo.match(/\p{N}/gu) || []).length <= CHIFFRES_MAX) p.pseudo = brut.pseudo;
-  if (typeof brut.pseudoEnfant === 'string') {
-    const m = brut.pseudoEnfant.split(' ');
-    if (m.length === 3 && ANIMAUX.includes(m[0]) && COULEURS.includes(m[1]) && /^[1-9][0-9]?$/.test(m[2]) && +m[2] <= NOMBRE_MAX) p.pseudoEnfant = brut.pseudoEnfant;
-  }
+  if (formePseudo(brut.pseudo)) p.pseudo = brut.pseudo;
+  if (formePseudo(brut.pseudoEnfant)) p.pseudoEnfant = brut.pseudoEnfant;   // le pseudo proposé (« Renard Bleu 27 ») ou un pseudo libre
   return p;
 }
