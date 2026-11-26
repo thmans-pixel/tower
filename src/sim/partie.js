@@ -6,7 +6,7 @@ import { CARTES } from '../data/cartes.js';
 import { TOURS, statsTour } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
-import { DIFFICULTES } from '../data/difficultes.js';
+import { DIFFICULTES, estPrestige } from '../data/difficultes.js';
 import { genererVague } from '../data/vagues.js';
 import { LABYRINTHE } from '../data/labyrinthe.js';
 import { construireCarte, positionSur, centre, LIBRE, CHEMIN } from './carte.js';
@@ -254,8 +254,10 @@ export function annulerPrevu(s, c, r) {
   return { ok: true };
 }
 
-export function prixAmelioration(t) {
+/** Prix du niveau suivant ; le niveau ultime (spec 023) n'existe qu'en prestige, donc faut-il passer la partie `s`. */
+export function prixAmelioration(t, s = null) {
   const d = TOURS[t.sorte];
+  if (t.niveau === d.ameliorations.length) return s && estPrestige(s.difficulte) ? d.prixUltime : null;
   return t.niveau < d.ameliorations.length ? d.ameliorations[t.niveau] : null;
 }
 
@@ -263,7 +265,7 @@ export function prixAmelioration(t) {
 export function ameliorer(s, id, variante) {
   const t = s.tours.find((x) => x.id === id);
   if (!t || s.fin) return { ok: false, raison: 'impossible' };
-  const prix = prixAmelioration(t);
+  const prix = prixAmelioration(t, s);
   if (prix === null) return { ok: false, raison: 'max' };
   if (t.niveau === 1 && variante !== 'a' && variante !== 'b') return { ok: false, raison: 'choix' };
   if (s.or < prix) return { ok: false, raison: 'or' };
@@ -376,6 +378,14 @@ export function combattre(s, dt = DT) {
   bruler(s, dt);
   tirer(s, dt);
   voler(s, dt);
+  if (s.retards && s.retards.length) {   // seconds obus du Pilonnage
+    const parId = new Map(s.ennemis.map((e) => [e.id, e]));
+    for (let i = s.retards.length - 1; i >= 0; i--) {
+      if ((s.retards[i].t -= dt) > 0) continue;
+      const [r] = s.retards.splice(i, 1);
+      impact(s, r.p, null, parId);
+    }
+  }
 }
 
 function lancer(s, dt) {
@@ -426,6 +436,7 @@ function deplacer(s, dt) {
     const d = ENNEMIS[e.sorte];
     if (e.ralenti > 0) { e.ralenti -= dt; if (e.ralenti <= 0) e.ralFacteur = 0; }
     if (e.gel > 0) e.gel -= dt;
+    if (e.fragile && (e.fragile.t -= dt) <= 0) e.fragile = null;
     if (e.rage > 0) e.rage -= dt;
     const zone = s.labyrinthe && !e.vol ? zoneMonstre(s.carte, e) : null;
     const v = e.gel > 0 ? 0 : d.vitesse * s.multVitesse * (1 - e.ralFacteur) * (e.rage > 0 ? 1 + e.rageBonus : 1) * (zone && zone.vitesse ? zone.vitesse : 1);
@@ -645,14 +656,17 @@ function tirer(s, dt) {
     if (n.chaine) { eclair(s, t, n, cible); continue; }
     const depart = { x: t.x, y: t.y - T * 0.55 };
     const salve = n.salve || 1;
+    let degats = n.degats;
+    if (n.critique) { t.tirs = (t.tirs || 0) + 1; if (t.tirs % n.critique.tous === 0) degats *= n.critique.facteur; }
     for (let k = 0; k < salve; k++) {
       const dec = (k - (salve - 1) / 2) * 7;          // carreaux d'une salve légèrement décalés
       const x = depart.x + Math.sin(t.angle) * dec, y = depart.y - Math.cos(t.angle) * dec;
       s.projectiles.push({
         sorte: t.sorte, variante: t.variante, x, y, x0: x, y0: y, cible: cible.id, tx: cible.x, ty: cible.y,
-        vitesse: n.brulure && n.zone ? 400 : VITESSE_PROJ[t.sorte], degats: n.degats, degat: n.degat,
+        vitesse: n.brulure && n.zone ? 400 : VITESSE_PROJ[t.sorte], degats, degat: n.degat,
         zone: n.zone || 0, ralenti: n.ralenti || 0, duree: n.duree || 0, gel: n.gel || 0, brulure: n.brulure || null,
         perce: n.perce || 0, rebond: n.rebond || null, transperce: n.transperce || 0, volants: n.volants, tour: t.id,
+        gelBoss: n.gelBoss || 0, gelZone: n.gelZone || 0, second: n.second || 0, execute: n.execute || 0,
         parcours: 0, total: Math.hypot(cible.x - x, cible.y - y) || 1,
       });
     }
@@ -667,6 +681,7 @@ function auraTour(s, t, n) {
   for (const e of [...s.ennemis]) {
     if ((e.vol && !n.volants) || Math.hypot(e.x - t.x, e.y - t.y) > n.portee) continue;
     ralentir(e, n.ralenti, n.duree);
+    if (n.fragilise) e.fragile = { part: n.fragilise, t: n.duree + 0.3 };
     blesser(s, e, n.degats, n.degat, t);
     touches++;
   }
@@ -692,7 +707,8 @@ function eclair(s, t, n, cible) {
   let degats = n.degats;
   for (const e of touches) {
     points.push({ x: e.x, y: e.y - (e.vol ? 26 : 8) });
-    if (n.etourdit) geler(e, n.etourdit);
+    if (n.etourdit) geler(e, n.etourdit, 0.5, n.etourdirBoss || 0);
+    if (n.ralenti) ralentir(e, n.ralenti, n.duree);
     blesser(s, e, degats, n.degat, t);
     degats *= 1 - n.chaine.baisse;
   }
@@ -705,9 +721,11 @@ export function ralentir(e, facteur, duree) {
 }
 
 /** Gel et étourdissement immobilisent ; le boss n'est que ralenti de moitié. */
-export function geler(e, duree) {
-  if (ENNEMIS[e.sorte].boss) ralentir(e, 0.5, duree);
-  else e.gel = Math.max(e.gel, duree);
+export function geler(e, duree, ralentiBoss = 0.5, arretBoss = 0) {
+  if (ENNEMIS[e.sorte].boss) {
+    ralentir(e, ralentiBoss, duree);
+    if (arretBoss) e.gel = Math.max(e.gel, arretBoss);   // ultimes : le boss s'arrête un instant
+  } else e.gel = Math.max(e.gel, duree);
 }
 
 function bruler(s, dt) {
@@ -715,9 +733,19 @@ function bruler(s, dt) {
     if (!e.brule) continue;
     e.brule.t -= dt;
     const tour = s.tours.find((t) => t.id === e.brule.tour);
-    const dps = e.brule.dps;
-    if (e.brule.t <= 0) e.brule = null;
+    const dps = e.brule.dps, b = e.brule;
+    if (b.propage) {   // Dragon : toutes les 0,5 s la flamme gagne les voisins qui ne brûlent pas
+      b.prop = (b.prop || 0) + dt;
+      if (b.prop >= 0.5) {
+        b.prop = 0;
+        for (const v of s.ennemis) {
+          if (v === e || v.brule || (v.vol && !e.vol) || Math.hypot(v.x - e.x, v.y - e.y) > b.propage) continue;
+          v.brule = { dps: b.dps, t: 2, tour: b.tour, propage: b.propage };
+        }
+      }
+    }
     blesser(s, e, dps * dt, 'magique', tour, 0, true);
+    if (b.t <= 0 && e.brule === b) e.brule = null;
   }
 }
 
@@ -744,8 +772,8 @@ function impact(s, p, cible, parId) {
   const tour = s.tours.find((t) => t.id === p.tour);
   const effets = (e) => {
     if (p.ralenti) ralentir(e, p.ralenti, p.duree);
-    if (p.gel) geler(e, p.gel);
-    if (p.brulure) e.brule = { dps: p.brulure.dps, t: p.brulure.duree, tour: p.tour };
+    if (p.gel) geler(e, p.gel, p.gelBoss || 0.5);
+    if (p.brulure) e.brule = { dps: p.brulure.dps, t: p.brulure.duree, tour: p.tour, propage: p.brulure.propage || 0, explose: p.brulure.explose || null };
   };
   if (p.zone) {
     ev(s, 'explosion', { x: p.tx, y: p.ty, rayon: p.zone, feu: !!p.brulure, sorte: p.sorte });
@@ -754,23 +782,33 @@ function impact(s, p, cible, parId) {
       effets(e);
       blesser(s, e, p.degats, p.degat, tour, p.perce);
     }
+    if (p.second && !p.deuxieme) (s.retards ??= []).push({ t: p.second, p: { ...p, deuxieme: true } });   // Pilonnage
     return;
   }
   if (!cible || !parId.has(cible.id) || cible.pv <= 0) return;
   ev(s, 'touche', { sorte: p.sorte, x: cible.x, y: cible.y, gel: !!p.gel });
   effets(cible);
   const { x: cx, y: cy } = cible;
-  blesser(s, cible, p.degats, p.degat, tour, p.perce);
+  if (p.gelZone) for (const e of s.ennemis) if (e !== cible && !(e.vol && !p.volants) && Math.hypot(e.x - cx, e.y - cy) <= p.gelZone) geler(e, p.gel, p.gelBoss || 0.5);
+  if (p.execute && !ENNEMIS[cible.sorte].boss && cible.pv <= p.execute * cible.pvMax) blesser(s, cible, cible.pv * 10, 'magique', tour);   // Lance de titan
+  else blesser(s, cible, p.degats, p.degat, tour, p.perce);
   if (p.rebond) {
-    let best = null, dmin = p.rebond.portee;
-    for (const e of s.ennemis) {
-      if (e === cible || (e.vol && !p.volants)) continue;
-      const d = Math.hypot(e.x - cx, e.y - cy);
-      if (d <= dmin) { dmin = d; best = e; }
-    }
-    if (best) {
-      ev(s, 'eclair', { points: [{ x: cx, y: cy - 8 }, { x: best.x, y: best.y - 8 }], sorte: p.sorte });
-      blesser(s, best, p.degats * p.rebond.facteur, p.degat, tour, p.perce);
+    // Chaque rebond part du dernier ennemi touché ; Foudre sacrée en enchaîne plusieurs (`nombre`).
+    const touches = [cible];
+    let cour = { x: cx, y: cy }, degats = p.degats;
+    for (let k = 0; k < (p.rebond.nombre || 1); k++) {
+      let best = null, dmin = p.rebond.portee;
+      for (const e of s.ennemis) {
+        if (touches.includes(e) || (e.vol && !p.volants)) continue;
+        const d = Math.hypot(e.x - cour.x, e.y - cour.y);
+        if (d <= dmin) { dmin = d; best = e; }
+      }
+      if (!best) break;
+      degats *= p.rebond.facteur;
+      ev(s, 'eclair', { points: [{ x: cour.x, y: cour.y - 8 }, { x: best.x, y: best.y - 8 }], sorte: p.sorte });
+      blesser(s, best, degats, p.degat, tour, p.perce);
+      touches.push(best);
+      cour = { x: best.x, y: best.y };
     }
   }
   if (p.transperce) {
@@ -791,12 +829,18 @@ function impact(s, p, cible, parId) {
 export function blesser(s, e, degats, type, tour, perce = 0, continu = false) {
   if (e.pv <= 0) return;
   const armure = type === 'physique' ? ENNEMIS[e.sorte].armure * (1 - perce) : 0;
-  const reel = degats * (1 - armure);
+  const reel = degats * (1 - armure) * (e.fragile ? 1 + e.fragile.part : 1);
   if (!continu) ev(s, 'blesse', { id: e.id, x: e.x, y: e.y, vol: e.vol, armure: armure >= 0.2 });
   const avant = e.pv;
   e.pv -= reel;
   if (tour) { const d = Math.min(reel, avant); tour.degats += d; (tour.degatsVague ??= {})[e.vague] = (tour.degatsVague[e.vague] || 0) + d; }
   if (e.pv > 0) return;
+  if (e.brule && e.brule.explose) {   // Météore : un ennemi qui meurt en brûlant blesse ses voisins
+    const { rayon, degats: dg } = e.brule.explose, tb = s.tours.find((t) => t.id === e.brule.tour);
+    e.brule = null;
+    ev(s, 'explosion', { x: e.x, y: e.y, rayon, feu: true, sorte: 'mage' });
+    for (const v of [...s.ennemis]) if (v !== e && Math.hypot(v.x - e.x, v.y - e.y) <= rayon) blesser(s, v, dg, 'magique', tb);
+  }
   if (s.labyrinthe) { metAterre(s, e, tour); return; }
   const i = s.ennemis.indexOf(e);
   if (i >= 0) s.ennemis.splice(i, 1);
@@ -838,7 +882,7 @@ function orCompense(s, base) {
 }
 
 /** Nom d'une tour : celui de sa spécialisation au niveau 3. */
-export const nomTour = (t) => (t.niveau === 2 && t.variante ? TOURS[t.sorte].specialisations[t.variante].nom : TOURS[t.sorte].nom);
+export const nomTour = (t) => (t.niveau === 3 ? TOURS[t.sorte].ultimes[t.variante].nom : t.niveau === 2 && t.variante ? TOURS[t.sorte].specialisations[t.variante].nom : TOURS[t.sorte].nom);
 
 /** Tours classées par dégâts totaux (la plus ancienne devant en cas d'égalité) : pour l'écran. */
 export function classement(s) {

@@ -10,7 +10,7 @@ import { LABYRINTHE, ZONES } from '../data/labyrinthe.js';
 import { etiquetteRang } from './clavier.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
 import { ficheTour, fichePouvoir, encadreNiveau2, ficheSpecialisation } from './fiches.js';
-import { DIFFICULTES, ORDRE_DIFFICULTES, ORDRE_PRESTIGES } from '../data/difficultes.js';
+import { DIFFICULTES, ORDRE_DIFFICULTES, ORDRE_PRESTIGES, estPrestige } from '../data/difficultes.js';
 import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, difficulteOuverte, ORDRE_CARTES } from '../sim/progression.js';
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
 import { codeProgression, lireCode } from '../sim/transfert.js';
@@ -552,7 +552,7 @@ export class Interface {
     const zoneTour = zone && ZONES[zone.sorte].cible === 'tour' ? ZONES[zone.sorte] : null;
     const vague = !!s.labyrinthe && enVague(s);
     const suiv = t.niveau === 0 ? statsEffectives(s, { ...t, niveau: 1 }) : null;   // flèches vers le niveau 2 seulement
-    const prix = prixAmelioration(t), vente = prixRevente(t);
+    const prix = prixAmelioration(t, s), vente = prixRevente(t);
     const sig = [t.id, t.niveau, t.variante, t.ciblage, Math.round(t.degats), t.abattus, t.couronnes, s.tours.length, rangDe(s, t), prix !== null && s.or >= prix, s.fin, vague, !!t.aRetirer].join('|');
     if (sig === this.signature && !p.hidden) return;
     this.signature = sig;
@@ -571,15 +571,25 @@ export class Interface {
     if (n.etourdit) lignes.push(['Étourdit', dec(n.etourdit) + ' s']);
     if (n.brulure) lignes.push(['Brûlure', `${n.brulure.dps}/s pendant ${n.brulure.duree} s`]);
     if (n.chaine) lignes.push(['Chaîne', `${n.chaine.nombre} ennemis, −${pct(n.chaine.baisse)} par saut`]);
-    if (n.rebond) lignes.push(['Rebond', pct(n.rebond.facteur) + ' des dégâts']);
+    if (n.rebond) lignes.push(['Rebond', (n.rebond.nombre > 1 ? n.rebond.nombre + ' fois, ' : '') + pct(n.rebond.facteur) + ' des dégâts']);
+    if (n.critique) lignes.push(['Critique', `1 tir sur ${n.critique.tous}, × ${n.critique.facteur}`]);
+    if (n.fragilise) lignes.push(['Fragilise', '+ ' + pct(n.fragilise) + ' de dégâts subis']);
+    if (n.gelZone) lignes.push(['Gèle aussi', 'les voisins (' + cases(n.gelZone) + ' case)']);
+    if (n.second) lignes.push(['Second obus', dec(n.second) + ' s plus tard']);
+    if (n.brulure && n.brulure.propage) lignes.push(['Propage', 'la brûlure aux voisins']);
+    if (n.brulure && n.brulure.explose) lignes.push(['Explosion', `${n.brulure.explose.degats} aux voisins d’un brûlé tué`]);
+    if (n.execute) lignes.push(['Achève', 'sous ' + pct(n.execute) + ' de PV (pas le boss)']);
+    if (n.etourdirBoss) lignes.push(['Étourdit le boss', dec(n.etourdirBoss) + ' s']);
     if (n.transperce) lignes.push(['Transperce', cases(n.transperce) + ' cases']);
     if (n.perce) lignes.push(['Ignore', pct(n.perce) + ' de l’armure']);
     lignes.push(['Vise', n.volants ? 'sol et air' : 'sol seulement']);
     if (zoneTour) lignes.push(['Zone', `${zoneTour.nom} : ${zoneTour.portee ? 'portée + 25 %' : zoneTour.degats ? 'dégâts + 25 %' : 'cadence − 25 %'}`]);
     lignes.push(['Rang', `${rangDe(s, t)}${rangDe(s, t) === 1 ? 'er' : 'e'} sur ${s.tours.length}`], ['Vagues remportées', t.couronnes ? '♛ ' + t.couronnes : '0']);
     lignes.push(['Dégâts totaux', nb(t.degats)], [s.labyrinthe ? 'Mises à terre' : 'Abattus', nb(t.abattus)]);
-    const titre = t.niveau === 2 ? `${d.specialisations[t.variante].nom}<small>Niveau 3 — ${d.nom}</small>` : `${d.nom}<small>Niveau ${t.niveau + 1} sur 3</small>`;
-    const rappel = t.niveau === 2 ? `<p class="desc">${d.specialisations[t.variante].description}</p>` : '';
+    const ultime = t.niveau === 3 ? d.ultimes[t.variante] : null;
+    const maxi = estPrestige(s.difficulte) ? 4 : 3;
+    const titre = ultime ? `${ultime.nom}<small>Niveau 4, ultime — ${d.nom}</small>` : t.niveau === 2 ? `${d.specialisations[t.variante].nom}<small>Niveau 3 — ${d.nom}</small>` : `${d.nom}<small>Niveau ${t.niveau + 1} sur ${maxi}</small>`;
+    const rappel = ultime ? `<p class="desc">${ultime.description}</p>` : t.niveau === 2 ? `<p class="desc">${d.specialisations[t.variante].description}</p>` : '';
     const bloque = (prix !== null && s.or < prix) || s.fin ? 'disabled' : '';
     let amelioration;
     if (prix === null) amelioration = '<button class="action" disabled>Niveau maximum</button>';
@@ -587,6 +597,9 @@ export class Interface {
       amelioration = '<div class="etiquette">Niveau 3 : choisissez une spécialisation</div><div class="choix">' +
         ['a', 'b'].map((v) => `<button class="action ameliorer specialite" data-act="ameliorer" data-variante="${v}" ${bloque}>
           ${ficheSpecialisation(t.sorte, v, prix)}</button>`).join('') + '</div><p class="petit-texte">Choix définitif.</p>';
+    } else if (t.niveau === 2) {
+      const u = d.ultimes[t.variante];
+      amelioration = `<div class="encadre"><div class="etiquette">Niveau 4, ultime : ${u.nom}</div><p>${u.description}</p></div><button class="action ameliorer" data-act="ameliorer" ${bloque}>Ultime · ${prix} or</button>`;
     } else amelioration = `${encadreNiveau2(t.sorte)}<button class="action ameliorer" data-act="ameliorer" ${bloque}>Améliorer · ${prix} or</button>`;
     p.innerHTML = `<button class="fermer" data-act="fermer" aria-label="Fermer">×</button>
       <h3>${titre}</h3>

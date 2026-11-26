@@ -181,6 +181,7 @@ const TOUR = {
 
 const cacheTour = {};
 export function spriteTour(sorte, niveau) {
+  niveau = Math.min(niveau, 2);   // l'ultime (niveau 4) garde le dessin du niveau 3
   const k = sorte + niveau;
   return cacheTour[k] || (cacheTour[k] = dessiner(20, 30, (r) => TOUR[sorte](r, niveau)));
 }

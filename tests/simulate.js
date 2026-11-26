@@ -27,12 +27,12 @@ export function jouer({ carte = 'prairie', difficulte = 'normal', maxTours = 20,
       const sorte = plan[k % plan.length];
       const prochaine = plan.length && s.tours.length < maxTours ? TOURS[sorte].prix : Infinity;
       // Améliorer la moins chère quand on a déjà assez de tours, sinon poser.
-      const amel = s.tours.filter((t) => prixAmelioration(t) !== null).sort((a, b) => prixAmelioration(a) - prixAmelioration(b))[0];
-      if (s.or >= prochaine && (s.tours.length < 8 || !amel || prixAmelioration(amel) > prochaine)) {
+      const amel = s.tours.filter((t) => prixAmelioration(t, s) !== null).sort((a, b) => prixAmelioration(a, s) - prixAmelioration(b, s))[0];
+      if (s.or >= prochaine && (s.tours.length < 8 || !amel || prixAmelioration(amel, s) > prochaine)) {
         const p = places.find(([c, r]) => peutPoser(s, c, r));
         const r = p && poser(s, sorte, p[0], p[1]);
         if (r && r.ok) { k++; if (k % 2 === 0 && s.vague >= 8) r.tour.ciblage = 'fort'; }   // une tour sur deux vise le plus fort, comme un joueur face au boss
-      } else if (amel && s.or >= prixAmelioration(amel)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
+      } else if (amel && s.or >= prixAmelioration(amel, s)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
       if (presse && peutAppeler(s)) appelerVague(s);
     }
     const v = s.vague;
@@ -67,7 +67,7 @@ export function jouerLabyrinthe({ graine = 1, difficulte = 'normal', murs = true
   const batir = () => {
     for (let essai = 0; essai < 400; essai++) {
       const sorte = plan[k % plan.length];
-      const amel = s.tours.filter((t) => prixAmelioration(t) !== null).sort((a, b) => prixAmelioration(a) - prixAmelioration(b))[0];
+      const amel = s.tours.filter((t) => prixAmelioration(t, s) !== null).sort((a, b) => prixAmelioration(a, s) - prixAmelioration(b, s))[0];
       const veutTour = s.tours.length < maxTours && (s.tours.length < debut + pose / parTour || !murs || pose >= budgetMurs);
       if (veutTour) {
         if (s.or < TOURS[sorte].prix) return;
@@ -85,7 +85,7 @@ export function jouerLabyrinthe({ graine = 1, difficulte = 'normal', murs = true
         const m = meilleurMur();
         if (!m) pose = budgetMurs;   // plus aucun mur ne rallonge le trajet
         else { pose++; poserMur(s, m[0], m[1]); }
-      } else if (amel && s.or >= prixAmelioration(amel)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
+      } else if (amel && s.or >= prixAmelioration(amel, s)) ameliorer(s, amel.id, amel.id % 2 ? 'a' : 'b');
       else return;
     }
   };

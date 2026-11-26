@@ -562,10 +562,19 @@ export class Vue {
       g.scale(pose.sx, pose.sy);
       g.translate(-t.x, -bas);
     }
+    if (t.niveau >= 3) {   // ultime : halo doré sous la tour
+      const p = 0.5 + 0.3 * Math.sin(this.horloge * 3);
+      g.fillStyle = `rgba(255,214,90,${p * 0.35})`;
+      g.beginPath(); g.ellipse(t.x, bas - 3, 24, 10, 0, 0, Math.PI * 2); g.fill();
+    }
     if (m) this.tourModele(t, m);
     else this.tourCode(t, bas);
+    if (t.niveau >= 3) {   // lueur dorée additive sur le corps
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.12 + 0.08 * Math.sin(this.horloge * 3);
+      g.fillStyle = '#ffd25a'; g.beginPath(); g.arc(t.x, t.y - 8, 18, 0, Math.PI * 2); g.fill(); g.restore();
+    }
     if (anim) g.restore();
-    if (!anim || anim.genre !== 'vente') for (let i = 0; i <= t.niveau; i++) { g.fillStyle = '#1a1420'; g.fillRect(t.x - 10 + i * 8, bas + 1, 6, 4); g.fillStyle = '#f2c14e'; g.fillRect(t.x - 9 + i * 8, bas + 2, 4, 2); }
+    if (!anim || anim.genre !== 'vente') for (let i = 0; i <= t.niveau; i++) { const x0 = t.x - 10 - (t.niveau > 2 ? 4 : 0); g.fillStyle = '#1a1420'; g.fillRect(x0 + i * 8, bas + 1, 6, 4); g.fillStyle = i === 3 ? '#fff1a8' : '#f2c14e'; g.fillRect(x0 + 1 + i * 8, bas + 2, 4, 2); }
   }
 
   /** Tour de Blender : le corps ancré au centre de la case, la pièce mobile dans l'orientation la plus proche. */
