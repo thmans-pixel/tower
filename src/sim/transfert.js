@@ -5,6 +5,7 @@ import { ORDRE_CARTES, relire } from './progression.js';
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const PREFIXE = 'TDR1';
+const PREFIXE_PRESTIGE = 'TDR3';   // codes qui portent aussi le plus haut prestige gagné (spec 022) ; ils portent toujours les trois records de labyrinthe
 const PREFIXE_LABY = 'TDR2';   // codes qui portent des records de labyrinthe d'après la spec 017 (règles de population)
 const DIFFS = ['facile', 'normal', 'difficile'];
 
@@ -44,6 +45,7 @@ function nombres(p) {
   const base = [drapeaux, etoiles, ...ORDRE_CARTES.map((c) => p.infini[c] || 0), ...DIFFS.map((d) => p.aleatoires[d] || 0)];
   // Records du labyrinthe (spec 016) : ajoutés seulement s'il y en a, pour que les anciens codes ne changent pas.
   const laby = DIFFS.map((d) => (p.labyrinthe || {})[d] || 0);
+  if (p.prestige > 0) return [...base, ...laby, p.prestige];   // spec 022 : un seul nombre de plus
   return laby.some(Boolean) ? [...base, ...laby] : base;
 }
 
@@ -54,8 +56,8 @@ export function codeProgression(p) {
   corps.push(...controle(corps));
   const groupes = [];
   for (let i = 0; i < corps.length; i += 4) groupes.push(corps.slice(i, i + 4).join(''));
-  const avecRecords = nombres(p).length > 2 + ORDRE_CARTES.length + DIFFS.length;
-  return [avecRecords ? PREFIXE_LABY : PREFIXE, ...groupes].join('-');
+  const n = nombres(p).length, base = 2 + ORDRE_CARTES.length + DIFFS.length;
+  return [n > base + DIFFS.length ? PREFIXE_PRESTIGE : n > base ? PREFIXE_LABY : PREFIXE, ...groupes].join('-');
 }
 
 /**
@@ -65,7 +67,8 @@ export function codeProgression(p) {
 export function lireCode(texte) {
   if (typeof texte !== 'string') return { ok: false };
   let t = texte.toUpperCase().replace(/[\s-]/g, '');
-  const laby = t.startsWith(PREFIXE_LABY);
+  const avecPrestige = t.startsWith(PREFIXE_PRESTIGE);
+  const laby = avecPrestige || t.startsWith(PREFIXE_LABY);
   if (!laby && !t.startsWith(PREFIXE)) return { ok: false };
   t = t.slice(PREFIXE.length).replace(/O/g, '0').replace(/[IL]/g, '1');
   if (t.length < 3 || [...t].some((ch) => !ALPHABET.includes(ch))) return { ok: false };
@@ -73,7 +76,8 @@ export function lireCode(texte) {
   if (controle(corps) !== t.slice(-2)) return { ok: false };
   const l = lireNombres(corps);
   const base = 2 + ORDRE_CARTES.length + DIFFS.length;
-  if (!l || (l.length !== base && l.length !== base + DIFFS.length)) return { ok: false };
+  const valide = avecPrestige ? [base + DIFFS.length + 1] : [base, base + DIFFS.length];   // TDR1 et TDR2 : avec ou sans records de labyrinthe
+  if (!l || !valide.includes(l.length)) return { ok: false };
   const [drapeaux, etoiles] = l;
   const brut = { debloquees: ['prairie'], etoiles: {}, infini: {}, aleatoires: {}, labyrinthe: {}, infiniOuvert: (drapeaux & 4) !== 0, enfant: (drapeaux & 8) !== 0 };
   if (drapeaux & 1) brut.debloquees.push('desert');
@@ -86,6 +90,7 @@ export function lireCode(texte) {
   DIFFS.forEach((d, i) => { if (l[2 + ORDRE_CARTES.length + i]) brut.aleatoires[d] = l[2 + ORDRE_CARTES.length + i]; });
   // Un code TDR1 d'avant la spec 017 ne fait pas revenir ses records de labyrinthe : les règles ont changé.
   if (laby) DIFFS.forEach((d, i) => { if (l[base + i]) brut.labyrinthe[d] = l[base + i]; });
+  if (avecPrestige && l[base + DIFFS.length] > 0) brut.prestige = l[base + DIFFS.length];
   brut.reglesLaby = 2;
   return { ok: true, progression: relire(brut) };
 }
@@ -105,6 +110,7 @@ export function fusionner(p, q) {
     const n = [(p.labyrinthe || {})[d], (q.labyrinthe || {})[d]].filter(Boolean);
     if (n.length) r.labyrinthe[d] = Math.min(...n);
   }
+  r.prestige = Math.max(p.prestige || 0, q.prestige || 0);
   r.infiniOuvert = p.infiniOuvert || q.infiniOuvert;
   r.enfant = !!(p.enfant || q.enfant);   // une fois la case cochée sur un appareil, elle le reste (prudence)
   return r;

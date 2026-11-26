@@ -8,7 +8,7 @@ import { LABYRINTHE } from './data/labyrinthe.js';
 import { aideCase } from './render/labyrinthe.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from './data/pouvoirs.js';
 import { CHEMIN } from './sim/carte.js';
-import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, enregistrerLabyrinthe, aleatoireOuvert, progressionVide } from './sim/progression.js';
+import { etoilesPartie, enregistrerVictoire, enregistrerInfini, enregistrerAleatoire, enregistrerLabyrinthe, aleatoireOuvert, difficulteOuverte, progressionVide } from './sim/progression.js';
 import { genererCarte } from './sim/generateur.js';
 import { scoreInfini } from './sim/partie.js';
 import { HallUi } from './ui/hall.js';
@@ -78,7 +78,7 @@ const interfaceJeu = new Interface({
   menu: () => (partie && !partie.fin ? interfaceJeu.question('Quitter la partie et revenir aux cartes ?', () => montrer('cartes')) : montrer('cartes')),
   ecran: montrer, carte: (id) => commencer(id), rejouer: () => commencer(idCarte),
   enfant: (v) => { progression.enfant = v; progression.ageRepondu = true; enregistrer(progression); son.jouer('clic'); },
-  difficulte: (d) => { progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
+  difficulte: (d) => { if (!difficulteOuverte(progression, d)) return; progression.difficulte = d; enregistrer(progression); afficherCartes(); son.jouer('clic'); },
   mode: (m) => { mode = m; afficherCartes(); son.jouer('clic'); },
   alea: async (changement) => {
     if (changement.graine === 'hasard') changement.graine = numeroAuHasard();

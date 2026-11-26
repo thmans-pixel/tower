@@ -10,8 +10,8 @@ import { LABYRINTHE, ZONES } from '../data/labyrinthe.js';
 import { etiquetteRang } from './clavier.js';
 import { POUVOIRS, ORDRE_POUVOIRS } from '../data/pouvoirs.js';
 import { ficheTour, fichePouvoir, encadreNiveau2, ficheSpecialisation } from './fiches.js';
-import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
-import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, ORDRE_CARTES } from '../sim/progression.js';
+import { DIFFICULTES, ORDRE_DIFFICULTES, ORDRE_PRESTIGES } from '../data/difficultes.js';
+import { estDebloquee, meilleuresEtoiles, infiniJouable, aleatoireOuvert, difficulteOuverte, ORDRE_CARTES } from '../sim/progression.js';
 import { THEMES, LONGUEURS } from '../sim/generateur.js';
 import { codeProgression, lireCode } from '../sim/transfert.js';
 import { CARTES } from '../data/cartes.js';
@@ -280,9 +280,12 @@ export class Interface {
     modes.innerHTML = offerts.map(([m, nom, sous]) =>
       `<button data-mode="${m}" class="${m === mode ? 'actif' : ''}" aria-pressed="${m === mode}">${nom}<small>${sous}</small></button>`).join('');
     for (const b of modes.querySelectorAll('button')) b.onclick = () => this.a.mode(b.dataset.mode);
-    $('choix-difficulte').innerHTML = ORDRE_DIFFICULTES.map((d) => {
-      const x = DIFFICULTES[d];
-      return `<button data-diff="${d}" class="${d === diff ? 'actif' : ''}" aria-pressed="${d === diff}">${x.nom}<small>${x.vies} vies</small></button>`;
+    // Facile, Normal, Difficile, puis les prestiges ouverts et le prochain, grisé (spec 022).
+    const offertes = [...ORDRE_DIFFICULTES, ...ORDRE_PRESTIGES.filter((d) => difficulteOuverte(prog, d) || difficulteOuverte(prog, ORDRE_PRESTIGES[ORDRE_PRESTIGES.indexOf(d) - 1] || 'normal'))];
+    $('choix-difficulte').innerHTML = offertes.map((d) => {
+      const x = DIFFICULTES[d], ouverte = difficulteOuverte(prog, d);
+      const sous = x.prestige ? `${x.vies} vies · PV ×${x.pv} · monstres ×${x.nombre}` : `${x.vies} vies`;
+      return `<button data-diff="${d}" class="${d === diff ? 'actif' : ''}${x.prestige ? ' prestige' : ''}" aria-pressed="${d === diff}"${ouverte ? '' : ' disabled'}>${ouverte ? '' : '🔒 '}${x.nom}<small>${ouverte ? sous : x.prestige === 1 ? 'gagnez en Difficile' : 'gagnez le prestige précédent'}</small></button>`;
     }).join('');
     for (const b of $('choix-difficulte').querySelectorAll('button')) b.onclick = () => this.a.difficulte(b.dataset.diff);
     const zone = $('liste-cartes');

@@ -25,7 +25,7 @@ export function nouvellePartie(idCarte = 'prairie', difficulte = 'normal', optio
   const diff = DIFFICULTES[difficulte];
   if (!diff) throw new Error('Difficulté inconnue : ' + difficulte);
   const s = {
-    difficulte, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
+    difficulte, multNombre: diff.nombre || 1, multPV: diff.pv * (maze ? LABYRINTHE.multPV : 1), pvParVague: def.pvParVague || 0, compteVague: diff.compte, multVitesse: def.vitesse || 1,
     carte: maze ? carteMaze : construireCarte(def),
     labyrinthe: maze ? { objectif: LABYRINTHE.objectif, murs: carteMaze.murs, prevus: [], popMax: carteMaze.lab.popMax, tpPris: new Set() } : null,
     or: Math.round(def.orDepart * diff.or), vies: diff.vies, viesDepart: diff.vies,
@@ -319,7 +319,8 @@ export function appelerVague(s) {
   s.vague++;
   const file = [];
   let a = 0;
-  for (const [sorte, nombre, ecart] of vagueN(s, s.vague)) {
+  for (const [sorte, effectif, ecart] of vagueN(s, s.vague)) {
+    const nombre = effectifDe(s, sorte, effectif);
     for (let n = 0; n < nombre; n++) { file.push({ sorte, a }); a += ecart; }
     a += ECART_GROUPES - ecart;
   }
@@ -329,6 +330,9 @@ export function appelerVague(s) {
   ev(s, 'vague', { vague: s.vague });
   return { ok: true, bonus };
 }
+
+/** Effectif d'un groupe selon la difficulté (prestiges : plus de monstres ; un boss reste seul). */
+const effectifDe = (s, sorte, nombre) => (s.multNombre > 1 && !ENNEMIS[sorte].boss ? Math.round(nombre * s.multNombre) : nombre);
 
 /** Groupes de la vague n : ceux de la carte, ou tirés au hasard (à graine) en mode infini. */
 function vagueN(s, n) {
@@ -348,7 +352,7 @@ export function composition(s, n) {
   const v = vagueN(s, n);
   if (!v) return [];
   const tot = {};
-  for (const [sorte, nombre] of v) tot[sorte] = (tot[sorte] || 0) + nombre;
+  for (const [sorte, nombre] of v) tot[sorte] = (tot[sorte] || 0) + effectifDe(s, sorte, nombre);
   return Object.entries(tot).map(([sorte, nombre]) => ({ sorte, nombre }));
 }
 
