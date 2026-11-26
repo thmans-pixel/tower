@@ -46,7 +46,17 @@
   "difficultes": {
     "facile": 30,
     "normal": 20,
-    "difficile": 10
+    "difficile": 10,
+    "prestige1": 10,
+    "prestige2": 9,
+    "prestige3": 9,
+    "prestige4": 8,
+    "prestige5": 8,
+    "prestige6": 7,
+    "prestige7": 7,
+    "prestige8": 6,
+    "prestige9": 6,
+    "prestige10": 5
   },
   "tours": [
     "archers",
@@ -75,6 +85,7 @@
     },
     "tour": {
       "vaguesMax": 500,
+      "multPrestige": 5,
       "degatsParVagueMax": {
         "campagne": 20000,
         "labyrinthe": 30000,

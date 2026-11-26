@@ -4,7 +4,7 @@
 import { scoreHall, pseudoEnfant, pseudoEnfantEnvoyable, pseudoValide } from '../sim/hall.js';
 import { PSEUDO_MIN, PSEUDO_MAX } from '../data/pseudos.js';
 import { ORDRE_CARTES } from '../sim/progression.js';
-import { DIFFICULTES, ORDRE_DIFFICULTES } from '../data/difficultes.js';
+import { DIFFICULTES, ORDRE_DIFFICULTES, ORDRE_PRESTIGES } from '../data/difficultes.js';
 import { CARTES } from '../data/cartes.js';
 import { TOURS } from '../data/tours.js';
 
@@ -91,7 +91,7 @@ export class HallUi {
     $('hall-cartes').hidden = !c.cartes;
     $('hall-difficultes').hidden = !c.difficultes;
     if (c.cartes) boutons('hall-cartes', ORDRE_CARTES.map((k) => [k, CARTES[k].nom]), v.carte, 'carte');
-    if (c.difficultes) boutons('hall-difficultes', ORDRE_DIFFICULTES.map((k) => [k, DIFFICULTES[k].nom]), v.difficulte, 'difficulte');
+    if (c.difficultes) boutons('hall-difficultes', [...ORDRE_DIFFICULTES, ...ORDRE_PRESTIGES].map((k) => [k, DIFFICULTES[k].prestige ? 'P' + DIFFICULTES[k].prestige : DIFFICULTES[k].nom]), v.difficulte, 'difficulte');
     this.charger();
   }
 

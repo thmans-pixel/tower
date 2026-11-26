@@ -10,7 +10,7 @@ const NOMS_ENNEMIS = {
 };
 const sansPrefixe = (nom) => String(nom).replace(/^ennemi_/, '');
 
-export const nomTour = (sorte, niveau, variante) => `tour_${sorte}_${niveau + 1}${niveau === 2 && variante ? variante : ''}`;
+export const nomTour = (sorte, niveau, variante) => `tour_${sorte}_${Math.min(niveau, 2) + 1}${niveau >= 2 && variante ? variante : ''}`;
 export const nomEnnemi = (sorte) => NOMS_ENNEMIS[sorte];
 
 function image(src) {

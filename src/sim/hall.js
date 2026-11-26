@@ -2,7 +2,7 @@
 import { ANIMAUX, COULEURS, NOMBRE_MAX, formePseudo } from '../data/pseudos.js';
 import { scoreInfini, classement } from './partie.js';
 import { hasard } from './hasard.js';
-import { ORDRE_DIFFICULTES } from '../data/difficultes.js';
+import { ORDRE_DIFFICULTES, estPrestige } from '../data/difficultes.js';
 
 export const CLASSEMENTS = ['tour', 'labyrinthe', 'infini', 'campagne'];
 const CARTES_CLASSEES = ['prairie', 'desert', 'montagne'];
@@ -14,7 +14,7 @@ const CARTES_CLASSEES = ['prairie', 'desert', 'montagne'];
  */
 export function scoreHall(s, idCarte) {
   if (!s || !s.fin) return [];
-  if (!ORDRE_DIFFICULTES.includes(s.difficulte)) return [];   // prestiges : pas de classement (le serveur ne les connaît pas)
+  if (!ORDRE_DIFFICULTES.includes(s.difficulte) && !estPrestige(s.difficulte)) return [];   // spec 023 : les prestiges sont classés
   const maze = !!s.labyrinthe;
   if (!maze && !CARTES_CLASSEES.includes(idCarte)) return [];   // carte aléatoire : jamais classée
   const r = [];

@@ -1,6 +1,7 @@
 // Prestiges (spec 022) : de plus en plus de PV et de monstres, ouverts un à un, portés par le code de transfert.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { nouvellePartie, appelerVague, composition } from '../src/sim/partie.js';
 import { progressionVide, relire, enregistrerVictoire, difficulteOuverte, prestigeOuvert } from '../src/sim/progression.js';
 import { DIFFICULTES, ORDRE_PRESTIGES, NB_PRESTIGES } from '../src/data/difficultes.js';
@@ -64,8 +65,16 @@ test('le code de transfert porte le plus haut prestige gagné', () => {
   assert.equal(fusionner(p, relire({ prestige: 7 })).prestige, 7);
 });
 
-test('pas de classement au hall of fame pour un prestige', () => {
+test('un prestige gagné est classé au hall of fame (spec 023)', () => {
   const s = nouvellePartie('prairie', 'prestige1');
   s.fin = 'victoire'; s.vague = 20;
-  assert.deepEqual(scoreHall(s, 'prairie'), []);
+  const r = scoreHall(s, 'prairie');
+  assert.ok(r.length >= 1 && r.every((x) => x.difficulte === 'prestige1'));
+  assert.equal(r.find((x) => x.classement === 'campagne').valeur, s.vies);
+});
+
+test('les règles du serveur connaissent chaque difficulté, avec ses vies', () => {
+  const regles = JSON.parse(readFileSync(new URL('../tools/hall/regles.json', import.meta.url), 'utf8'));
+  for (const [k, d] of Object.entries(DIFFICULTES)) assert.equal(regles.difficultes[k], d.vies, k);
+  assert.deepEqual(Object.keys(regles.difficultes), Object.keys(DIFFICULTES));
 });
