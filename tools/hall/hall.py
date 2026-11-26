@@ -230,7 +230,9 @@ def verifier_envoi(p):
             raise Refus(400, 'mode', 'Demande incorrecte.')
         tour = dans(p.get('tour'), REGLES['tours'], 'tour')
         vagues = entier(p.get('vagues'), 1, b['tour']['vaguesMax'])
-        valeur = entier(p.get('valeur'), 1, vagues * b['tour']['degatsParVagueMax'][mode])
+        # Prestiges (spec 023) : les ultimes frappent bien plus fort, le plafond par vague est multiplié.
+        mult = b['tour'].get('multPrestige', 1) if difficulte.startswith('prestige') else 1
+        valeur = entier(p.get('valeur'), 1, vagues * b['tour']['degatsParVagueMax'][mode] * mult)
         detail = {'tour': tour, 'carte': carte, 'difficulte': difficulte, 'mode': mode, 'vagues': vagues}
         cle_carte, cle_diff, score = '', '', valeur
     else:

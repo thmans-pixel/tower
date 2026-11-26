@@ -65,7 +65,7 @@ Points à régler en dernier avec le joueur automatique : Âge glaciaire et Drag
 
 ## Livraison (2026-11-26) — lot 1 : niveau 4 jouable
 Fait : données (`ULTIMES` dans `tours.js`), logique (`prixAmelioration(t, s)`, `statsTour`, `nomTour`, les 12 effets), fiche de tour,
-halo doré et 4ᵉ pastille, `tests/ultimes.test.js`. Pas encore fait : classement des prestiges au hall of fame (§2), réglage fin des chiffres.
+halo doré et 4ᵉ pastille, `tests/ultimes.test.js`. Lot 2 fait : classement des prestiges au hall of fame (§2) — `regles.json` (vies de P1 à P10, `multPrestige` 5 : plafond de dégâts par vague × 5 en prestige), `scoreHall`, boutons « P1 » à « P10 » de l'écran du hall, tests `tools/hall/test_hall.py` et `tests/prestiges.test.js`. Reste : réglage fin des chiffres.
 Écarts : « transperce 2 ennemis » = 60 px derrière la cible ; « aucune chance aux invisibles » (Foudre sacrée) sans objet : le Mage voit déjà les invisibles.
 **Constat d'équilibre** : le joueur automatique perd avant d'avoir de quoi payer un ultime (Prairie, or gagné en tout avant la défaite :
 Difficile 4 023 ; P1 2 057 ; P2 765 ; P3 565 ; P5 232), il n'en achète donc aucun et ses repères ne bougent pas (P1 12, P2-P3 7, P5 4, P10 2).

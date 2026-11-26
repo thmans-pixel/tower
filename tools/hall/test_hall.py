@@ -183,6 +183,18 @@ class Bornes(Base):
         self.refus({**t, 'valeur': 10, 'mode': 'labyrinthe'}, 'mode')
         self.refus({**t, 'valeur': 10, 'carte': 'aleatoire'}, 'carte')
 
+    def test_prestiges(self):
+        self.refus(camp('Alice', 10, difficulte='prestige10'), 'valeur')
+        self.hall.envoyer(camp('Alice', 5, difficulte='prestige10'))
+        self.hall.envoyer(camp('Bob', 10, difficulte='prestige1'))
+        self.refus(camp('Alice', 5, difficulte='prestige11'), 'difficulte')
+        self.assertEqual(len(self.hall.lire({'classement': 'campagne', 'carte': 'prairie', 'difficulte': 'prestige1', 'enfant': '0'})['entrees']), 1)
+        t = {'pseudo': 'Alice', 'enfant': False, 'classement': 'tour', 'carte': 'prairie', 'difficulte': 'prestige3',
+             'mode': 'campagne', 'tour': 'tempete', 'vagues': 20, 'valeur': 20000 * 20 * 5 + 1}
+        self.refus(t, 'valeur')
+        self.hall.envoyer({**t, 'valeur': 20000 * 20 * 5})   # plafond ×5 en prestige (ultimes)
+        self.refus({**t, 'difficulte': 'difficile'}, 'valeur')   # pas pour les trois d'origine
+
     def test_champs_inconnus_ou_manquants(self):
         self.refus({**camp(), 'ip': '1.2.3.4'}, 'forme')
         self.refus({**camp(), 'tour': 'mage'}, 'forme')
@@ -284,7 +296,10 @@ class Coherence(unittest.TestCase):
         with open(os.path.join(racine, 'src', 'data', 'difficultes.js'), encoding='utf-8') as f:
             src = f.read()
         for nom, vies in REGLES['difficultes'].items():
-            self.assertRegex(src, rf'{nom}:\s*{{[^}}]*vies: {vies}\b')
+            if nom.startswith('prestige'):   # générés par formule : vies = max(5, 10 − ⌊k/2⌋) (le test JS compare aussi les valeurs)
+                self.assertEqual(vies, max(5, 10 - int(nom[8:]) // 2), nom)
+            else:
+                self.assertRegex(src, rf'{nom}:\s*{{[^}}]*vies: {vies}\b')
         with open(os.path.join(racine, 'src', 'data', 'tours.js'), encoding='utf-8') as f:
             src = f.read()
         for t in REGLES['tours']:
