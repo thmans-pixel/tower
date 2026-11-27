@@ -7,7 +7,7 @@ export const LABYRINTHE = {
   partOr: 0.5,            // part de l'or habituel rendue par une mise à terre
   renfort: 0.3,           // PV en plus à chaque mise à terre : le monstre revient plus fort
   tailleVagues: 0.5,      // effectifs des vagues générées (1 = ceux du mode infini)
-  multPV: 1.5,            // PV de base des monstres, multipliés (population limitée depuis la spec 017 : moins de murs, donc des monstres plus costauds)
+  multPV: 1.75,           // PV de base des monstres, multipliés (population limitée depuis la spec 017 : moins de murs, donc des monstres plus costauds)
   pvParVague: 0,          // PV en plus par vague (en plus de la montée habituelle) : inutile depuis `renfort`
   checkpoints: [3, 5],    // nombre de checkpoints : de 3 à 5
   paires: [1, 2],         // paires de téléporteurs : 1 ou 2

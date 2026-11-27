@@ -254,3 +254,9 @@ en une dizaine de vagues. Thibault a choisi la correction « le monstre revient 
 
 ## Questions ouvertes
 (aucune)
+
+## Réglage du 2026-11-27 (accord de Thibault)
+PV de base des monstres du labyrinthe × 1,75 au lieu de × 1,5. Joueur automatique, Normal, 10 terrains : avec murs 7 gagnés
+sur 10 (10 à 23 vagues), sans mur 6 sur 10. À × 2 et plus il perd presque partout, avec ou sans mur : le critère 19
+(« sans mur il perd ») reste non atteint, car le joueur automatique ne tire aucun profit mesurable de ses murs
+(population par niveau comprise, spec 024). Seul un joueur humain peut juger l'utilité des murs.

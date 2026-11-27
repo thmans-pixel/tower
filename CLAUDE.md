@@ -108,7 +108,7 @@ effets et animations : `docs/specs/012-effets-et-animations.md` (lots A, B et C 
   s'emballer. Population maximale (spec 017) : `s.labyrinthe.popMax` (40 ou 50 selon la graine), `populationLabyrinthe(s)`, refus
   `raison: 'population'` ; obstacles `lab.obstacles` ({ type: 'rocher' | 'montagne', cases }), `casesObstacles`, fermés comme des
   murs mais non vendables ni comptés ; dessinés par `Laby.obstacle`. Records : `progression.reglesLaby = 2` (sinon les records
-  de labyrinthe sont ignorés), codes `TDR2` quand ils portent des records. PV des monstres × 1,5. Repères actuels (2026-11-24, 10
+  de labyrinthe sont ignorés), codes `TDR2` quand ils portent des records. PV des monstres × 1,75 (2026-11-27). Repères actuels (2026-11-24, 10
   terrains) : Normal 9 gagnés sur 10 en 5 à 22 vagues, sans mur 8 sur 10 ; Facile 10 sur 10 en 3 à 11 ; Difficile 8 sur 10.
   Joueur automatique : murs gloutons (celui qui rallonge le plus le trajet) dans ce que la population permet.
 - Classement des tours (spec 017, lot 1) : `tour.degatsVague[v]` (dans `blesser`), `s.orVague[v]`, `s.vendues` ; à la fin de
