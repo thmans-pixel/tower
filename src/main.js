@@ -1,8 +1,8 @@
 // Point d'entrée : relie la logique (src/sim), l'affichage (src/render), le son et l'interface.
 import { W, H, T, DT, COLS, ROWS } from './sim/const.js';
 import { CARTES } from './data/cartes.js';
-import { TOURS, ORDRE_TOURS } from './data/tours.js';
-import { nouvellePartie, avancer, poser, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret,
+import { TOURS, ORDRE_TOURS, prixDirect } from './data/tours.js';
+import { nouvellePartie, avancer, poser, poserEvoluee, ameliorer, vendre, cibler, appelerVague, peutPoser, lancerMeteores, appelerRenforts, pouvoirPret,
   poserMur, vendreMur, annulerPrevu, raisonPose, caseLibre } from './sim/partie.js';
 import { LABYRINTHE } from './data/labyrinthe.js';
 import { aideCase } from './render/labyrinthe.js';
@@ -57,15 +57,16 @@ let ecran = 'titre';
 let vitesse = 1, enPause = false, reste = 0, avant = performance.now(), finMontree = false;
 const ui = {
   construction: null, fantome: null, selection: null, pouvoir: null, visee: null,
+  niveauPose: '1',  // niveau de pose (spec 024) : '1' ou 'a' / 'b' = tour de niveau 3 achetée d'un coup, avec cette spécialisation
   verrou: null,     // tour verrouillée par un appui long (tablette) : on en pose plusieurs à la suite
-  peutPoser: (c, r) => partie && peutPoser(partie, c, r),
+  peutPoser: (c, r) => partie && peutPoser(partie, c, r, ui.niveauPose === '1' ? 1 : 3),
   caseLibre: (c, r) => partie && caseLibre(partie, c, r),
-  raisonPose: (c, r) => (partie ? raisonPose(partie, c, r) : 'place'),
+  raisonPose: (c, r) => (partie ? raisonPose(partie, c, r, ui.niveauPose === '1' ? 1 : 3) : 'place'),
   surChemin: (c, r) => partie && (partie.labyrinthe ? partie.carte.cheminCases.some(([i, j]) => i === c && j === r) : partie.carte.etat(c, r) === CHEMIN),
   survol: null,     // case sous la souris (bulle d'aide du labyrinthe)
   aide: null,       // case touchée au doigt : sa bulle reste quelques secondes
 };
-const prixDe = (sorte) => (sorte === 'mur' ? LABYRINTHE.prixMur : TOURS[sorte].prix);
+const prixDe = (sorte) => (sorte === 'mur' ? LABYRINTHE.prixMur : ui.niveauPose === '1' ? TOURS[sorte].prix : prixDirect(sorte));
 const cleCase = (c, r) => r * COLS + c;
 
 const interfaceJeu = new Interface({
@@ -95,6 +96,7 @@ const interfaceJeu = new Interface({
   effacer: () => { const { enfant, ageRepondu } = progression; effacer(); progression = { ...progressionVide(), enfant, ageRepondu }; mode = 'campagne'; son.actif = true; afficherCartes(); },
   deselectionner: () => { ui.selection = null; },
   classement: () => { ui.classement = !ui.classement; son.jouer('clic'); },
+  niveauPose: (v) => { if (['1', 'a', 'b'].includes(v)) { ui.niveauPose = v; son.jouer('clic'); } },
   choisirTour: (id) => { ui.selection = id; ui.construction = null; son.jouer('clic'); },
   ameliorer: (variante) => { const r = partie && ameliorer(partie, ui.selection, variante); if (r && !r.ok) son.jouer('erreur'); },
   vendre: () => { const r = partie && vendre(partie, ui.selection); if (r && r.ok && !r.prevu) ui.selection = null; },
@@ -325,7 +327,7 @@ function batir(c, r, serie) {
   const mur = ui.construction === 'mur';
   // L'outil Mur retire un mur déjà là (ou annule un mur prévu) : on dessine et on gomme avec le même outil.
   if (mur && (partie.labyrinthe.murs.has(cleCase(c, r)) || partie.labyrinthe.prevus.some((p) => p.c === c && p.r === r && p.type === 'poseMur'))) { retirer(c, r); return; }
-  const res = mur ? poserMur(partie, c, r) : poser(partie, ui.construction, c, r);
+  const res = mur ? poserMur(partie, c, r) : ui.niveauPose === '1' ? poser(partie, ui.construction, c, r) : poserEvoluee(partie, ui.construction, c, r, ui.niveauPose);
   if (res.ok) {
     if (res.prevu) { son.jouer('clic'); vue.texte(c * T + T / 2, r * T - 6, 'Prévu', '#8fe0ff'); }
     if ((serie || mur) && partie.or >= prixDe(ui.construction)) ui.fantome = mobile.actif ? null : ui.fantome;

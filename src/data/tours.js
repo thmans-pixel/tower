@@ -120,6 +120,9 @@ export const CIBLAGES = {
   proche: 'Plus proche',
 };
 
+/** Prix d'une tour posée directement au niveau 3 : construction + niveau 2 + niveau 3 (spec 024). */
+export const prixDirect = (sorte) => TOURS[sorte].prix + TOURS[sorte].ameliorations.reduce((a, b) => a + b, 0);
+
 /** Caractéristiques d'une tour posée : niveau 1 ou 2, ou sa spécialisation au niveau 3. */
 export function statsTour(t) {
   const d = TOURS[t.sorte];
