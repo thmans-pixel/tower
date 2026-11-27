@@ -3,7 +3,7 @@
 // toute action du joueur passe par les commandes exportées (poser, ameliorer, vendre, cibler, appelerVague).
 import { T, DT, COMPTE_VAGUE, BONUS_AVANCE, REVENTE, ECART_GROUPES, COMPENSATION_OR, PRIME_TOUR } from './const.js';
 import { CARTES } from '../data/cartes.js';
-import { TOURS, statsTour } from '../data/tours.js';
+import { TOURS, statsTour, prixDirect } from '../data/tours.js';
 import { ENNEMIS, multPV, VOIENT_INVISIBLE } from '../data/ennemis.js';
 import { POUVOIRS } from '../data/pouvoirs.js';
 import { DIFFICULTES, estPrestige } from '../data/difficultes.js';
@@ -64,29 +64,41 @@ export function caseLibre(s, c, r) {
 }
 
 /** Labyrinthe : murs et tours construits ou prévus (poses prévues comptées, ventes prévues déduites). */
+/** Places qu'une tour prend dans la population du labyrinthe : une par niveau (spec 024). */
+export const placesTour = (t) => t.niveau + 1;
+
+/** Variation de population d'une pose ou d'une vente prévue. */
+function placesPrevu(s, p) {
+  if (p.type === 'poseMur') return 1;
+  if (p.type === 'poseTour') return p.places || 1;
+  if (p.type === 'venteMur') return -1;
+  const t = s.tours.find((x) => x.id === p.id);
+  return -(t ? placesTour(t) : 1);
+}
+
 export function populationLabyrinthe(s) {
   const l = s.labyrinthe;
-  let n = l.murs.size + s.tours.length;
-  for (const p of l.prevus) n += p.type.startsWith('pose') ? 1 : -1;
+  let n = l.murs.size + s.tours.reduce((a, t) => a + placesTour(t), 0);
+  for (const p of l.prevus) n += placesPrevu(s, p);
   return n;
 }
 
 /** Pourquoi on ne peut pas construire en (c, r) : 'place', 'population' (labyrinthe : plafond atteint), 'bouche' (labyrinthe : plus de passage), ou null. */
-export function raisonPose(s, c, r) {
+export function raisonPose(s, c, r, places = 1) {
   if (!caseLibre(s, c, r)) return 'place';
   if (!s.labyrinthe) return null;
-  if (populationLabyrinthe(s) >= s.labyrinthe.popMax) return 'population';
+  if (populationLabyrinthe(s) + places > s.labyrinthe.popMax) return 'population';
   const b = bloquesPrevus(s);
   b.add(cle(c, r));
   return passageAPied(s.carte.lab, b) ? null : 'bouche';
 }
 
-export const peutPoser = (s, c, r) => raisonPose(s, c, r) === null;
+export const peutPoser = (s, c, r, places = 1) => raisonPose(s, c, r, places) === null;
 
-function construireTour(s, sorte, c, r, prix) {
+function construireTour(s, sorte, c, r, prix, variante = null) {
   const t = {
-    id: s.prochainId++, sorte, niveau: 0, c, r, x: centre(c), y: centre(r),
-    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: prix, angle: 0, tir: 0, variante: null,
+    id: s.prochainId++, sorte, niveau: variante ? 2 : 0, c, r, x: centre(c), y: centre(r),
+    recharge: 0, ciblage: 'premier', degats: 0, abattus: 0, depense: prix, angle: 0, tir: 0, variante,
     degatsVague: {}, couronnes: 0,   // dégâts par vague du monstre touché ; vagues remportées (spec 017)
   };
   s.tours.push(t);
@@ -94,20 +106,34 @@ function construireTour(s, sorte, c, r, prix) {
   return t;
 }
 
+/** Prix d'une tour posée directement au niveau 3 : la somme de ses trois prix (spec 024). */
+export const prixEvoluee = prixDirect;
+
 export function poser(s, sorte, c, r) {
+  return poserTour(s, sorte, c, r, null);
+}
+
+/** Achat direct d'une tour de niveau 3 avec sa spécialisation (`variante` = 'a' ou 'b'), au prix de la somme des trois prix. */
+export function poserEvoluee(s, sorte, c, r, variante) {
+  if (variante !== 'a' && variante !== 'b') return { ok: false, raison: 'choix' };
+  return poserTour(s, sorte, c, r, variante);
+}
+
+function poserTour(s, sorte, c, r, variante) {
   const d = TOURS[sorte];
   if (!d || s.fin) return { ok: false, raison: 'impossible' };
   if (s.labyrinthe && !enVague(s)) appliquerPrevus(s);
-  const raison = raisonPose(s, c, r);
+  const places = variante ? 3 : 1, prix = variante ? prixEvoluee(sorte) : d.prix;
+  const raison = raisonPose(s, c, r, places);
   if (raison) return { ok: false, raison };
-  if (s.or < d.prix) return { ok: false, raison: 'or' };
-  s.or -= d.prix;
+  if (s.or < prix) return { ok: false, raison: 'or' };
+  s.or -= prix;
   if (s.labyrinthe && enVague(s)) {
-    s.labyrinthe.prevus.push({ type: 'poseTour', sorte, c, r, prix: d.prix });
+    s.labyrinthe.prevus.push({ type: 'poseTour', sorte, c, r, prix, variante, places });
     ev(s, 'prevu', { x: centre(c), y: centre(r) });
     return { ok: true, prevu: true };
   }
-  const t = construireTour(s, sorte, c, r, d.prix);
+  const t = construireTour(s, sorte, c, r, prix, variante);
   if (s.labyrinthe) recalculerChemin(s);
   return { ok: true, tour: t };
 }
@@ -190,7 +216,7 @@ export function appliquerPrevus(s) {
   }
   for (const p of liste) {
     if (p.type === 'poseMur') { l.murs.add(cle(p.c, p.r)); ev(s, 'poseMur', { x: centre(p.c), y: centre(p.r) }); }
-    else if (p.type === 'poseTour') construireTour(s, p.sorte, p.c, p.r, p.prix);
+    else if (p.type === 'poseTour') construireTour(s, p.sorte, p.c, p.r, p.prix, p.variante || null);
   }
   recalculerChemin(s);
   ev(s, 'prevusAppliques', { n: liste.length });
@@ -241,7 +267,8 @@ export function annulerPrevu(s, c, r) {
   const p = l.prevus[i];
   if (p.type === 'venteMur' || p.type === 'venteTour') {
     // Garder ce qu'on voulait vendre referme la case : il faut qu'un passage reste, et une place dans la population.
-    if (populationLabyrinthe(s) >= l.popMax) return { ok: false, raison: 'population' };
+    const rendue = p.type === 'venteTour' ? placesPrevu(s, p) : -1;   // places qu'on reprend en gardant la tour
+    if (populationLabyrinthe(s) - rendue > l.popMax) return { ok: false, raison: 'population' };
     const b = bloquesPrevus(s);
     b.add(cle(c, r));
     if (!passageAPied(s.carte.lab, b)) return { ok: false, raison: 'bouche' };
@@ -264,10 +291,11 @@ export function prixAmelioration(t, s = null) {
 /** Au niveau 2, l'amélioration demande le choix d'une spécialisation : `variante` = 'a' ou 'b'. */
 export function ameliorer(s, id, variante) {
   const t = s.tours.find((x) => x.id === id);
-  if (!t || s.fin) return { ok: false, raison: 'impossible' };
+  if (!t || s.fin || t.aRetirer) return { ok: false, raison: 'impossible' };   // (aRetirer : vente prévue)
   const prix = prixAmelioration(t, s);
   if (prix === null) return { ok: false, raison: 'max' };
   if (t.niveau === 1 && variante !== 'a' && variante !== 'b') return { ok: false, raison: 'choix' };
+  if (s.labyrinthe && populationLabyrinthe(s) + 1 > s.labyrinthe.popMax) return { ok: false, raison: 'population' };   // spec 024 : chaque niveau prend une place
   if (s.or < prix) return { ok: false, raison: 'or' };
   s.or -= prix;
   if (t.niveau === 1) t.variante = variante;

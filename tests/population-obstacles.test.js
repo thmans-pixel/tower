@@ -1,7 +1,7 @@
 // Spec 017, lot 2 : population maximale et obstacles du labyrinthe.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { nouvellePartie, ameliorer, poser, poserMur, vendre, vendreMur, annulerPrevu, populationLabyrinthe, caseLibre, appelerVague } from '../src/sim/partie.js';
+import { nouvellePartie, ameliorer, poser, poserEvoluee, poserMur, vendre, vendreMur, annulerPrevu, populationLabyrinthe, caseLibre, appelerVague } from '../src/sim/partie.js';
 import { genererLabyrinthe, cheminLabyrinthe, casesFixes, casesObstacles, cle } from '../src/sim/labyrinthe.js';
 import { LABYRINTHE } from '../src/data/labyrinthe.js';
 
@@ -25,7 +25,7 @@ test('plafond de population : 40 ou 50, toujours le même pour une graine, les d
   assert.equal(partie(3).labyrinthe.popMax, genererLabyrinthe(3).popMax);
 });
 
-test('au plafond : poser et poserMur refusent sans débiter ; vendre libère ; améliorer ne coûte rien', () => {
+test('au plafond : poser et poserMur refusent sans débiter ; vendre libère ; améliorer demande une place', () => {
   const s = partie(1);
   s.labyrinthe.popMax = 5;
   const places = libres(s, 12);
@@ -42,8 +42,60 @@ test('au plafond : poser et poserMur refusent sans débiter ; vendre libère ; a
   assert.equal(populationLabyrinthe(s), 4);
   assert.ok(poserMur(s, ...places[5]).ok);
   assert.equal(populationLabyrinthe(s), 5);
-  assert.ok(ameliorer(s, t.tour.id).ok, 'améliorer ne coûte pas de population');
+  // Spec 024 : chaque niveau d'une tour prend une place ; au plafond, améliorer est refusé sans débiter.
+  const or2 = s.or;
+  assert.equal(ameliorer(s, t.tour.id).raison, 'population');
+  assert.equal(s.or, or2);
+  vendreMur(s, ...poses[1]);
+  assert.ok(ameliorer(s, t.tour.id).ok);
   assert.equal(populationLabyrinthe(s), 5);
+});
+
+test('population par niveau et achat direct (spec 024)', () => {
+  const s = partie(1);
+  s.labyrinthe.popMax = 6;
+  s.or = 100000;
+  const places = libres(s, 12);
+  const direct = poserEvoluee(s, 'mage', ...places[0], 'a');
+  assert.ok(direct.ok);
+  assert.equal(direct.tour.niveau, 2);
+  assert.equal(direct.tour.variante, 'a');
+  assert.equal(direct.tour.depense, 130 + 110 + 190);
+  assert.equal(populationLabyrinthe(s), 3);
+  assert.equal(poserEvoluee(s, 'mage', ...places[1], 'a').ok, true);
+  assert.equal(populationLabyrinthe(s), 6);
+  const or = s.or;
+  assert.equal(poserEvoluee(s, 'canon', ...places[2], 'b').raison, 'population');
+  assert.equal(poser(s, 'archers', ...places[2]).raison, 'population');
+  assert.equal(s.or, or);
+  assert.equal(poserEvoluee(s, 'mage', ...places[3], 'x').raison, 'choix');
+  vendre(s, direct.tour.id);
+  assert.equal(populationLabyrinthe(s), 3);
+});
+
+test('une vente prévue rend toutes les places de la tour', () => {
+  const s = partie(1);
+  s.labyrinthe.popMax = 5;
+  s.or = 100000;
+  const places = libres(s, 12);
+  const t = poserEvoluee(s, 'mage', ...places[0], 'b').tour;
+  poser(s, 'archers', ...places[1]); poser(s, 'archers', ...places[2]);
+  assert.equal(populationLabyrinthe(s), 5);
+  appelerVague(s);   // une vague en cours : les ventes sont prévues
+  assert.ok(vendre(s, t.id).prevu);
+  assert.equal(populationLabyrinthe(s), 2);
+  assert.equal(ameliorer(s, t.id).raison, 'impossible');
+  assert.equal(annulerPrevu(s, t.c, t.r).ok, true);
+  assert.equal(populationLabyrinthe(s), 5);
+});
+
+test("l'achat direct existe aussi hors labyrinthe, sans population", () => {
+  const s = nouvellePartie('prairie');
+  s.or = 1000;
+  const [c, r] = [[0, 0]].concat(Array.from({ length: 24 * 16 }, (_, i) => [i % 24, Math.floor(i / 24)])).find(([i, j]) => caseLibre(s, i, j));
+  const res = poserEvoluee(s, 'archers', c, r, 'b');
+  assert.ok(res.ok);
+  assert.equal(s.or, 1000 - (70 + 65 + 120));
 });
 
 test('population : poses et ventes prévues pendant une vague comptent tout de suite', () => {

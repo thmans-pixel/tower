@@ -1,6 +1,6 @@
 // Barres, panneau de tour, écrans : tout le texte à l'écran. Ne touche pas à l'état : les boutons appellent les
 // fonctions passées par main.js.
-import { TOURS, ORDRE_TOURS, CIBLAGES, statsTour } from '../data/tours.js';
+import { TOURS, ORDRE_TOURS, CIBLAGES, statsTour, prixDirect } from '../data/tours.js';
 import { ENNEMIS } from '../data/ennemis.js';
 import { T, W, COLS, ROWS } from '../sim/const.js';
 import { composition, peutAppeler, bonusAppel, prixAmelioration, prixRevente, statsEffectives, enVague } from '../sim/partie.js';
@@ -119,7 +119,11 @@ export class Interface {
         <img alt="" src="${spriteMur().toDataURL()}">
         <span class="nom">Mur</span>
         <span class="prix"><i class="ico piece"></i>${LABYRINTHE.prixMur}</span>
-        <kbd>${etiquetteRang(7)}</kbd></button>` + '<button id="b-serie" class="serie-mobile" hidden aria-label="Poser plusieurs fois la même tour">×n</button>';
+        <kbd>${etiquetteRang(7)}</kbd></button>` + `<div class="niveau-pose" role="group" aria-label="Niveau de pose">
+        <button data-niv="1" class="actif" title="Poser une tour de niveau 1">Niveau 1</button>
+        <button data-niv="a" title="Acheter d’un coup une tour de niveau 3, première spécialisation">Niv. 3 · A</button>
+        <button data-niv="b" title="Acheter d’un coup une tour de niveau 3, seconde spécialisation">Niv. 3 · B</button></div>` + '<button id="b-serie" class="serie-mobile" hidden aria-label="Poser plusieurs fois la même tour">×n</button>';
+    zone.querySelector('.niveau-pose').addEventListener('click', (e) => { const b = e.target.closest('button[data-niv]'); if (b) this.a.niveauPose(b.dataset.niv); });
     $('b-serie').onclick = (e) => { e.stopPropagation(); if (this.choisie) this.a.verrouiller(this.choisie); };
     // Appui long (tablette) : verrouille la tour pour en poser plusieurs à la suite ; un nouvel appui long la libère.
     let minuteur = null, appuiLong = false;
@@ -231,13 +235,14 @@ export class Interface {
     // Sur écran tactile, pas de fiche au choix d'une tour : sur un téléphone elle couvrait la carte et empêchait de bâtir.
     if (!v || !v.b) { if (!f.hidden) { f.hidden = true; this.sigFiche = ''; } return; }
     const [genre, nom] = v.cle.split(':');
-    const prix = nom === 'mur' ? LABYRINTHE.prixMur : genre === 't' ? TOURS[nom].prix : 0;
+    const direct = genre === 't' && ui.niveauPose !== '1';
+    const prix = nom === 'mur' ? LABYRINTHE.prixMur : genre === 't' ? (direct ? prixDirect(nom) : TOURS[nom].prix) : 0;
     const manque = genre === 't' && s ? Math.max(0, prix - s.or) : 0;
-    const sig = v.cle + '|' + manque;
+    const sig = v.cle + '|' + manque + '|' + ui.niveauPose;
     if (sig !== this.sigFiche) {
       this.sigFiche = sig;
       if (nom === 'mur') f.innerHTML = ficheMur(s ? s.or : null);
-      else if (genre === 't') f.innerHTML = ficheTour(nom, etiquetteRang(ORDRE_TOURS.indexOf(nom) + 1), s ? s.or : null);
+      else if (genre === 't') f.innerHTML = ficheTour(nom, etiquetteRang(ORDRE_TOURS.indexOf(nom) + 1), s ? s.or : null) + (direct ? `<div class="encadre"><div class="etiquette">Pose directe</div><p>Niveau 3 : ${TOURS[nom].specialisations[ui.niveauPose].nom}, ${prix} or d’un coup${s && s.labyrinthe ? ' · 3 places de population' : ''}.</p></div>` : '');
       else {
         const k = ORDRE_POUVOIRS.indexOf(nom);
         f.innerHTML = fichePouvoir(nom, `${etiquetteRang(this.rangPouvoirs + k)} ou ${POUVOIRS[nom].touche.toUpperCase()}`);
@@ -522,8 +527,12 @@ export class Interface {
       if (sorte === 'mur' && b.hidden === maze) b.hidden = !maze;
       b.classList.toggle('actif', ui.construction === sorte);
       b.classList.toggle('verrou', ui.verrou === sorte);
-      b.classList.toggle('trop-cher', s.or < (sorte === 'mur' ? LABYRINTHE.prixMur : TOURS[sorte].prix));
+      const px = sorte === 'mur' ? LABYRINTHE.prixMur : ui.niveauPose === '1' ? TOURS[sorte].prix : prixDirect(sorte);
+      b.classList.toggle('trop-cher', s.or < px);
+      const el = b.querySelector('.prix');
+      if (el && el.dataset.px !== String(px)) { el.dataset.px = px; el.lastChild.textContent = px; }
     }
+    for (const b of document.querySelectorAll('.niveau-pose button')) b.classList.toggle('actif', b.dataset.niv === ui.niveauPose);
     this.majPanneau(s, ui);
     this.majFiche(s, ui);
   }
@@ -553,7 +562,7 @@ export class Interface {
     const vague = !!s.labyrinthe && enVague(s);
     const suiv = t.niveau === 0 ? statsEffectives(s, { ...t, niveau: 1 }) : null;   // flèches vers le niveau 2 seulement
     const prix = prixAmelioration(t, s), vente = prixRevente(t);
-    const sig = [t.id, t.niveau, t.variante, t.ciblage, Math.round(t.degats), t.abattus, t.couronnes, s.tours.length, rangDe(s, t), prix !== null && s.or >= prix, s.fin, vague, !!t.aRetirer].join('|');
+    const sig = [t.id, t.niveau, t.variante, t.ciblage, Math.round(t.degats), t.abattus, t.couronnes, s.tours.length, rangDe(s, t), prix !== null && s.or >= prix, s.fin, vague, !!t.aRetirer, !!s.labyrinthe && populationLabyrinthe(s) + 1 > s.labyrinthe.popMax].join('|');
     if (sig === this.signature && !p.hidden) return;
     this.signature = sig;
     const fleche = (a, b, f) => (b !== undefined && b !== a ? ` <em>→ ${f(b)}</em>` : '');
@@ -584,13 +593,15 @@ export class Interface {
     if (n.perce) lignes.push(['Ignore', pct(n.perce) + ' de l’armure']);
     lignes.push(['Vise', n.volants ? 'sol et air' : 'sol seulement']);
     if (zoneTour) lignes.push(['Zone', `${zoneTour.nom} : ${zoneTour.portee ? 'portée + 25 %' : zoneTour.degats ? 'dégâts + 25 %' : 'cadence − 25 %'}`]);
+    if (s.labyrinthe) lignes.push(['Population', `${t.niveau + 1} place${t.niveau ? 's' : ''}`]);
     lignes.push(['Rang', `${rangDe(s, t)}${rangDe(s, t) === 1 ? 'er' : 'e'} sur ${s.tours.length}`], ['Vagues remportées', t.couronnes ? '♛ ' + t.couronnes : '0']);
     lignes.push(['Dégâts totaux', nb(t.degats)], [s.labyrinthe ? 'Mises à terre' : 'Abattus', nb(t.abattus)]);
     const ultime = t.niveau === 3 ? d.ultimes[t.variante] : null;
     const maxi = estPrestige(s.difficulte) ? 4 : 3;
     const titre = ultime ? `${ultime.nom}<small>Niveau 4, ultime — ${d.nom}</small>` : t.niveau === 2 ? `${d.specialisations[t.variante].nom}<small>Niveau 3 — ${d.nom}</small>` : `${d.nom}<small>Niveau ${t.niveau + 1} sur ${maxi}</small>`;
     const rappel = ultime ? `<p class="desc">${ultime.description}</p>` : t.niveau === 2 ? `<p class="desc">${d.specialisations[t.variante].description}</p>` : '';
-    const bloque = (prix !== null && s.or < prix) || s.fin ? 'disabled' : '';
+    const pleine = !!s.labyrinthe && populationLabyrinthe(s) + 1 > s.labyrinthe.popMax;   // spec 024 : un niveau de plus = une place de plus
+    const bloque = (prix !== null && (s.or < prix || pleine)) || s.fin ? 'disabled' : '';
     let amelioration;
     if (prix === null) amelioration = '<button class="action" disabled>Niveau maximum</button>';
     else if (t.niveau === 1) {
@@ -600,7 +611,7 @@ export class Interface {
     } else if (t.niveau === 2) {
       const u = d.ultimes[t.variante];
       amelioration = `<div class="encadre"><div class="etiquette">Niveau 4, ultime : ${u.nom}</div><p>${u.description}</p></div><button class="action ameliorer" data-act="ameliorer" ${bloque}>Ultime · ${prix} or</button>`;
-    } else amelioration = `${encadreNiveau2(t.sorte)}<button class="action ameliorer" data-act="ameliorer" ${bloque}>Améliorer · ${prix} or</button>`;
+    } else amelioration = `${encadreNiveau2(t.sorte)}<button class="action ameliorer" data-act="ameliorer" ${bloque}>Améliorer · ${prix} or</button>${pleine ? '<p class="petit-texte">Population maximale atteinte : vendez un mur ou une tour.</p>' : ''}`;
     p.innerHTML = `<button class="fermer" data-act="fermer" aria-label="Fermer">×</button>
       <h3>${titre}</h3>
       ${rappel}
