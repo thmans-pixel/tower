@@ -18,8 +18,8 @@ Vague atteinte avant la défaite : Prairie Difficile 18, P1 12, P2-P3 7, P4-P5 4
 assez pour juger les niveaux hauts : à régler à la main en jouant (les chiffres sont tous dans `difficultes.js`).
 
 ## À valider
-- Les chiffres ci-dessus et le nombre de niveaux (10).
-- Ouvrir un classement des prestiges au hall of fame (serveur + règles à étendre).
+- Rien d'ouvert : les 10 niveaux et le classement au hall of fame sont validés (2026-11-26, spec 023).
+- À régler en jouant (retours de Thibault) : les chiffres de P5 à P10, que le joueur automatique ne sait pas juger.
 
 ## Réglage du 2026-11-26 (retour de Thibault : « les prestiges peuvent être plus durs »)
 PV × 1,18 par niveau au lieu de 1,15 (le reste inchangé). Joueur automatique, Prairie, 30 tours, avec l'or de la spec 023 :
